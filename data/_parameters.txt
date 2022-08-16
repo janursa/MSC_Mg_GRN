@@ -1,0 +1,27 @@
+# Name of the proteomic data file
+proteomics-values-file = omics.txt
+
+# Names of columns that contain information other than values and what they map to
+id-column = ID
+symbols-column = Symbols
+sites-column = Sites
+effect-column = Effect
+
+# How the values should be interpreted
+value-transformation = significant-change-of-mean-paired
+
+do-log-transform = false
+
+calculate-network-significance = true
+use-network-significance-for-causal-reasoning= true
+
+
+# Names of control and test columns. In a paired analysis, their order are important.
+control-value-column = ctr_1
+test-value-column = Mg_1
+control-value-column = ctr_2
+test-value-column = Mg_2
+control-value-column = ctr_3
+test-value-column = Mg_3
+control-value-column = ctr_4
+test-value-column = Mg_4
