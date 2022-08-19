@@ -499,7 +499,7 @@ def wr_dynGENIE3_single(args):
     
 
 
-def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree_method,K,ntrees,compute_quality_scores,save_models,max_depth):
+def dynGENIE3_single(TS_data,time_points,SS_data,i_gene,alpha,input_idx,tree_method,K,ntrees,compute_quality_scores,save_models,max_depth):
 
     h = 1 # lag (in number of time points) used for the finite approximation of the derivative of the target gene expression
     ntop = 5 # number of top-ranked candidate regulators over which to compute the stability score
@@ -527,12 +527,12 @@ def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree
         npoints = current_timeseries.shape[0]
         time_diff_current = current_time_points[h:] - current_time_points[:npoints-h]
         current_timeseries_input = current_timeseries[:npoints-h,input_idx]
-        current_timeseries_output = (current_timeseries[h:,output_idx] - current_timeseries[:npoints-h,output_idx]) / time_diff_current + alpha*current_timeseries[:npoints-h,output_idx]
+        current_timeseries_output = (current_timeseries[h:,i_gene] - current_timeseries[:npoints-h,i_gene]) / time_diff_current + alpha*current_timeseries[:npoints-h,i_gene]
         nsamples_current = current_timeseries_input.shape[0]
         input_matrix_time[nsamples_count:nsamples_count+nsamples_current,:] = current_timeseries_input
         output_vect_time[nsamples_count:nsamples_count+nsamples_current] = current_timeseries_output
-        output_vect_time_present[nsamples_count:nsamples_count+nsamples_current] = current_timeseries[:npoints-h,output_idx]
-        output_vect_time_future[nsamples_count:nsamples_count+nsamples_current] = current_timeseries[h:,output_idx]
+        output_vect_time_present[nsamples_count:nsamples_count+nsamples_current] = current_timeseries[:npoints-h,i_gene]
+        output_vect_time_future[nsamples_count:nsamples_count+nsamples_current] = current_timeseries[h:,i_gene]
         time_diff[nsamples_count:nsamples_count+nsamples_current] = time_diff_current
         nsamples_count += nsamples_current
     
@@ -540,7 +540,7 @@ def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree
     if SS_data is not None:
 
         input_matrix_steady = SS_data[:,input_idx]
-        output_vect_steady = SS_data[:,output_idx] * alpha
+        output_vect_steady = SS_data[:,i_gene] * alpha
     
         # Concatenation
         input_all = vstack([input_matrix_steady,input_matrix_time])
@@ -586,7 +586,7 @@ def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree
     feature_importances = compute_feature_importances(treeEstimator)
     vi = zeros(ngenes)
     vi[input_idx] = feature_importances
-    vi[output_idx] = 0
+    vi[i_gene] = 0
 
     # Normalize importance scores
     vi_sum = sum(vi)
@@ -617,7 +617,7 @@ def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree
                 output_pred_TS = (oob_prediction_TS - alpha*output_vect_time_present) * time_diff + output_vect_time_present
             
                 output_pred = concatenate((output_pred_SS,output_pred_TS))
-                output_true = concatenate((SS_data[:,output_idx],output_vect_time_future))
+                output_true = concatenate((SS_data[:,i_gene],output_vect_time_future))
             
                 (prediction_score_oob,tmp) = pearsonr(output_pred,output_true)
             
@@ -632,8 +632,8 @@ def dynGENIE3_single(TS_data,time_points,SS_data,output_idx,alpha,input_idx,tree
    
         # Importances returned by each tree
         importances_by_tree = asarray([e.tree_.compute_feature_importances(normalize=False) for e in treeEstimator.estimators_])
-        if output_idx in input_idx:
-            idx = input_idx.index(output_idx)
+        if i_gene in input_idx:
+            idx = input_idx.index(i_gene)
             # Remove importances of target gene
             importances_by_tree = delete(importances_by_tree,idx,1)
             

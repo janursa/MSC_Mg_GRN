@@ -9,11 +9,9 @@ __author__ = 'Jalil Nourisa'
 import time
 import numpy as np
 import itertools
-
-from numpy.random import permutation, uniform
-from operator import itemgetter
-from multiprocessing import Pool
+import operator 
 import matplotlib.pyplot as plt
+from pathos.pools import ParallelPool as Pool
 
 from sklearn import tree
 from sklearn import ensemble
@@ -32,6 +30,23 @@ from sklearn import model_selection
 #TODO: https://sklearn-template.readthedocs.io/en/latest/quick_start.html#develop-your-own-scikit-learn-estimators
 #TODO: scripts to manage continuous integration (testing on Linux and Windows)
 
+# TODO: sensitivity of the model to the parameters. 
+#       This can be done both using sensitivity analysis or by evaluating the results of grid search 
+#       (by checking the variations in the best chosen parameters)
+
+# TODOC: pathos is used instead of multiprocessing, which is an external dependency. 
+#        This is because multiprocessing uses pickle that has problem with lambda function.
+
+# def SA(Xs, ys, param, grid_range, specs):
+#     run_fun = # create the model by getting a grid_range, 
+#     def run_fun()
+#     specs['']
+#     obj = barneySA.tools.SA(free_params = grid_range,settings = specs)
+#     obj.sample()
+
+#     obj.run()
+
+#     obj.postprocessing()
 
 def get_link_list(links, gene_names=None, regulators='all', maxcount='all', file_name=None):
     
@@ -113,7 +128,7 @@ def get_link_list(links, gene_names=None, regulators='all', maxcount='all', file
     vInter = [(i,j,score) for (i,j),score in ndenumerate(VIM) if i in input_idx and i!=j]
     
     # Rank the list according to the weights of the edges        
-    vInter_sort = sorted(vInter,key=itemgetter(2),reverse=True)
+    vInter_sort = sorted(vInter,key=operator.itemgetter(2),reverse=True)
     nInter = len(vInter_sort)
     
     # Random permutation of edges with score equal to 0
@@ -128,7 +143,7 @@ def get_link_list(links, gene_names=None, regulators='all', maxcount='all', file
             
     if not flag:
         items_perm = vInter_sort[i:]
-        items_perm = random.permutation(items_perm)
+        items_perm = np.random.permutation(items_perm)
         vInter_sort[i:] = items_perm
         
     # Write the ranked list of edges
@@ -181,55 +196,22 @@ def compute_feature_importances(estimator):
                        for e in estimator.estimators_]
         importances = np.array(importances)
         return np.sum(importances,axis=0) / len(estimator)
-def estimate_degradation_rates(TS_data,time_points):
-    
-    """ Estimation of degradation rates from data
-    For each gene, the degradation rate is estimated by assuming that the gene expression x(t) follows:
-    x(t) =  A exp(-alpha * t) + C_min,
-    between the highest and lowest expression values.
-    C_min is set to the minimum expression value over all genes and all samples.
 
-    keyword arguments:
-    TS_data -- 
-    time_points -- 
-    """
-    
-    ngenes = TS_data[0].shape[1]
-    nexp = len(TS_data)
-    
-    C_min = TS_data[0].min()
-    if nexp > 1:
-        for current_timeseries in TS_data[1:]:
-            C_min = min(C_min,current_timeseries.min())
-    
-    alphas = np.zeros((nexp,ngenes))
-    
-    for (i,current_timeseries) in enumerate(TS_data):
-        current_time_points = time_points[i]
-        
-        for j in range(ngenes):
-            
-            idx_min = np.argmin(current_timeseries[:,j])
-            idx_max = np.argmax(current_timeseries[:,j])
-            
-            xmin = current_timeseries[idx_min,j]
-            xmax = current_timeseries[idx_max,j]
-            
-            tmin = current_time_points[idx_min]
-            tmax = current_time_points[idx_max]
-            
-            xmin = max(xmin-C_min,1e-6)
-            xmax = max(xmax-C_min,1e-6)
-                
-            xmin = np.log(xmin)
-            xmax = np.log(xmax)
-            
-            alphas[i,j] = (xmax - xmin) / abs(tmin - tmax)
-                
-    alphas = alphas.max(axis=0)
-    return alphas
+def post_grid_search(best_params,best_scores):
+    """plots the results of grid search"""
+    sorted_best_params = {key: np.array([item[key] for item in best_params]) for key in best_params[0].keys()}
+    n_sorted_best_params = {key: values/max(values) for key,values in sorted_best_params.items()}
+ 
+    fig, axs = plt.subplots(1,2, tight_layout = True, figsize = (10,5),  gridspec_kw={'width_ratios': [3, 1]})
+    axs[0].boxplot(n_sorted_best_params.values(), showfliers= True, labels=n_sorted_best_params.keys())
+    axs[0].set_ylabel('Normalized quantity')
+    axs[0].set_title('Estimated params stats')
 
-def process_data(TS_data, time_points, regulators = 'all',alpha='from_data'): 
+    axs[1].boxplot(best_scores, showfliers= True)
+    axs[1].set_ylabel('Score')
+    axs[1].set_title('Best scores distribution')
+    axs[1].set_xticklabels([])
+def process_data(TS_data, time_points, regulators = 'all'): 
     """ Reformats the raw data for sklearn applications
 
     Receives data in the raw format (n_exp*n_time*n_genes) and returns a standard format for sklearn (n_samples*n_genes)
@@ -267,13 +249,6 @@ def process_data(TS_data, time_points, regulators = 'all',alpha='from_data'):
         if len(time_points[i]) != expr_data.shape[0]:
             raise ValueError('The length of the i-th vector of time_points must be equal to the number of rows in the i-th array of TS_data')
 
-    if alpha == 'from_data':
-        alphas = estimate_degradation_rates(TS_data,time_points)
-    elif isinstance(alpha,(int,float)):
-        alphas = zeros(ngenes) + float(alpha)    
-    else:
-        alphas = [float(a) for a in alpha]
-
     # Re-order time points in increasing order
     for (i,tp) in enumerate(time_points):
         tp = np.array(tp, np.float32)
@@ -298,20 +273,22 @@ def process_data(TS_data, time_points, regulators = 'all',alpha='from_data'):
 
         # Time-series data
         input_matrix_time = np.zeros((nsamples_time-h*nexp,ninputs))
-        output_vect_time = np.zeros(nsamples_time-h*nexp)
+        output_vect_time = []
 
-        nsamples_count = 0
-        for (i,current_timeseries) in enumerate(TS_data):
-            current_time_points = time_points[i]
-            npoints = current_timeseries.shape[0]
-            time_diff_current = current_time_points[h:] - current_time_points[:npoints-h]
-            current_timeseries_input = current_timeseries[:npoints-h,input_idx]
-            current_timeseries_output = (current_timeseries[h:,i_gene] - current_timeseries[:npoints-h,i_gene]) / time_diff_current + alphas[i_gene]*current_timeseries[:npoints-h,i_gene]
-            nsamples_current = current_timeseries_input.shape[0]
-            input_matrix_time[nsamples_count:nsamples_count+nsamples_current,:] = current_timeseries_input
-            output_vect_time[nsamples_count:nsamples_count+nsamples_current] = current_timeseries_output
-            nsamples_count += nsamples_current
-        
+        for (i,exp_timeseries) in enumerate(TS_data):
+            exp_time_points = time_points[i]
+            n_time = exp_timeseries.shape[0]
+            exp_time_diff = exp_time_points[h:] - exp_time_points[:n_time-h]
+            exp_timeseries_x = exp_timeseries[:n_time-h,input_idx]
+            # current_timeseries_output = (exp_timeseries[h:,i_gene] - exp_timeseries[:n_time-h,i_gene]) / exp_time_diff + alphas[i_gene]*exp_timeseries[:n_time-h,i_gene]
+            for ii in range(len(exp_time_diff)):
+                f_dy_dt = lambda alpha_i,i=i, ii=ii,i_gene=i_gene: float((TS_data[i][ii+1:ii+2,i_gene] - TS_data[i][ii:ii+1,i_gene])/exp_time_diff[ii] + alpha_i*TS_data[i][ii:ii+1,i_gene])
+                output_vect_time.append(f_dy_dt)
+            
+            exp_n_samples = exp_timeseries_x.shape[0]
+            input_matrix_time[i*exp_n_samples:(i+1)*exp_n_samples,:] = exp_timeseries_x
+            
+
         # Steady-state data (if any)
         if False: 
             pass
@@ -331,38 +308,44 @@ def rand_search(n_sample = 100):
     """
     # TODO: before implementing this, be sure about how alpha will be included in the rate of prediction. 
     # read the relevant paper
-def grid_search_single(X, y, param, param_grid, cv = 4, use_oob_score = False):
-    """ """
-    # TODO: check that estimator_t is given
-    # TODO: check that param and param_grid dont share same params
-    # TODO: if use_oob_score is true, param should have oob_score given
-    use_oob_flag = False
-    if param['estimator_t'] == 'RF' and use_oob_score == True:
+def evaluate(Xs, ys, param, cv = 4):
+    # TODO: This is for SA. for now, its not practical
+    """ evaluetes the whole network and returns a test score which is the average score of all estimator"""
+    scores = []
+    for X, y in zip(Xs, ys):
+        _, score = evaluate_single(X, y, param, cv)
+        scores.append(score)
+    return np.mean(scores)
+
+def evaluate_single(X, y, param, cv = 4):
+    """ evalutes the target estimator and returns a test score 
+    for RF, the test score is oob_score. For the rest, cv is applied.
+    """
+    if param['estimator_t'] == 'RF' :
         use_oob_flag = True
+    else:
+        use_oob_flag = False
+    
+    est = TargetEstimator(**param)
+    if use_oob_flag:
+        fit = est.fit(X,y)
+        score = est.test()
+    else:
+        cv_a = model_selection.ShuffleSplit(n_splits=cv, test_size=(1/cv))
+        scores = model_selection.cross_val_score(est, X, y, cv=cv_a)
+        score = np.mean(scores)
 
-    # permuation of param grid
-    tags = list(param_grid.keys())
-    values = list(param_grid.values())
-    permts = []
-    for value in list(itertools.product(*values)):
-        permts.append({tag:i for tag,i in zip(tags,value)})
-
+    return est, score
+def grid_search_single_gene(X, y, param, permts, cv = 4):
+    """ evalute one gene for the given params, and returns the best fit """
     # evalute each permutation
     fits = []
     scores = []
     for permt in permts:  
         param_a = {**param,**permt}
-        est = TargetEstimator(**param_a)
-        if use_oob_flag:
-            fit = est.fit(X,y)
-            p_scores = fit.est.oob_score_
-        else:
-            # TODO: use CV
-            raise ValueError('Define first')
-        score_m = np.mean(p_scores)
-
+        fit, score = evaluate_single(X, y, param_a,cv)
         fits.append(fit)
-        scores.append(score_m)
+        scores.append(score)
     # find the best candidate. Max score is considered best score. 
     best_score = max(scores)
     index = scores.index(best_score)
@@ -370,39 +353,88 @@ def grid_search_single(X, y, param, param_grid, cv = 4, use_oob_score = False):
     best_est = fits[index]
 
     return best_score, best_param, best_est
-def pool_map_function(args):
-    """ maps the args to the grid search function, used for multi threating """
+def grid_search_single_permut(Xs, ys, param, permt, cv = 4):
+    """ evalute all genes for the one permutation of param, and returns the best fit """
+    param_a = {**param,**permt}
+    fits = []
+    scores = []
+    for X, y in zip(Xs, ys):
+        fit, score = evaluate_single(X, y, param_a,cv)
+        fits.append(fit)
+        scores.append(score)
+    return scores, fits
+
+def map_gene(args):
+    """ maps the args to the grid search function for single target, used for multi threating """
     i = args['i'] # index of each target
     args_rest = {key:value for key,value in args.items() if key != 'i'}
-    return (i, grid_search_single(**args_rest))
+    return (i, grid_search_single_gene(**args_rest))
+
+def map_permut(args):
+    """ maps the args to the grid search function for single permutation of param, used for multi threating """
+    i = args['i'] # index of each target
+    args_rest = {key:value for key,value in args.items() if key != 'i'}
+    return (i, grid_search_single_permut(**args_rest))
+
 def grid_search(Xs,ys, param, param_grid, n_jobs = 1, **specs):
     """  """
     # TODO: verify the inputs
     n_genes = Xs[0].shape[1]
-    print('Running param search on %d threads' % n_jobs)
+    time_start = time.time()
+    # permuation of param grid
+    print('Grid params:', param_grid)
+    tags = list(param_grid.keys())
+    values = list(param_grid.values())
+    permts = []
+    for value in list(itertools.product(*values)):
+        permts.append({tag:i for tag,i in zip(tags,value)})
+    print('%d genes %d permts -> %d jobs on %d threads' % (n_genes, len(permts), n_genes*len(permts), n_jobs))
     best_scores = [None for i in range(n_genes)]
     best_params = [None for i in range(n_genes)]
     best_ests = [None for i in range(n_genes)]
     if n_jobs == 1: # serial
-        for i_gene in range(n_genes):
-            X = Xs[i_gene]
-            y = ys[i_gene]
-            best_score, best_param, best_est = grid_search_single(X, y, param, param_grid, **specs)
+        map_input =  [{'i':i, 'X': Xs[i], 'y': ys[i], 'param': param, 'permts': permts, **specs} for i in range(n_genes)]
+        all_output = list(map(map_gene, map_input))
+        all_output.sort(key = lambda x: x[0])
+        for i_gene, output in enumerate(all_output): # each output is for a gene
+            best_score, best_param, best_est = output[1]
             best_scores[i_gene] = best_score
             best_params[i_gene] = best_param
             best_ests[i_gene] = best_est
     else: # parallel
+        # multithreading happens either on gene_n or permuts, depending which one is bigger
         pool = Pool(n_jobs)
-        input_data =  [{'i':i, 'X': Xs[i], 'y': ys[i], 'param': param, 'param_grid': param_grid, **specs} for i in range(n_genes)]
-        all_output = pool.map(pool_map_function, input_data)
-        for output in all_output:
-            i_gene = output[0]
-            best_score, best_param, best_est = output[1]
+        if n_genes >= len(permts):
+            print('Gene-based multi threading')
+            map_input =  [{'i':i, 'X': Xs[i], 'y': ys[i], 'param': param, 'permts': permts, **specs} for i in range(n_genes)]
+            all_output = pool.map(map_gene, map_input)
+            all_output.sort(key = lambda x: x[0])
+            for i_gene,output in enumerate(all_output): # each output is for a gene
+                best_score, best_param, best_est = output[1]
 
-            best_scores[i_gene] = best_score
-            best_params[i_gene] = best_param
-            best_ests[i_gene] = best_est
+                best_scores[i_gene] = best_score
+                best_params[i_gene] = best_param
+                best_ests[i_gene] = best_est
+        else: # when there is more permuts
+            print('Permutation-based multi threading')
+            input_data =  [{'i':i, 'Xs': Xs, 'ys': ys, 'param': param, 'permt': permts[i], **specs} for i in range(len(permts))]
+            all_output = pool.map(map_permut, input_data)
+            all_output.sort(key = lambda x: x[0])
 
+            scores = np.empty([n_genes, 0])
+            ests = np.empty([n_genes, 0])
+            for output in all_output: # each output is for a permut
+                scores_all_genes, ests_all_genes = output[1] # for all genes 
+                scores = np.c_[scores, scores_all_genes]
+                ests = np.c_[ests, ests_all_genes]
+            best_scores = scores.max(1)
+            best_indices = np.array(scores.argmax(1))
+            best_ests = ests[range(n_genes),best_indices]
+            best_params = [permts[i] for i in best_indices]
+
+
+    time_end = time.time()
+    print('Param search is completed in %.3f seconds' % ((time_end-time_start)))
     return best_scores, best_params, best_ests
 def sklearn_search(Xs, ys, param, param_grid, specs): # should use oob score when specified, for RF
     '''  '''
@@ -418,7 +450,7 @@ def sklearn_search(Xs, ys, param, param_grid, specs): # should use oob score whe
     best_params = [r.best_params_ for r in res] 
     best_fitted_est = [r.best_estimator_ for r in res]
     return best_scores, best_params, best_fitted_est  
-def network_inference(Xs, ys, param , param_unique = None, ests = None):
+def network_inference(Xs, ys, param  , param_unique = None, ests = None):
     """ Determines links of network inference
     If the ests are given, use them instead of creating new ones.
 
@@ -435,11 +467,8 @@ def network_inference(Xs, ys, param , param_unique = None, ests = None):
         assert(len(ests) == n_genes)
     scores_train = [ests[i].score(X,y) for i, (X, y) in enumerate(zip(Xs,ys))]
     if param['estimator_t'] == 'RF':
-        if 'oob_score' in param:
-            oob_scores = [est.est.oob_score_ for est in ests]
-        else:
-            print('oob_score is not specified in RF')
-            oob_scores = None 
+        oob_scores = [est.test() for est in ests]
+        
     else:
         oob_scores = None
 
@@ -448,7 +477,7 @@ def network_inference(Xs, ys, param , param_unique = None, ests = None):
     return ests, scores_train, links, oob_scores
 class TargetEstimator(base.BaseEstimator,base.RegressorMixin):
     """The docstring for a class should summarize its behavior and list the public methods and instance variables """
-    def __init__(self,estimator_t,**params):
+    def __init__(self,estimator_t, alpha = 0, **params):
         '''args should all be keyword arguments with a default value -> kwargs should be all the keyword params of all regressors with values'''
         '''they should not be documented under the “Attributes” section, but rather under the “Parameters” section for that estimator.'''
         '''every keyword argument accepted by __init__ should correspond to an attribute on the instance'''
@@ -457,8 +486,9 @@ class TargetEstimator(base.BaseEstimator,base.RegressorMixin):
         # self.alpha = alpha
         self.params = params
         self.estimator_t = estimator_t
+        self.alpha = alpha
         # self._required_parameters = () #estimators also need to declare any non-optional parameters to __init__ in the
-    def fit(self,X,y, alpha = 0):
+    def fit(self,X,y):
         """ fit X to y
         X -- Array-like of shape (n_samples, n_features)
         y -- Array-like of shape (n_samples,)
@@ -466,6 +496,10 @@ class TargetEstimator(base.BaseEstimator,base.RegressorMixin):
         """
         '''Attributes that have been estimated from the data must always have a name ending with trailing underscore'''
         '''The estimated attributes are expected to be overridden when you call fit a second time.'''
+        
+        # apply alpha to y
+        y = [y_i(self.alpha) for y_i in y]
+
         utils.check_array(X)
         utils.check_X_y(X,y)
         utils.indexable(X)
@@ -478,25 +512,42 @@ class TargetEstimator(base.BaseEstimator,base.RegressorMixin):
         self.y_ = y
 
         if self.estimator_t == 'RF':
-            self.est = ensemble.RandomForestRegressor(**self.params)
+            self.est = ensemble.RandomForestRegressor(oob_score = True,**self.params)
+        elif self.estimator_t == 'HGB':
+            self.est = ensemble.HistGradientBoostingRegressor(**self.params)
         else:
             raise ValueError('Define estimator_t')
         self.est.fit(X,y)
         return self
     def predict(self,X):
         """ """
+        # apply alpha to y
+        y = [y_i(self.alpha) for y_i in y]
         utils.validation.check_is_fitted(self)
         utils.check_X_y(X,y)
         return self.est.predict(X)
 
     def score(self,X,y): 
         """ """
+        # apply alpha to y
+        y = [y_i(self.alpha) for y_i in y]
         utils.validation.check_is_fitted(self)
         utils.check_array(X)
         utils.check_X_y(X,y)
         utils.indexable(X)
         utils.indexable(y)
         return self.est.score(X,y)
+    def test(self,X = None, y = None):
+        """ evaluate the fit
+        if RF, it returns back oob_score
+        """
+        utils.validation.check_is_fitted(self)
+        if self.estimator_t == 'RF':
+            return np.mean(self.est.oob_score_)
+        else:
+            return self.score(X,y)
+
+
     def weight_links(self):
         """ """
         vi = compute_feature_importances(self.est)
@@ -526,4 +577,5 @@ class TargetEstimator(base.BaseEstimator,base.RegressorMixin):
         return {'requires_fit': True, 'allow_nan': allow_nan, 'multioutput': True, 
             'requires_y': True,}
 
-
+    
+   
