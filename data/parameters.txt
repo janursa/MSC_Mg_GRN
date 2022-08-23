@@ -1,0 +1,47 @@
+# Name of the proteomic data file
+proteomics-values-file = sig_data.txt
+
+# Names of columns that contain information other than values and what they map to
+id-column = ID
+symbols-column = Symbols
+sites-column = Sites
+effect-column = Effect
+
+# How the values should be interpreted
+value-transformation = significant-change-of-mean-paired
+
+# FDR thresholds for data types
+fdr-threshold-for-data-significance = 0.1 protein
+
+# Should we use proteomic and phosphoproteomic values together while calculating the p-value threshold that satisfies the required FDR? We say yes here because this is RPPA data.
+pool-proteomics-for-fdr-adjustment = false
+
+# Which value corresponds to most intense color? When the value is a p-value (as here), this setting is applied to -ln(p).
+color-saturation-value = 10
+
+# Whether to show proteomic values on the disconnected proteins
+show-all-genes-with-proteomic-data = true
+
+# Even though we set network significance calculations on here, webserver will ignore it because of limited resources. If this analysis is performed locally using the JAR file, then the network significance will be calculated.
+calculate-network-significance = true
+permutations-for-significance = 10000
+fdr-threshold-for-network-significance = 0.1
+use-network-significance-for-causal-reasoning = true
+
+# Names of control and test columns. In a paired analysis, their order are important.
+control-value-column = ctr_1
+ test-value-column = Mg_1
+control-value-column = ctr_2
+ test-value-column = Mg_2
+control-value-column = ctr_3
+ test-value-column = Mg_3
+control-value-column = ctr_4
+ test-value-column = Mg_4
+control-value-column = ctr_7
+ test-value-column = Mg_7
+control-value-column = ctr_8
+ test-value-column = Mg_8
+control-value-column = ctr_10
+ test-value-column = Mg_10
+control-value-column = ctr_11
+ test-value-column = Mg_11
