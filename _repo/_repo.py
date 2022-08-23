@@ -139,3 +139,103 @@ print('Data size, rows with more than 2 zero were removed: {}'.format(len(df_2))
 df_ffill = df.ffill() 
 df_ffill = listwise_deletion(df_ffill)
 print('Data size, df_ffill: {}'.format(len(df_ffill)))
+
+## build sklearn random forest
+n_estimators = 100
+criterion='squared_error'
+max_depth = None
+min_samples_split = 2
+min_samples_leaf = 1
+min_weight_fraction_leaf = 0
+max_features = sqrt(len(feature_names) - 1)/len(feature_names) # according to GENIE3 suggestion
+max_leaf_nodes = None
+min_impurity_decrease = 0
+bootstrap = True
+oob_score = True  # to use out-of-bag samples to estimate the generalization score (available for bootstrap=True)
+n_jobs = None # number of jobs in parallel. fit, predict, decision_path, and apply can be done in parallel over the trees
+random_state=None # controls randomness in bootstrapping as well as drawing features
+verbose=0 
+warm_start=False # reuse the slution of the previous call to fit and add more ensembles to the estimator. look up on Glosery
+ccp_alpha=0 # complexity parameter used for minima cost-complexity pruning. by default, no prunning
+max_samples = None # if bootstrap is True, the number of samples to draw from the samples. if none, draw X.shape[0]
+
+sk_rf_reg = RandomForestRegressor(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split,
+                                  min_samples_leaf=min_samples_leaf, min_weight_fraction_leaf=min_weight_fraction_leaf, 
+                                  max_features=max_features, max_leaf_nodes=max_leaf_nodes, min_impurity_decrease=min_impurity_decrease,
+                                  bootstrap=bootstrap, oob_score=oob_score, n_jobs=n_jobs, random_state=random_state, verbose=verbose,
+                                  warm_start=warm_start, ccp_alpha=ccp_alpha, max_samples=max_samples)
+
+
+## feature importance
+feature_importance = reg.feature_importances_
+sorted_idx = np.argsort(feature_importance)
+pos = np.arange(sorted_idx.shape[0]) + 0.5
+fig = plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.barh(pos, feature_importance[sorted_idx], align="center")
+plt.yticks(pos, np.array(diabetes.feature_names)[sorted_idx])
+plt.title("Feature Importance (MDI)")
+
+result = permutation_importance(
+    reg, X_test, y_test, n_repeats=10, random_state=42, n_jobs=2
+)
+sorted_idx = result.importances_mean.argsort()
+plt.subplot(1, 2, 2)
+plt.boxplot(
+    result.importances[sorted_idx].T,
+    vert=False,
+    labels=np.array(diabetes.feature_names)[sorted_idx],
+)
+plt.title("Permutation Importance (test set)")
+fig.tight_layout()
+plt.show()
+
+## load the data
+import sys
+import os
+main_dir = "C:/Users/nourisa/Downloads/testProjs/omics"
+sys.path.insert(0,main_dir)
+import _pickle
+
+data_dir = 'C:/Users/nourisa/Downloads/testProjs/omics/dynGENIE3/dynGENIE3_data/real_networks/data/yeast_data.pkl'
+goldern_links_dir = ''
+with open(data_dir,'rb') as f:
+    (TS_data, time_points, genes, TFs, alphas) = _pickle.load(f)
+print('exp n:',len(TS_data))
+print('time*genes',TS_data[0].shape)
+print('len of alphas:',len(alphas))
+print('len of genes:',len(genes))
+print('len of TFs:',len(TFs))
+# print(genes)
+# Xs,ys = newEstimator.process_data(TS_data, time_points)
+# print('genes: ',len(Xs))
+# print('time across all experiments*genes:',Xs[0].shape)
+# check_estimator(TargetEstimator)
+
+
+
+from SALib.sample import saltelli
+from SALib.analyze import sobol
+from SALib.test_functions import Ishigami
+import numpy as np
+
+# Define the model inputs
+problem = {
+    'num_vars': 3,
+    'names': ['x1', 'x2', 'x3'],
+    'bounds': [[-3.14159265359, 3.14159265359],
+               [-3.14159265359, 3.14159265359],
+               [-3.14159265359, 3.14159265359]]
+}
+
+# Generate samples
+param_values = saltelli.sample(problem, 1024)
+
+# Run model (example)
+Y = Ishigami.evaluate(param_values)
+
+# Perform analysis
+Si = sobol.analyze(problem, Y, print_to_console=True)
+
+# Print the first-order sensitivity indices
+print(Si['S1'])
