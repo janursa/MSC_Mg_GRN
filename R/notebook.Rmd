@@ -1,0 +1,17 @@
+```{r}
+library(limma)
+library(Matrix)
+
+## Create the experimental variables and put them in a data frame
+animal <- factor(rep(sprintf("Animal %s", 1:6), each=2))
+timep <- factor(c("Pre", "Post"), levels=c("Pre", "Post"))
+treat <- factor(c("control", "control", "reagent", "reagent"))
+df <- data.frame(animal, timep, treat)
+df$replicate <- as.numeric(droplevels(df$animal:df$timep:df$treat))
+# Create technical replicates by duplicating each row
+df <- df[rep(1:nrow(df), each=2),]
+rownames(df) <- as.character(1:nrow(df))
+
+```
+
+
