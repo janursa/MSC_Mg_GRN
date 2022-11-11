@@ -1,1 +1,2 @@
-to use fold change together with p value to choose the proteins
+what is MCL cluster?
+how to determine indirect links? string gives functional links -> both direct and indirect link (yes?). GRN gives indirect link (maybe not in the case of portia) 

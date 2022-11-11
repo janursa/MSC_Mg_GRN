@@ -1,0 +1,89 @@
+```{r}
+# Enrichment analysis based on STRING
+library(readr)
+library(rjson)
+library(clusterProfiler)
+map <- fromJSON(file='C:/Users/nourisa/Downloads/testProjs/proteomics_MSC/results/map_geneID.json')$map
+DE_genes_vector <- names(map)
+
+reireive_string_data <- function (file_type, gene_count){
+  MAIN_DIR <- 'C:/Users/nourisa/Downloads/'
+  file <- paste(MAIN_DIR,file_type,sep="")
+  data <- read_tsv(file,show_col_types = FALSE)
+  data$`#term ID` <- NULL
+  data$`matching proteins in your network (IDs)` <- NULL
+  data$`background gene count` <- NULL
+  colnames(data) <- c('Description', 'Count', 'Strength','p.adjust','geneID')
+  GeneRatio <- c()
+  for (item in data$Count){
+    GeneRatio <- append(GeneRatio,paste(item,gene_count,sep="/"))
+  }
+  data$GeneRatio <- GeneRatio
+  data$pvalue <- data$p.adjust #not useful but required as input to the graph
+  data$qvalue <- data$pvalue #not useful but required as input to the graph
+  return(data)
+}
+
+
+
+
+df1 <- reireive_string_data('enrichment.Process.tsv', length(DE_genes_vector))
+df1$category <- 1
+
+df2 <- reireive_string_data('enrichment.Function.tsv',length(DE_genes_vector))
+df2$category <- 2
+
+df <- rbind(df1,df2)
+
+primary_df <- read_csv('C:/Users/nourisa/Downloads/testProjs/proteomics_MSC/data/primary_omics.csv')
+universe_vector <- primary_df$Entry
+
+obj <- new("enrichResult",
+readable = FALSE,
+result = df1,
+pvalueCutoff = .05,
+pAdjustMethod = "BH",
+qvalueCutoff = 0.2,
+organism = "homosapien",
+ontology = "UNKNOWN",
+gene = DE_genes_vector,
+universe = universe_vector,
+keytype = "UNKNOWN",
+gene2Symbol = character(0),
+geneSets = map
+)
+
+
+dotplot(
+  obj, 
+  x = "GeneRatio",
+  color = "p.adjust",
+  showCategory = 50,
+  size = "Strength",
+  split = factor(df$category),
+  # split = split(df, df$category),
+  font.size = 10,
+  title = "Biological Process",
+  label_format = 100
+  )
+
+```
+
+
+
+```
+
+```{r} 
+# using enrichDO for enrichment. 0 enriched terms. 
+library(enrichplot)
+library(DOSE)
+library("rjson")
+map <- fromJSON(file='C:/Users/nourisa/Downloads/testProjs/proteomics_MSC/results/map_geneID.json')$map
+geneIDs <- c()
+for (i in 1:length(map)){
+  geneIDs <- append(geneIDs, map[[i]])
+}
+x <- enrichDO(geneIDs, pvalueCutoff = .05,qvalueCutoff = .2)
+dotplot(x)
+```
+
