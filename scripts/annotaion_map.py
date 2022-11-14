@@ -171,9 +171,37 @@ def get_id_mapping_results_stream(url):
     return decode_results(request, file_format, compressed)
 
 
-job_id = submit_id_mapping(
-    from_db="UniProtKB_AC-ID", to_db="GeneID", ids=["P05067"]
-)
-if check_id_mapping_results_ready(job_id):
-    link = get_id_mapping_results_link(job_id)
-    results = get_id_mapping_results_search(link)
+def protname_geneID(protnames):
+    job_id = submit_id_mapping(
+        from_db="UniProtKB_AC-ID", to_db="GeneID", ids=protnames
+        )
+    if check_id_mapping_results_ready(job_id):
+        link = get_id_mapping_results_link(job_id)
+        results = get_id_mapping_results_search(link)
+    map_protnames_geneID = {}
+    for item in results['results']:
+        map_protnames_geneID.update({item['from']:item['to']})
+    return map_protnames_geneID
+def protname_genename(names):
+    job_id = submit_id_mapping(
+        from_db="UniProtKB_AC-ID", to_db="Gene_Name", ids=names
+        )
+    if check_id_mapping_results_ready(job_id):
+        link = get_id_mapping_results_link(job_id)
+        results = get_id_mapping_results_search(link)
+    map_ = {}
+    for item in results['results']:
+        map_.update({item['from']:item['to']})
+    return map_
+def genename_geneID(names):
+    job_id = submit_id_mapping(
+        from_db="Gene_Name", to_db="GeneID", ids=names
+        )
+    if check_id_mapping_results_ready(job_id):
+        link = get_id_mapping_results_link(job_id)
+        results = get_id_mapping_results_search(link)
+    map_ = {}
+    for item in results['results']:
+        map_.update({item['from']:item['to']})
+    return map_
+

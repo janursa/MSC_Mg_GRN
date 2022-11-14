@@ -1,73 +1,149 @@
-```{r}
-# Enrichment analysis based on STRING
-library(readr)
-library(rjson)
-library(clusterProfiler)
-map <- fromJSON(file='C:/Users/nourisa/Downloads/testProjs/proteomics_MSC/results/map_geneID.json')$map
-DE_genes_vector <- names(map)
 
-reireive_string_data <- function (file_type, gene_count){
-  MAIN_DIR <- 'C:/Users/nourisa/Downloads/'
-  file <- paste(MAIN_DIR,file_type,sep="")
-  data <- read_tsv(file,show_col_types = FALSE)
-  data$`#term ID` <- NULL
-  data$`matching proteins in your network (IDs)` <- NULL
-  data$`background gene count` <- NULL
-  colnames(data) <- c('Description', 'Count', 'Strength','p.adjust','geneID')
-  GeneRatio <- c()
-  for (item in data$Count){
-    GeneRatio <- append(GeneRatio,paste(item,gene_count,sep="/"))
-  }
-  data$GeneRatio <- GeneRatio
-  data$pvalue <- data$p.adjust #not useful but required as input to the graph
-  data$qvalue <- data$pvalue #not useful but required as input to the graph
+```{r}
+# help functions and variables
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
+library(readr)
+MAIN_DIR <- "C:/Users/nourisa/Downloads/testProjs/proteomics_MSC"
+
+dot_plot_F <- function(obj){
+  dotplot(
+    obj, 
+    x = "GeneRatio",
+    color = "p.adjust",
+    showCategory = 50,
+    size = "Count",
+    # split = factor(df$category),
+    # split = split(df, df$category),
+    font.size = 10,
+    title = "GO: Biological Process",
+    label_format = 100,
+    orderBy = 'p.adjust'
+  )
+}
+
+reireive_EA_data_F <- function (file_name){ "Reads edited string enrich data"
+  file <- paste(MAIN_DIR,'results/postprocess',file_name,sep="/")
+  data <- read.csv(file)
+  data$X <- NULL
+  # # remove some columns
+  # data$`matching proteins in your network (IDs)` <- NULL
+  # data$`background gene count` <- NULL
+  # colnames(data) <- c('ID','Description', 'Count', 'Strength','p.adjust','geneID')
+  # # gene ratio is in the format of x/total
+  # GeneRatio <- c()
+  # for (item in data$Count){
+  #   GeneRatio <- append(GeneRatio,paste(item,gene_count,sep="/"))
+  # }
+  # data$GeneRatio <- GeneRatio
+  # #not useful but required as input to the graph
+  # data$pvalue <- data$p.adjust 
+  # data$qvalue <- data$pvalue 
+  # # change the gene names to gene ID
+  # geneIDs_p <- data$geneID
+  # geneIDs <- list()
   return(data)
 }
 
+```
+
+```{r}
+# read df 
+library(rjson)
+# map_geneID_genename_FILE <- paste(MAIN_DIR,'results/postprocess/map_geneID_genename.json', sep='/')
+# map_geneID_genename <- fromJSON(file=map_geneID_genename_FILE)$map
+# map_genename_geneID_FILE <- paste(MAIN_DIR,'results/postprocess/map_genename_geneID.json', sep='/')
+# map_genename_geneID <- fromJSON(file=map_genename_geneID_FILE)$map
+
+DE_geneIDs_FILE <- paste(MAIN_DIR,'results/postprocess/DE_geneIDs.json', sep='/')
+DE_geneIDs <- fromJSON(file=DE_geneIDs_FILE)$geneIDs
+
+
+df1 <- reireive_EA_data_F('enrichment_Process.csv')
+
+# df1$category <- 1
+# df1$ID <- x$ID[1:22]
+# df1$pvalue <- x$pvalue[1:22]
+# df1$qvalue <- x$qvalue[1:22]
+# df1$p.adjust <- x$p.adjust[1:22]
+# df1$geneID <- x$geneID[1:22]
+# df1$BgRatio <- x$BgRatio[1:22]
+# df1$GeneRatio <- x$GeneRatio[1:22]
+# df1$Description <- x$Description[1:22]
+# df1$Count <- x$Count[1:22]
+
+df <- df1
+
+# df <- rbind(df1,df2)
+
+# primary_df_FILE <- paste(MAIN_DIR, 'data/primary_omics.csv', sep='/')
+# primary_df <- read_csv(primary_df_FILE)
+# universe_vector <- primary_df$Entry # all genes
+```
 
 
 
-df1 <- reireive_string_data('enrichment.Process.tsv', length(DE_genes_vector))
-df1$category <- 1
-
-df2 <- reireive_string_data('enrichment.Function.tsv',length(DE_genes_vector))
-df2$category <- 2
-
-df <- rbind(df1,df2)
-
-primary_df <- read_csv('C:/Users/nourisa/Downloads/testProjs/proteomics_MSC/data/primary_omics.csv')
-universe_vector <- primary_df$Entry
+```{r}
+# plot
+geneSets <- list()
+Description <- df$Description
+geneID <- df$geneID
+for (i in 1:length(Description)){
+  geneSets[Description[i]] <- geneID[i]
+}
 
 obj <- new("enrichResult",
-readable = FALSE,
-result = df1,
-pvalueCutoff = .05,
-pAdjustMethod = "BH",
-qvalueCutoff = 0.2,
-organism = "homosapien",
-ontology = "UNKNOWN",
-gene = DE_genes_vector,
-universe = universe_vector,
-keytype = "UNKNOWN",
-gene2Symbol = character(0),
-geneSets = map
+  readable = FALSE,
+  result = df,
+  # result = data.frame(df),
+  pvalueCutoff = .05,
+  pAdjustMethod = "BH",
+  qvalueCutoff = .2,
+  organism = "Homo sapiens",
+  ontology = "UNKNOWN",
+  gene = DE_geneIDs,
+  universe = "UNKNOWN",
+  keytype = "ENTREZID",
+  gene2Symbol = character(0),
+  geneSets = geneSets
 )
+library(jamba)
+library(multienrichjam)
+enrich_df = enrichDF2enrichResult(
+  enrichDF = df,
+  pvalueCutoff = 1,
+  pAdjustMethod = "none",
+  keyColname = c("itemsetID", "ID", "Name", "Pathway"),
+  pathGenes = "pathGenes",
+  geneColname = c("geneNames", "geneID", "Gene", "Genes"),
+  geneHits = "geneHits",
+  geneRatioColname = c("GeneRatio", "^Ratio"),
+  geneDelim = "[,/ ]+",
+  pvalueColname = c("P.Value", "Pvalue", "FDR", "adj.P.Val"),
+  descriptionColname = c("Description", "Name", "Pathway", "ID")
+)
+# dot_plot_F(obj)
 
+# cowplot::plot_grid(p1, p2, p3, ncol=3, labels=LETTERS[1:3], rel_widths=c(.8, .8, 1.2))
 
-dotplot(
-  obj, 
-  x = "GeneRatio",
-  color = "p.adjust",
-  showCategory = 50,
-  size = "Strength",
-  split = factor(df$category),
-  # split = split(df, df$category),
-  font.size = 10,
-  title = "Biological Process",
-  label_format = 100
-  )
+cnetplot(enrich_df)
+p3 <- cnetplot(edox, foldChange=geneList, circular = TRUE, colorEdge = TRUE) 
+
+obj
 
 ```
+```{r}
+library(DOSE)
+data(geneList)
+de <- names(geneList)[1:100]
+x <- enrichDO(de)
+
+cnetplot(x, showCategory = 5, foldChange = NULL, layout = "kk")
+x
+# x$ID[1:23]
+```
+
 
 
 
@@ -86,4 +162,6 @@ for (i in 1:length(map)){
 x <- enrichDO(geneIDs, pvalueCutoff = .05,qvalueCutoff = .2)
 dotplot(x)
 ```
+
+
 

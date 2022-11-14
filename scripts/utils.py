@@ -14,7 +14,7 @@ from scipy import stats
 
 time = [1,2,3,4,7,8,9,10,11,14,21]
 
-def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_ID='Entry', time=time, ee=0.5, **kywrds):
+def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_name='Protein', time=time, ee=0.5, **kywrds):
     """ plots ctr and sample in time series indicating the sig margin """
     n_prots = len(prots)
     if n_prots == 1:
@@ -49,7 +49,7 @@ def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_ID='Entry', time=ti
                 prot = prots[count]
             except:
                 return
-            df_tag = df.loc[df[p_ID] == prot]
+            df_tag = df.loc[df[p_name] == prot]
             try:
                 
                 ctrs_data = df_tag[ctrs].iloc[0,:].to_list()
@@ -68,7 +68,7 @@ def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_ID='Entry', time=ti
             if count == len(prots):
                 break
             
-def plot_time_series_mutual(df1, df2, prots, c_tag='ctr_', s_tag='mg_', p_ID='Entry', time=time, ee=0.5, **kywrds):
+def plot_time_series_mutual(df1, df2, prots, c_tag='ctr_', s_tag='mg_', p_name='Entry', time=time, ee=0.5, **kywrds):
     """ plots ctr and sample in time series indicating the sig margin """
     n_prots = len(prots)
 
@@ -110,8 +110,8 @@ def plot_time_series_mutual(df1, df2, prots, c_tag='ctr_', s_tag='mg_', p_ID='En
         except:
             return
         
-        func(df1.loc[df1[p_ID] == prot],axs[i][0])
-        func(df2.loc[df2[p_ID] == prot],axs[i][1])
+        func(df1.loc[df1[p_name] == prot],axs[i][0])
+        func(df2.loc[df2[p_name] == prot],axs[i][1])
 
         if count == 0:
             axs[i][0].legend(loc='best', bbox_to_anchor=(1.1, 1.7),  ncol=3)
@@ -196,26 +196,26 @@ def listwise_deletion(df):
         df_copy = df_copy.drop(drop_line)
     df_copy.reset_index(inplace=True,drop=True)
     return df_copy
-def rename_missing_symbols(df,p_ID,**kywrds): 
+def rename_missing_symbols(df,p_name,**kywrds): 
     """ Name the missing symbols in protein names """
     df_c = copy.deepcopy(df)
-    nulls = df_c[p_ID].isnull() 
+    nulls = df_c[p_name].isnull() 
     unique_names = ['p_{}'.format(ii) for ii in range(sum(nulls))]
     map_ = {i:name for i,name in zip([i for i, x in enumerate(nulls) if x],unique_names)}
-    df_c.loc[nulls, p_ID] = unique_names
-    print('Remaining missing names: ',[x for x in df_c[p_ID] if not isinstance(x,str)])
+    df_c.loc[nulls, p_name] = unique_names
+    print('Remaining missing names: ',[x for x in df_c[p_name] if not isinstance(x,str)])
     with open('results/missing_names.txt','w') as f:
         for key,value in map_.items():
             f.write('original index: '+str(key)+' -> '+value+'\n')
     return df_c
 
-def tailor_names(o_df, time, p_ID, c_func, s_func, o_c_func, o_s_func, **kywrds):
+def tailor_names(o_df, time, p_name, c_func, s_func, o_c_func, o_s_func, **kywrds):
     """ """
     df = pd.DataFrame()
-    df[p_ID] = o_df[p_ID]
+    df[p_name] = o_df[p_name]
     df['Gene'] = o_df['Gene names  (primary)']
     missing_names = df['Gene'].isnull()
-    df['Gene'].loc[missing_names] = df[p_ID].loc[missing_names].values
+    df['Gene'].loc[missing_names] = df[p_name].loc[missing_names].values
     # Rename the data columns for ctr and sample 
     for i in time: 
         df[c_func(i)] = o_df[o_c_func(i)]
