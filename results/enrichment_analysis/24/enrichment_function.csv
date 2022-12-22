@@ -1,0 +1,2 @@
+ID,Description,Count,Strength,p.adjust,geneID,GeneRatio,pvalue,qvalue,BgRatio
+GO:0003723,RNA binding,12,0.74,0.0013,"SF3A1,LRP1,MARS,RPL8,ACAA2,YWHAG,MDH2,RPS26,XRCC6,S100A4,CKAP4,CIRBP",12/26,0.0013,0.0013,12/26
