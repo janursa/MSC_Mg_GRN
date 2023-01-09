@@ -1,3 +1,10 @@
+cd Downloads/testProjs/proteomics_MSC/scripts
+TODO:
+#check if lamda alpha is embedded in training data
+comparition to string: with or without estimated decay coeffs
+
+how to check on the train scores
+
 
 # Network graph
 different network graphs, one for each mg and ctr (maybe combined)

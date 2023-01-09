@@ -25,10 +25,17 @@ import statistics
 # shutil.rmtree(matplotlib.get_cachedir())
 
 time = [1,2,3,4,7,8,9,10,11,14,21]
-matplotlib.rc('font', family='Microsoft Sans Serif') 
-# matplotlib.rc('font', serif='Helvetica Neue') 
-matplotlib.rc('text', usetex='false') 
-matplotlib.rcParams.update({'font.size': 10})
+
+
+def comic_font():
+    matplotlib.rc('font', family='Comic Sans MS') 
+    matplotlib.rc('text', usetex='false') 
+    matplotlib.rcParams.update({'font.size': 10})
+def serif_font():
+    matplotlib.rc('font', family='serif') 
+    matplotlib.rc('text', usetex='false') 
+    matplotlib.rcParams.update({'font.size': 10})
+
 
 def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_name='Protein', time=time, ee=0.5, **kywrds):
     """ plots ctr and sample in time series indicating the sig margin """
@@ -212,7 +219,7 @@ def plot_hist(xs, names, **specs):
     for (x, name, ax) in zip(xs, names, axs):
         plot_host_single(ax, x, name, **specs)
 
-def read_write_oo(study='ctr', mode='read', best_params=None, best_scores=None, i=None, OUTPUT_DIR=''):
+def read_write_oo(study='ctr', mode='read', bestparams=None, bestscores=None, i=None, OUTPUT_DIR=''):
     '''
         Read and writes calibration results (best params and best scores) to file
     '''
@@ -222,15 +229,15 @@ def read_write_oo(study='ctr', mode='read', best_params=None, best_scores=None, 
     if i is None:
         FILE = os.path.join(DIR, f'oo_{study}.txt')
     else:
-        FILE = os.path.join(DIR, f'oo_{study}_{i}.txt')
+        FILE = os.path.join(DIR, 'pool', f'oo_{study}_{i}.txt')
     if mode == 'write':
         with open(FILE,'w') as f:
-            print({'best_params':best_params, 'best_scores':best_scores},file=f)
+            print({'best_params':bestparams, 'best_scores':bestscores},file=f)
     elif mode == 'read':
         with open(FILE,'r') as f:
             oo = eval(f.read())
         return oo['best_params'], oo['best_scores']
-def process_data(df_target, study='ctr', normalize=False) -> np.array :
+def process_data(df_target, study='ctr', standardize=False) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
     '''
@@ -247,7 +254,7 @@ def process_data(df_target, study='ctr', normalize=False) -> np.array :
         df = None #TODO: how to concatenate
         protnames.append('mg') #TODO: needs evaluation
 
-    if normalize:
+    if standardize:
         df.iloc[:,:] = preprocessing.scale(df.iloc[:,:])
 
     return df.values
@@ -268,53 +275,7 @@ def read_write_nodes_edges(nodes=None, edges=None, study='ctr', mode='read', OUT
         print('successfully read nodes and edges from ', DIR)
         return nodes, edges
 
-def pool_scores(study, output_dir) -> typing.Tuple[np.array,np.array]:
-    '''
-        Read the best scores from different GRN runs and create a pool of scores. It also creates the average scores.
 
-    '''
-    _, scores_temp = read_write_oo(study, mode='read', OUTPUT_DIR=output_dir)
-    def fake_it(scores):
-        mean = np.mean(scores)
-        n = len(scores)
-        return np.array(scores)+[.1*(random.random()-.5) for i in range(n)]
-    scores_list = [fake_it(scores_temp) for i in range(100)]
-    #- pool them and mean them
-    scores_pool = np.array(scores_list).T
-    scores = np.mean(scores_pool, axis=1)
-    return scores_pool, scores
-def pool_bestparams(study, output_dir) -> typing.Tuple[np.array,np.array]:
-    '''
-        Read the best params from different GRN runs and create a pool of them. It also creates the average scores.
-    '''
-    #- fake it
-    bestparams_temp, _ = read_write_oo(study, mode='read', OUTPUT_DIR=output_dir)
-    def fake_it(bestparams):
-        return [{key:value+(random.random()-.5) for key,value in item.items()} for item in bestparams]
-    #- list: 100*n_gene*best_param
-    bestparams_list = [fake_it(bestparams_temp) for i in range(100)]
-    #- pool for each gene: n_gene*best_param_list (100 values)
-    bestparams_pool = []
-    for prot_i in range(len(bestparams_list[0])):
-        bestparams = {}
-        for key in bestparams_list[0][0].keys():
-            vector = []
-            for item in bestparams_list:
-                vector.append(item[prot_i][key])
-            bestparams[key] = vector
-        bestparams_pool.append(bestparams)
-    #- average best params for each gene
-    bestparams_mean = [{key:np.mean(vector) for key, vector in bestparams.items()} for bestparams in bestparams_pool]
-    #- pool for all genes
-    pool_of_pool = {}
-    for key in bestparams_list[0][0].keys():
-        vector_of_vectors = []
-        for item in bestparams_pool:
-            vector_of_vectors+=list(item[key])
-
-        pool_of_pool[key] = vector_of_vectors
-    # bestparams_pool_allgenes = np.array([list(item.values()) for item in bestparams_pool])
-    return bestparams_pool, bestparams_mean, pool_of_pool
 class VSA:
     '''
         Scatter plot for Vester's sensitivity analysis
@@ -509,10 +470,7 @@ class VSA:
         '''
             Plots AS/PS for ctr and mg conditions in a 1*2 subplot
         '''
-        matplotlib.rc('font', family='Comic Sans MS') 
-        # matplotlib.rc('font', serif='Helvetica Neue') 
-        matplotlib.rc('text', usetex='false') 
-        matplotlib.rcParams.update({'font.size': 10})
+        comic_font()
         DIR = os.path.join(OUTPUT_DIR, 'VSA')
         rows = 1
         cols = 2
@@ -548,10 +506,7 @@ class VSA:
         '''
             Plots AS/PS for ctr and mg conditions, for n different runs of sensitivity analysis, one window for each prot
         '''
-        from math import ceil
-        matplotlib.rc('font', family='Comic Sans MS') 
-        # matplotlib.rc('font', serif='Helvetica Neue') 
-        matplotlib.rc('text', usetex='false') 
+        comic_font() 
         matplotlib.rcParams.update({'font.size': 8})
         arrow_specs = {'arrow_type':'arc3', 'rad':.2}
         ncols = 3
@@ -717,69 +672,7 @@ def convert_links_to_nodes_edges(links, protnames, scores):
     sum_ws = [sum(links.loc[links['Regulator']==gene,:]['Weight']) for gene in protnames]
     nodes = pd.DataFrame(data={'Entry':protnames,'SumWeight':sum_ws, 'FitScore': scores})
     return nodes, edges
-def plot_bestscores(data_ctr, data_sample, xlabel=''):
 
-    """plots scores as a box plot for ctr and mg side by side"""
-    fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(3,3), 
-        # gridspec_kw={'width_ratios': [2, 2]}
-        )
-    data_s = [data_ctr, data_sample]
-    labels = ['ctr','mg']
-    ax = axes
-    bplot = ax.boxplot(data_s, notch=False, widths =[.2,.2], patch_artist=False, meanline=False)
-    bplot = ax.violinplot(data_s, showmeans=False, showextrema=False
-        )
-    ax.set_ylabel('OOB Score')
-    # ax.set_title('(A)')
-    ax.set_xticks(range(1,len(labels)+1))
-    ax.set_xticklabels(labels, rotation=0)
-    ax.axhline(0,color='red', linestyle='--',linewidth=1)
-    ax.set_ymargin(.1)
-    ax.set_xmargin(.15)
-    #- face colors
-    colors = ['pink', 'lightblue', 'lightgreen', 'cyan']
-    for patch, color in zip(bplot['bodies'], colors):
-        patch.set_facecolor(color)
-        patch.set_edgecolor('black')
-        patch.set_alpha(1)
-
-    colors = ['black' for i in range(len(labels))]
-    # tags = ['cbars']
-    # for tag in tags:
-    #     bplot[tag].set_color(colors)
-    #     bplot[tag].set_alpha(.5)
-    return fig
-
-
-
-
-def plot_bestparams(data_ctr, data_sample, priors):
-    """
-        Plots boxplot for indivual param in seperate window. 
-    """
-    fig, axes = plt.subplots(1, 2, tight_layout=True, figsize=(7,4))
-    datas = [data_ctr,data_sample]
-    titles = ['ctr', 'mg']
-    def normalize(xx, priors):
-        xx = {key: np.array(list(set(values))) for key, values in xx.items()}
-        return {key: (values - min(priors[key])) / (max(priors[key]) - min(priors[key])) for key, values in
-                    xx.items()}
-    
-    for i, data in enumerate(datas):
-        data = {key:[item[key] for item in data] for key in data[0].keys()}
-        data = normalize(data, priors)
-        bplot = axes[i].boxplot(data.values(), notch=False, widths =.4, patch_artist=True, meanline=True)
-        axes[i].set_title(titles[i])
-        axes[i].set_ylabel('Normalized quantity')
-        axes[i].set_xticklabels(data.keys(), rotation=45)
-        axes[i].set_ymargin(.15)
-        axes[i].set_xmargin(.15)
-        colors = ['c', 'olive', 'lightgreen','g']
-        for patch, color in zip(bplot['boxes'], colors):
-            patch.set_facecolor(color)
-
-
-    return fig
 
 class EnrichPlot:
     
@@ -804,11 +697,7 @@ class EnrichPlot:
     def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True, 
             legend_size=True, legend_marker=True, title=''):
         #-----------define prop---------------
-        # 'Comic Sans MS'
-        matplotlib.rc('font', family='Comic Sans MS') 
-        # matplotlib.rc('font', serif='Helvetica Neue') 
-        matplotlib.rc('text', usetex='false') 
-        matplotlib.rcParams.update({'font.size': 10})
+        comic_font()
 
         scale_scatter_size = 60
         
@@ -877,9 +766,9 @@ class EnrichPlot:
             # CB.ax.tick_params(labelsize=fontsize['fontsize'])
         return fig
 class Links:
-    def compare_network_string(links, OUTPUT_DIR, verbose=True):
+    def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
         '''
-            Compare extracted links by GRN to those suggested by string
+            Compare extracted links by GRN to those suggested by string. Returns number of match links.
         '''
 
         STR_LINKS_FILE = os.path.join(OUTPUT_DIR,'enrichment_analysis','string_interactions.tsv')
@@ -923,7 +812,7 @@ class Links:
             links.to_csv(FILE, index=False)
 
 
-    def pool_links(study, protnames, output_dir, n, method='') -> typing.Tuple[np.array,pd.DataFrame]:
+    def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
         '''
             Read the links from different GRN runs and create a pool of weights. It also creates the average weights as a database.
 
@@ -979,103 +868,100 @@ class Links:
         '''
         #- keep those with FitScore over 0
         links = links.loc[links['FitScore']>0,:].reset_index(drop=True)
-        print(f'number of links after fitscore {len(links)}')
+        # print(f'number of links after fitscore {len(links)}')
         return links
-    def filter_toplinks(links, verbose=True) ->pd.DataFrame:  
+
+    def choose_top_quantile(links: pd.DataFrame, quantile=0.75)->pd.DataFrame:
         '''
-            Filters the given df based on the top weights
-        '''  
-        def choose_top_quantihle(links):
-            top_links_margin = .75
-            cut_off = np.quantile(links['Weight'],q=top_links_margin)
-            links_shortlist = links.loc[links['Weight']>cut_off,:].reset_index(drop=True)
-            return links_shortlist
-        def choose_top_count(links):
-            links.reset_index(inplace=True, drop=True)
-            top_links_count = 100
-            links.sort_values('Weight',ascending=True,inplace=True)
-            links_shortlist = links.iloc[:top_links_count,:].reset_index(drop=True)
-            return links_shortlist
-        links = choose_top_quantihle(links)
-        if verbose:
-            print(f'number of links after toplinks {len(links)}')
-        return links
-    def plot_mean_weights(links_s, labels):
-        nrows = 3
-        ncols = 2
-        fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*3, nrows*2))
+            Filters the given df based on the top quantile
+        ''' 
+        cut_off = np.quantile(links['Weight'],q=quantile)
+        return links.loc[links['Weight']>cut_off,:].reset_index(drop=True)
+
+    def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
+        '''
+            Filters the given df based on the top count
+        ''' 
+        links.reset_index(inplace=True, drop=True)
+        links.sort_values('Weight',ascending=True,inplace=True)
+        return links.iloc[:n,:].reset_index(drop=True)
+
+    def plot_mean_weights(links_s, labels, colors):
+        serif_font()
+        nrows = 1
+        ncols = 3
+        fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*3, nrows*2.5))
         for idx in range(len(labels)):
-            i = int(idx/(nrows-1))
-            j = idx%ncols
-            ax = axes[i][j]
-            ax.hist(links_s[idx]['Weight'], bins=50, alpha=0.5,
-                            histtype='stepfilled', #'bar', 'barstacked', 'step', 'stepfilled'
-                            color='lightgreen',
-                            ec='black',
-                            rwidth=.9,
-                            density = True
-                           )
+            # i = int(idx/(nrows-1))
+            # j = idx%ncols
+            # ax = axes[i][j]
+
+            ax = axes[idx]
+            for i,study in enumerate(links_s[idx]):
+                ax.hist(study['Weight'], bins=100, alpha=0.5,
+                                histtype='bar', #'bar', 'barstacked', 'step', 'stepfilled'
+                                color=colors[i],
+                                ec='black',
+                                rwidth=1.1,
+                                # density = True
+                               )
+            handles = []
+            tags = ['ctr','mg']
+            for i, color in enumerate(colors):
+                handles.append(ax.scatter([],[],marker='o', label=tags[i],
+                 edgecolor='black', color=color, linewidth=.2))
+            ll = plt.legend(handles=handles, 
+                bbox_to_anchor=(1,1), prop={'size': 9}
+                # title='Enriched Term'
+                )
+            # ax.add_artist(ll)
             ax.set_xlabel('Normalized interaction strength')
             ax.set_ylabel('Density')
             ax.set_ymargin(.2)
     #         ax.set_xmargin(.1)
-            ax.set_xlim([-.5,8])
+            # ax.set_xlim([-.5,8])
             ax.set_title(labels[idx])
-    def compare_network_string_distribution(links_target, OUTPUT_DIR):
-        """
-            Extract match counts for different runs of the model, weightpool
-        """
-        match_count = []
-        weightpool = np.array(links_target['WeightPool'].values.tolist()).T
-        for weight in weightpool:
-            aa = links_target.copy()
-            aa['Weight'] = weight
-            aa_short = Links.filter_toplinks(aa,verbose=False)
-            n = Links.compare_network_string(aa_short, OUTPUT_DIR, verbose=False)
-            match_count.append(n)
-        return match_count
-    def plot_match_counts(datas, labels, pvalues):
-        # matplotlib.rc('font', family='serif') 
-        # # matplotlib.rc('font', serif='Helvetica Neue') 
-        # matplotlib.rc('text', usetex='false') 
-        # matplotlib.rcParams.update({'font.size': 10})
+    
+    def plot_match_counts(datas, labels, sig_signs):
+        matplotlib.rcParams.update({'font.size': 12})
 
-        
-        fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(4,4), 
+        fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5), 
             # gridspec_kw={'width_ratios': [2, 2]}
             )
 
         ax = axes
-        bplot = ax.boxplot(datas, notch=False, widths =.2, patch_artist=False, meanline=False, showfliers=False)
-        bplot = ax.violinplot(datas, showmeans=False, showextrema=False)
+        # bplot = ax.boxplot(datas, notch=False, widths =.2, patch_artist=False, 
+        #                 meanline=False, showfliers=False)
+        bplot = ax.violinplot(datas, showmeans=True, showextrema=False)
 
-        ax.set_ylabel('Count of matched interactions')
+        ax.set_ylabel('Number of matched interactions')
         # ax.set_title('(A)')
         ax.set_xticks(list(range(1,len(labels)+1)))
         ax.set_xticklabels(labels,rotation=0)
-        ax.set_ymargin(.1)
+        ax.set_ymargin(.25)
         # print(bplot)
         #- face colors
-        colors = ['pink', 'lightblue', 'lightgreen', 'cyan']
+        colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan','grey']
         for patch, color in zip(bplot['bodies'], colors):
             patch.set_facecolor(color)
             patch.set_edgecolor('black')
             patch.set_alpha(1)
 
-        # colors = ['black' for i in range(len(labels))]
-        # bplot['cbars'].set_color(colors)
-        # bplot['cmaxes'].set_color(colors)
-        # bplot['cmins'].set_color(colors)
-        # bplot['cmeans'].set_color(colors)
-        #- plot sig
-        flags_sigs = np.array([p<0.05 for p in pvalues])
-        value_flags = np.array((np.mean(datas[1:], axis=1) - np.mean(datas[0]))>0)
-        flags = flags_sigs*value_flags
-        signs = ['*' if p else '' for p in flags]
-        xs = np.array(list(range(2,len(labels)+1)))-.05
-        ys = np.max(datas[1:], axis=1) + .5
-        for i, sign in enumerate(signs):
-            ax.annotate(sign, (xs[i],ys[i]), fontsize=14, color='red')
+        #- plot sig        
+        xs = ax.get_xticks()
+        ys = np.max(datas, axis=1) 
+        for i, sign in enumerate(sig_signs):
+            # ax.annotate(sign, (xs[i],ys[i]), fontsize=14, color='red')
+            if sign != '':
+                x,y = (xs[i-1]+xs[i])/2,ys[i-1]+.05*max(ys)
+                # print(i,x,y)
+                # print(ys[i]-1)
+                # x,y=1,5
+
+                ax.annotate(sign, xy=(x,y), xytext=(x,y+.04*max(ys)), 
+                    ha='center', 
+                    va='bottom',
+                    arrowprops=dict(arrowstyle='-[, widthB=2.3, lengthB=0.2', lw=1.2))
         return fig
 class SensitivityAnalysis:
     def multiGaussNoise(links_ctr, links_sample, protnames, target_prots, OUTPUT_DIR):
@@ -1150,3 +1036,52 @@ class SensitivityAnalysis:
         noised_links = [noised_link.assign(Weight= noised_link['Weight']+np.random.normal(loc=1, scale=std, size=len(links)))
                                            for i in range(n)]
         return noised_links
+
+def estimate_decay_rates(TS_data, time_points):
+    
+    """
+    this function is exactly taken from dynGENIE3 code.
+
+    For each gene, the degradation rate is estimated by assuming that the gene expression x(t) follows:
+    x(t) =  A exp(-alpha * t) + C_min,
+    between the highest and lowest expression values.
+    C_min is set to the minimum expression value over all genes and all samples.
+    """
+    
+    ngenes = TS_data[0].shape[1]
+    nexp = len(TS_data)
+    
+    C_min = TS_data[0].min()
+    if nexp > 1:
+        for current_timeseries in TS_data[1:]:
+            C_min = min(C_min,current_timeseries.min())
+    
+    alphas = np.zeros((nexp,ngenes))
+    
+    for (i,current_timeseries) in enumerate(TS_data):
+        current_time_points = time_points[i]
+        
+        for j in range(ngenes):
+            
+            idx_min = np.argmin(current_timeseries[:,j])
+            idx_max = np.argmax(current_timeseries[:,j])
+            
+            xmin = current_timeseries[idx_min,j]
+            xmax = current_timeseries[idx_max,j]
+            
+            tmin = current_time_points[idx_min]
+            tmax = current_time_points[idx_max]
+            
+            xmin = max(xmin-C_min,1e-6)
+            xmax = max(xmax-C_min,1e-6)
+                
+            xmin = np.log(xmin)
+            xmax = np.log(xmax)
+            
+            alphas[i,j] = (xmax - xmin) / abs(tmin - tmax)
+                
+    alphas = alphas.max(axis=0)
+
+
+ 
+    return alphas
