@@ -33,7 +33,7 @@ def process_oo(study, n=10):
     #- average best params for each gene
     bestparams = [{key:np.mean(vector) for key, vector in bestparams.items()} for bestparams in bestparams_pool]
     #- make some param int
-    bestparams = [{key:value if key=='alpha' else int(value) for key,value in bestparam.items()} for bestparam in bestparams]
+    bestparams = [{key:value if key=='decay_coeff' else int(value) for key,value in bestparam.items()} for bestparam in bestparams]
     #- pool for all genes
     # pool_of_pool = {}
     # for key in best_paramss[0][0].keys():

@@ -37,13 +37,15 @@ if __name__ == '__main__':
     #-- rf
     links_rf = retreive_grn('ctr','rf')
     #-- ridge
-    links_ridge_alpha_estimated = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_ridge_alpha_estimated.csv'), index_col=False)
-    links_ridge_alpha_zero = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_ridge_alpha_zero.csv'), index_col=False)
+    links_ridge_decay_coeff_estimated = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_ridge_estimated.csv'), index_col=False)
+    links_ridge = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_ridge.csv'), index_col=False)
+
     #-- portia
-    links_portia_alpha_estimated = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_portia_alpha_estimated.csv'), index_col=False)
-    # links_portia_alpha_zero = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_portia_alpha_zero.csv'), index_col=False)
+    links_portia = pd.read_csv(os.path.join(OUTPUT_DIR, 'GRN/links_ctr_portia.csv'), index_col=False)
     #-- random
-    links_random = create_random_links([links_rf,links_ridge_alpha_estimated,links_portia_alpha_estimated], n=replica_n)
+    links_all = [links_rf,links_ridge_decay_coeff_estimated,links_portia]
+    links_all_n = [utils.Links.nomalize(item) for item in links_all]
+    links_random = create_random_links(links_all_n, n=replica_n)
 
     #- calculate match count. choose top links for different methods
     top_n = 100
@@ -56,11 +58,10 @@ if __name__ == '__main__':
         match_count = utils.Links.compare_network_string(links_short.copy(), OUTPUT_DIR)
         match_count = [match_count for i in range(replica_n)]
         return match_count
-    match_count_ridge_estimated = process(links_ridge_alpha_estimated)
-    match_count_ridge_zero = process(links_ridge_alpha_zero)
+    match_count_ridge_estimated = process(links_ridge_decay_coeff_estimated)
+    match_count_ridge = process(links_ridge)
     #-- portia
-    match_count_portia_estimated = process(links_portia_alpha_estimated)
-    # match_count_portia_zero = process(links_portia_alpha_zero)
+    match_count_portia = process(links_portia)
     #-- random
     match_count_random = pool_comparision(links_random)
 
@@ -70,10 +71,13 @@ if __name__ == '__main__':
     # datas = [match_count_random_grni, match_count_grni, match_count_random_portia, match_count_portia, match_count_ensemble]
     # labels = ['Random\n geneRNI', 'geneRNI', 'Random\n Portia', 'Portia','Ensemble\n methods']
 
-    datas = [match_count_random, match_count_rf, match_count_ridge_estimated,match_count_ridge_zero, match_count_portia_estimated]
-    # aa = [print(len(item)) for item in datas]
+    datas = [match_count_random, match_count_rf, match_count_ridge_estimated,match_count_ridge, match_count_portia]
+    labels = ['Random\n', 'RF', 'Ridge\n e', 'Ridge', 'Portia']
+    print('Mean match counts:')
+    for label, data in zip(labels,datas):
+        print(f'{label}: {np.mean(data)}')
 
-    labels = ['Random\n', 'RF','Ridge\n e','Ridge\n z', 'Portia\n e']
+
 
     # pvalues = []
     # s, p = scipy.stats.ttest_ind(match_count_grni, match_count_random_grni)

@@ -47,7 +47,7 @@ def plot_bestscores_pool():
         for patch in bplot['bodies']:
             patch.set_facecolor('lightgreen')
             patch.set_edgecolor('black')
-            patch.set_alpha(1)
+            patch.set_decay_coeff(1)
     return fig
 
 def plot_bestparams_pool(study):
@@ -77,7 +77,7 @@ def plot_bestparams_pool(study):
         for patch in bplot['bodies']:
             patch.set_facecolor('lightgreen')
             patch.set_edgecolor('black')
-            patch.set_alpha(1)
+            patch.set_decay_coeff(1)
     return fig
 def plot_bestscores(data_ctr, data_sample, xlabel=''):
 
@@ -96,7 +96,7 @@ def plot_bestscores(data_ctr, data_sample, xlabel=''):
     # ax.set_title('(A)')
     ax.set_xticks(range(1,len(labels)+1))
     ax.set_xticklabels(labels, rotation=0)
-    ax.axhline(0,color='red', linestyle='--',linewidth=1.5, alpha=.5)
+    ax.axhline(0,color='red', linestyle='--',linewidth=1.5, decay_coeff=.5)
     ax.set_ymargin(.1)
     ax.set_xmargin(.15)
     #- face colors
@@ -104,13 +104,13 @@ def plot_bestscores(data_ctr, data_sample, xlabel=''):
     for patch, color in zip(bplot['boxes'], colors):
         patch.set_facecolor(color)
         patch.set_edgecolor('black')
-        patch.set_alpha(1)
+        patch.set_decay_coeff(1)
 
     # colors = ['black' for i in range(len(labels))]
     # tags = ['cbars']
     # for tag in tags:
     #     bplot[tag].set_color(colors)
-    #     bplot[tag].set_alpha(.5)
+    #     bplot[tag].set_decay_coeff(.5)
     return fig
 
 

@@ -42,4 +42,4 @@ def retreive_grn(study, method):
         links = pd.read_pickle(os.path.join(OUTPUT_DIR,'GRN', f'links_{study}_{method}.csv'))
     return links
 
-param_grid = dict(alpha=np.arange(0,1,.05), min_samples_leaf=np.arange(1,5,1), max_depth=np.arange(5,34,1))
+param_grid = dict(decay_coeff=np.arange(0,1,.05), min_samples_leaf=np.arange(1,5,1), max_depth=np.arange(5,34,1))

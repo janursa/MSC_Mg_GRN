@@ -308,7 +308,7 @@ for (im in seq_along(imp.met)) {
                  mapping = aes(x = Day, y = Norm.Abundance),
                  shape = 21, col = "grey20", size = 2.5) +
 
-      # geom_line(alpha = 0.9, aes(col = Condition, group = Condition)) + #
+      # geom_line(decay_coeff = 0.9, aes(col = Condition, group = Condition)) + #
       # facet_grid(rows = vars(cluster), cols = vars(Condition)) +
       facet_wrap(facets = "Protein") +
       theme_bw() +
@@ -320,7 +320,7 @@ for (im in seq_along(imp.met)) {
       geom_spline(aes(x = Day, y = Norm.Abundance, group = Condition, col = Condition),
                   df = df, size = 1.
       ) +
-      guides(alpha = "none") +
+      guides(decay_coeff = "none") +
       theme(axis.text.x = element_text(angle = 90, size = 8))
 
    ggsave(pl, filename = file.path("ProfilePlots", paste0("SplineFit_df3_top",topN,"_", imp.met[im], ".pdf")),
@@ -351,7 +351,7 @@ plot_Venn_rna(topl,
               edge_size = 3,
               label = "count",
               label_geom = "label",
-              label_alpha = 0.4,
+              label_decay_coeff = 0.4,
               label_color = "darkred",
 
               venn.low.col = "grey90",

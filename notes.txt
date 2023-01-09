@@ -1,7 +1,8 @@
 cd Downloads/testProjs/proteomics_MSC/scripts
 TODO:
-#check if lamda alpha is embedded in training data
+#check if lamda decay_coeff is embedded in training data
 comparition to string: with or without estimated decay coeffs
+estimated coeff on portia
 
 how to check on the train scores
 

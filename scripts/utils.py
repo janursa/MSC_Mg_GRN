@@ -810,8 +810,6 @@ class Links:
             return links_df
         elif mode=='write':
             links.to_csv(FILE, index=False)
-
-
     def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
         '''
             Read the links from different GRN runs and create a pool of weights. It also creates the average weights as a database.
@@ -837,7 +835,6 @@ class Links:
         links['Weight'] = ws_mean
         links['WeightPool'] = list(ws_pool)
         return links
-    
     def filter_ttest(links) ->pd.DataFrame:
         '''
             Conducts t test and select those significanly different than 0
@@ -870,14 +867,12 @@ class Links:
         links = links.loc[links['FitScore']>0,:].reset_index(drop=True)
         # print(f'number of links after fitscore {len(links)}')
         return links
-
     def choose_top_quantile(links: pd.DataFrame, quantile=0.75)->pd.DataFrame:
         '''
             Filters the given df based on the top quantile
         ''' 
         cut_off = np.quantile(links['Weight'],q=quantile)
         return links.loc[links['Weight']>cut_off,:].reset_index(drop=True)
-
     def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
         '''
             Filters the given df based on the top count
@@ -885,7 +880,6 @@ class Links:
         links.reset_index(inplace=True, drop=True)
         links.sort_values('Weight',ascending=True,inplace=True)
         return links.iloc[:n,:].reset_index(drop=True)
-
     def plot_mean_weights(links_s, labels, colors):
         serif_font()
         nrows = 1
@@ -921,7 +915,6 @@ class Links:
     #         ax.set_xmargin(.1)
             # ax.set_xlim([-.5,8])
             ax.set_title(labels[idx])
-    
     def plot_match_counts(datas, labels, sig_signs):
         matplotlib.rcParams.update({'font.size': 12})
 
@@ -963,6 +956,14 @@ class Links:
                     va='bottom',
                     arrowprops=dict(arrowstyle='-[, widthB=2.3, lengthB=0.2', lw=1.2))
         return fig
+
+    def nomalize(links):
+        """
+            Nornalize the links based on the std
+        """
+        links_n = links.copy()
+        links_n.loc[:,'Weight'] = links['Weight']/np.std(links['Weight'])
+        return links_n
 class SensitivityAnalysis:
     def multiGaussNoise(links_ctr, links_sample, protnames, target_prots, OUTPUT_DIR):
         """
@@ -1043,7 +1044,7 @@ def estimate_decay_rates(TS_data, time_points):
     this function is exactly taken from dynGENIE3 code.
 
     For each gene, the degradation rate is estimated by assuming that the gene expression x(t) follows:
-    x(t) =  A exp(-alpha * t) + C_min,
+    x(t) =  A exp(-decay_coeff * t) + C_min,
     between the highest and lowest expression values.
     C_min is set to the minimum expression value over all genes and all samples.
     """
@@ -1056,7 +1057,7 @@ def estimate_decay_rates(TS_data, time_points):
         for current_timeseries in TS_data[1:]:
             C_min = min(C_min,current_timeseries.min())
     
-    alphas = np.zeros((nexp,ngenes))
+    decay_coeffs = np.zeros((nexp,ngenes))
     
     for (i,current_timeseries) in enumerate(TS_data):
         current_time_points = time_points[i]
@@ -1078,10 +1079,10 @@ def estimate_decay_rates(TS_data, time_points):
             xmin = np.log(xmin)
             xmax = np.log(xmax)
             
-            alphas[i,j] = (xmax - xmin) / abs(tmin - tmax)
+            decay_coeffs[i,j] = (xmax - xmin) / abs(tmin - tmax)
                 
-    alphas = alphas.max(axis=0)
+    decay_coeffs = decay_coeffs.max(axis=0)
 
 
  
-    return alphas
+    return decay_coeffs

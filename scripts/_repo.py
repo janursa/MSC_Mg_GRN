@@ -173,8 +173,8 @@ class Plot:
     def scatter(ax,log2FC,negLog10pv,flags):
         ax.scatter(log2FC,negLog10pv,
                    color=['red' if flag else 'black' for flag in flags],
-#                    alpha=[1 if flag else .5 for flag in flags]
-                   alpha = .7,
+#                    decay_coeff=[1 if flag else .5 for flag in flags]
+                   decay_coeff = .7,
                    linewidths=.5,
                    edgecolors='cyan'
                   )

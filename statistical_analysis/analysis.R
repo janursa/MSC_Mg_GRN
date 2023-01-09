@@ -269,7 +269,7 @@ library("ggformula")
    dt[Protein %in% toptb1$Protein[1:12]],
    aes(x = Day, y = Norm.Abundance, col = Condition)) +
    geom_point() +
-   # geom_line(alpha = 0.9, aes(col = Condition, group = Condition)) + #
+   # geom_line(decay_coeff = 0.9, aes(col = Condition, group = Condition)) + #
    # facet_grid(rows = vars(cluster), cols = vars(Condition)) +
    facet_wrap(facets = "Protein") +
    theme_bw() +
@@ -281,7 +281,7 @@ library("ggformula")
    geom_spline(aes(x = Day, y = Norm.Abundance, group = Condition, col = Condition),
                df = df, size = 1.
    ) +
-   guides(alpha = "none") +
+   guides(decay_coeff = "none") +
    theme(axis.text.x = element_text(angle = 90, size = 8))} %>%
    ggsave(filename = "profile_plots_withSpline_df3_top12.pdf", width = 8, height = 7)
 
