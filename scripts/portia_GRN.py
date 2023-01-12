@@ -1,45 +1,39 @@
 from imports import *
-
-# estimated_decay_coeffs = utils.estimate_decay_rates([data_ctr, data_mg], [time,time])
-
 dir_portia = os.path.join(MAIN_DIR,'..','external/PORTIA-master')
 sys.path.insert(0,dir_portia)
 import portia as pt
-def data_process(data, time):
-    dataset = pt.GeneExpressionDataset()
-    exp_id = 1
-    # decay_coeffs = estimated_decay_coeffs
-    for data_i, time_i in zip(data,time):
-        dataset.add(pt.Experiment(exp_id, data_i))
-        exp_id+=1
-    return dataset
-
-
-def GRN(data, study):
-    dataset = data_process(data, time)
+def GRN(data, study, decay_coeffs):
+    dataset = data_process(data, time, decay_coeffs)
     M_bar = pt.run(dataset, method='fast')
     links_df = tools.Links.format(M_bar, protnames)
-    
-    utils.Links.read_write_links(links=links_df, study=study, mode='write',method='portia',OUTPUT_DIR=OUTPUT_DIR)
+    utils.links.read_write_links(links=links_df, study=study, mode='write_links',method='portia',OUTPUT_DIR=OUTPUT_DIR)
     return links_df
 
-
-
+def data_process(data, time, decay_coeffs):
+#     dataset = Data(gene_names=protnames, ss_data=None, ts_data=[data], time_points=[time],
+#                        test_size=0)
+    portia_dataset = pt.GeneExpressionDataset()
+    exp_id = 1
+    for data_i, time_i in zip(data,time):
+#         X, y = dataset.process_time_series(0)
+        portia_dataset.add(pt.Experiment(exp_id, data_i))
+        exp_id+=1
+    return portia_dataset
 
 if __name__ == '__main__':
     # - read the data
     data_ctr = utils.process_data(df_target, study='ctr', standardize=False)
     data_mg = utils.process_data(df_target, study='mg', standardize=False)
     print('Data shape:', np.array(data_ctr).shape, '(n_samples_time_series*n_genes)')
-
     # - run
-    links = GRN(data_ctr, 'ctr')
-    GRN(data_mg, 'mg')
-
+    decay_coeffs = utils.estimate_decay_rates([data_ctr,data_mg], [time, time])
+    links_ctr = GRN(data_ctr, 'ctr', decay_coeffs)
+    links_mg = GRN(data_mg, 'mg', decay_coeffs)
     #- compare to string
-    top_n = 250
-
-    # links_short = utils.Links.choose_top_count(links, n=top_n)
-    links_short = utils.Links.choose_top_quantile(links, quantile=.75)
-    match_count = utils.Links.compare_network_string(links_short.copy(), OUTPUT_DIR)
-    print('match: ', match_count)
+    def compare(links):
+        top_n = 100
+        links_short = utils.links.choose_top_count(links_ctr, n=top_n)
+        # links_short = utils.links.choose_top_quantile(links, quantile=.75)
+        match_count = utils.links.compare_network_string(links_short.copy(), OUTPUT_DIR)
+        print('match: ', match_count)
+    compare(links_ctr)

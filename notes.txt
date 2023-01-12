@@ -1,10 +1,9 @@
-cd Downloads/testProjs/proteomics_MSC/scripts
-TODO:
-#check if lamda decay_coeff is embedded in training data
-comparition to string: with or without estimated decay coeffs
-estimated coeff on portia
+	TODO:
+- estimated coeff on portia
+- plot mg and ctr for oob scores on one plot
+- false positive vs true negative from 100 to 250 top links
+ 
 
-how to check on the train scores
 
 
 # Network graph
