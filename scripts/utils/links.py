@@ -64,7 +64,7 @@ def read_write_links(links=None, oob_scores=None, train_scores=None, study='ctr'
     '''
         Read write links extracted from GRN 
     '''
-    assert(study in ['ctr','mg','combined'])
+    assert(study in ['ctr','mg','combined','random'])
     assert(mode in ['read_links', 'write_links', 'read_oob_scores', 'write_oob_scores', 'read_train_scores', 'write_train_scores'])
     #- determine file location
     DIR = os.path.join(OUTPUT_DIR, 'GRN', method)
@@ -207,42 +207,30 @@ def plot_match_counts(datas, labels, sig_signs):
     matplotlib.rcParams.update({'font.size': 12})
 
     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5), 
-        # gridspec_kw={'width_ratios': [2, 2]}
         )
 
     ax = axes
-    # bplot = ax.boxplot(datas, notch=False, widths =.2, patch_artist=False, 
-    #                 meanline=False, showfliers=False)
     bplot = ax.violinplot(datas, showmeans=True, showextrema=False)
 
     ax.set_ylabel('Number of matched interactions')
-    # ax.set_title('(A)')
     ax.set_xticks(list(range(1,len(labels)+1)))
     ax.set_xticklabels(labels,rotation=0)
     ax.set_ymargin(.25)
-    # print(bplot)
     #- face colors
     colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan','grey']
     for patch, color in zip(bplot['bodies'], colors):
         patch.set_facecolor(color)
         patch.set_edgecolor('black')
         patch.set_alpha(1)
-
     #- plot sig        
     xs = ax.get_xticks()
     ys = np.max(datas, axis=1) 
     for i, sign in enumerate(sig_signs):
-        # ax.annotate(sign, (xs[i],ys[i]), fontsize=14, color='red')
         if sign != '':
-            x,y = (xs[i-1]+xs[i])/2,ys[i-1]+.05*max(ys)
-            # print(i,x,y)
-            # print(ys[i]-1)
-            # x,y=1,5
-
-            ax.annotate(sign, xy=(x,y), xytext=(x,y+.04*max(ys)), 
+            ax.annotate(sign, xy=(xs[i],ys[i]),
                 ha='center', 
                 va='bottom',
-                arrowprops=dict(arrowstyle='-[, widthB=2.3, lengthB=0.2', lw=1.2))
+                )
     return fig
 def nomalize(links):
     """
