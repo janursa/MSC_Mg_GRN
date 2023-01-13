@@ -10,9 +10,10 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from scripts.imports import *
 #- create random links
 def create_random_links(links_assembly, n=1000):
+    #- TODO: create matrix (using protname)
     links_assembly = [utils.links.nomalize(links) for links in links_assembly]
     weights = [links['Weight'].values.tolist() for links in links_assembly]
-    weights = [i for j in weights for i in j]
+    weights = [i for j in weights for i in j] #flatten
     random_links = links_assembly[0].copy()
     weightpoolvector = []
     for i in range(len(links_assembly[0])):
@@ -92,10 +93,6 @@ def main(links_random, links_rf, links_ridge, links_portia, top_quantile=0.75, p
         match_count_ridge = [match_count_ridge for i in range(len(match_count_random))]
         match_count_portia = [match_count_portia for i in range(len(match_count_random))]
     else:
-        #- TODO: should be replaced by the following
-        # match_count_random = compare(links_random.copy(), top_quantile)
-        # match_count_rf = compare(links_rf.copy(), top_quantile)
-        #- TODO: real one
         match_count_random = batch_compare(links_random.copy(), top_quantile)
         match_count_rf = batch_compare(links_rf.copy(), top_quantile)
         match_count_random = int(np.mean(match_count_random))
@@ -117,8 +114,9 @@ if __name__ == '__main__':
     links_names = ['Arbitrary', 'RF', 'Ridge', 'Portia']
     top_quantile_list = np.linspace(.75, .9, num=10)
     links_rf, links_ridge, links_portia = retrieve_data()
-    # links_random = create_random_links([links_rf, links_ridge, links_portia], n=100) #only once
-    links_random = pd.read_pickle(os.path.join(OUTPUT_DIR, 'postprocess', f'links_random.csv'))
+    #- create random links: run only once and then retreive it
+    links_random = create_random_links([links_rf, links_ridge, links_portia], n=100)
+    # links_random = pd.read_pickle(os.path.join(OUTPUT_DIR, 'postprocess', f'links_random.csv'))
     def compare_distribution():
         """
         comapre for top quartile 0.9 and 0.75 with distribution plot
@@ -132,8 +130,7 @@ if __name__ == '__main__':
     # compare_distribution()
     def compare_series():
         """
-        Obtains top matches for a range of top quantile values. Only mean values are considered
-        in match calculation
+        Obtains top matches for a range of top quantile values.
         """
         match_counts_pool = []
         for top_quantile in top_quantile_list:
