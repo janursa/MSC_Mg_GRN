@@ -1,4 +1,13 @@
-from imports import *
+"""
+description
+"""
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from scripts.imports import *
 #- create random links
 def create_random_links(links_assembly, n=1000):
     links_assembly = [utils.links.nomalize(links) for links in links_assembly]
@@ -68,7 +77,7 @@ def retrieve_data():
     links_portia = utils.links.read_write_links('ctr', method='portia', mode='read_links', OUTPUT_DIR=OUTPUT_DIR)
 
     return links_rf, links_ridge, links_portia
-def main(links_random, links_rf, links_ridge, links_portia, top_quantile=0.75, pool_flag=False, plot_flag=False):
+def main(links_random, links_rf, links_ridge, links_portia, top_quantile=0.75, pool_flag=False, plot_flag=False, links_names=None):
     """
     Main function to run the comparision for all datasets
     """
@@ -83,78 +92,66 @@ def main(links_random, links_rf, links_ridge, links_portia, top_quantile=0.75, p
         match_count_ridge = [match_count_ridge for i in range(len(match_count_random))]
         match_count_portia = [match_count_portia for i in range(len(match_count_random))]
     else:
-        match_count_random = compare(links_random.copy(), top_quantile)
-        # match_count_random = int(np.mean(match_count_random))
-        match_count_rf = compare(links_rf.copy(), top_quantile)
-        # match_count_rf = int(np.mean(match_count_rf))
+        #- TODO: should be replaced by the following
+        # match_count_random = compare(links_random.copy(), top_quantile)
+        # match_count_rf = compare(links_rf.copy(), top_quantile)
+        #- TODO: real one
+        match_count_random = batch_compare(links_random.copy(), top_quantile)
+        match_count_rf = batch_compare(links_rf.copy(), top_quantile)
+        match_count_random = int(np.mean(match_count_random))
+        match_count_rf = int(np.mean(match_count_rf))
 
         # match_count_rf = np.mean(match_count_random)
     match_counts = match_count_random, match_count_rf, match_count_ridge, match_count_portia
     if plot_flag:
-        labels = ['Random\n', 'RF', 'Ridge', 'Portia']
-        for label, data in zip(labels, match_counts):
+        for label, data in zip(links_names, match_counts):
             print(f'{label}: {np.mean(data)}')
         sig_signs = determine_sig_signes(match_counts)
-        fig = utils.links.plot_match_counts(datas=match_counts, labels=labels, sig_signs=sig_signs)
+        fig = utils.links.plot_match_counts(datas=match_counts, labels=links_names, sig_signs=sig_signs)
 
-        fig.savefig(os.path.join(OUTPUT_DIR, f'postprocess/match_count_{top_quantile}.png'), dpi=300, transparent=True)
-        fig.savefig(os.path.join(OUTPUT_DIR, f'postprocess/match_count_{top_quantile}.pdf'))
+        fig.savefig(os.path.join(OUTPUT_DIR, f'string/match_count_{top_quantile}.png'), dpi=300, transparent=True)
+        fig.savefig(os.path.join(OUTPUT_DIR, f'string/match_count_{top_quantile}.pdf'))
     return match_counts
 
 if __name__ == '__main__':
-
+    links_names = ['Arbitrary', 'RF', 'Ridge', 'Portia']
+    top_quantile_list = np.linspace(.75, .9, num=10)
     links_rf, links_ridge, links_portia = retrieve_data()
-    # links_random = create_random_links([links_rf, links_ridge, links_portia], n=10) #only once
+    # links_random = create_random_links([links_rf, links_ridge, links_portia], n=100) #only once
     links_random = pd.read_pickle(os.path.join(OUTPUT_DIR, 'postprocess', f'links_random.csv'))
-    def section1():
+    def compare_distribution():
         """
         comapre for top quartile 0.9 and 0.75 with distribution plot
         """
-        top_quantile = 0.9
-        main(links_random, links_rf, links_ridge, links_portia, top_quantile, pool_flag=True, plot_flag=True)
+        top_quantile = top_quantile_list[-1]
+        main(links_random, links_rf, links_ridge, links_portia, top_quantile, pool_flag=True, plot_flag=True, links_names=links_names)
 
-        top_quantile = 0.75
-        main(links_random, links_rf, links_ridge, links_portia, top_quantile, pool_flag=True, plot_flag=True)
+        top_quantile = top_quantile_list[0]
+        main(links_random, links_rf, links_ridge, links_portia, top_quantile, pool_flag=True, plot_flag=True, links_names=links_names)
         plt.show()
-    # section1()
-    def section2():
+    # compare_distribution()
+    def compare_series():
         """
         Obtains top matches for a range of top quantile values. Only mean values are considered
         in match calculation
         """
-        top_quantile_list = np.arange(.75,.9, 0.016) # 10 values
         match_counts_pool = []
         for top_quantile in top_quantile_list:
             match_counts = main(links_random, links_rf, links_ridge, links_portia, top_quantile)
             match_counts_pool.append(match_counts)
         match_counts_list = np.array(match_counts_pool).T
-        match_counts_sum = np.sum(match_counts_pool, axis=0)
-        #- plot
-        def plot_match_counts_multiple(match_counts_list):
-            utils.serif_font()
-            fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7, 3.5),
-                                     )
-            for data in match_counts_list:
-                plt.plot(data)
+        np.savetxt(os.path.join(OUTPUT_DIR,'string','match_counts_list.csv'), match_counts_list, delimiter=",", fmt='%d')
 
-            # ax.set_ylabel('Number of matched interactions')
-            # ax.set_xticks(list(range(1, len(labels) + 1)))
-            # ax.set_xticklabels(labels, rotation=0)
-            # ax.set_ymargin(.25)
-            # # - face colors
-            # colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan', 'grey']
-            # for patch, color in zip(bplot['bodies'], colors):
-            #     patch.set_facecolor(color)
-            #     patch.set_edgecolor('black')
-            #     patch.set_alpha(1)
-
-            return fig
-
-
-        plot_match_counts_multiple(match_counts_list)
+    # compare_series()
+    def plot_series():
+        match_counts_list = np.genfromtxt(os.path.join(OUTPUT_DIR,'string','match_counts_list.csv'), delimiter=",")
+        fig = utils.links.plot_match_counts_series(match_counts_list,
+                                                links_names,
+                                                top_quantile_list=top_quantile_list)
+        fig.savefig(os.path.join(OUTPUT_DIR, f'string/match_count_trend.png'), dpi=300, transparent=True)
+        fig.savefig(os.path.join(OUTPUT_DIR, f'string/match_count_trend.pdf'))
         plt.show()
-
-    section2()
+    plot_series()
 
 
 

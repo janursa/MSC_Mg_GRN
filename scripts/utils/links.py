@@ -232,6 +232,47 @@ def plot_match_counts(datas, labels, sig_signs):
                 va='bottom',
                 )
     return fig
+
+
+def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
+    """
+    Plots match counts for different top selected links as a line plot. Each line is for different methods such as RF and Ridge
+    """
+    top_quantile_list = np.round(top_quantile_list, 2)
+    match_counts_sum = np.sum(match_counts_list, axis=1).astype(int) #final scores
+    # add scores to the names
+    links_names = [f'{name}: {score}' for name, score in zip(links_names,match_counts_sum)]
+    utils.serif_font()
+    fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7, 3.5))
+    # x_range = [min(xticks_labels), max(xticks_labels)]
+    x = np.linspace(min(top_quantile_list), max(top_quantile_list), len(top_quantile_list))
+    colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan', 'grey']
+    linestyles = ['-', '--', '-.', ':']
+    for i, data in enumerate(match_counts_list):
+        ax.plot(top_quantile_list, data, label=links_names[i], color=colors[i], alpha=1, linewidth=2,
+                linestyle=linestyles[i],
+                marker='o')
+        # ax.fill_between(x, data, alpha=.1)
+
+    ax.set_ylabel('Number of matched interactions')
+    ax.set_xlabel('Selected top quantile')
+    xticks = np.arange(min(top_quantile_list), max(top_quantile_list), .05)
+    ax.set_xticks(xticks)
+    ax.set_xmargin(.15)
+    ax.set_ymargin(.15)
+
+    plt.legend(frameon=False)
+    # - annotate score on the right side of each line
+    
+    # for i, (score, y) in enumerate(zip(match_counts_sum, match_counts_list)):
+    #     ax.annotate(score, xy=(top_quantile_list[-1] + .01, y[-1] - 0.5),
+    #                 ha='center',
+    #                 va='bottom',
+    #                 size=10,
+    #                 alpha=.5
+    #                 )
+
+    return fig
 def nomalize(links):
     """
         Nornalize the links based on the std
@@ -320,35 +361,35 @@ def read_write_nodes_edges(nodes=None, edges=None, study='ctr', mode='read', OUT
         nodes = pd.read_csv(nodes_FILE, index_col=False)
         print('successfully read nodes and edges from ', DIR)
         return nodes, edges
-def plot_scores(data_ctr, data_sample, xlabel=''):
-    """plots oob adn train scores as a box plot for ctr and mg side by side"""
-    utils.serif_font()
-    fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
-                             # gridspec_kw={'width_ratios': [2, 2]}
-                             )
-    data_s = [data_ctr, data_sample]
-    labels = ['ctr', 'mg']
-    ax = axes
-    for data in data_s:
-        bplot = ax.boxplot(data, notch=True, widths=[.5, .5], patch_artist=True, meanline=True)
-    # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
-    #     )
-    ax.set_ylabel('Score')
-    ax.set_xticks(range(1, len(labels) + 1))
-    ax.set_xticklabels(labels, rotation=0)
-    ax.axhline(0, color='red', linestyle='--', linewidth=1.5, alpha=.5)
-    ax.set_ymargin(.1)
-    ax.set_xmargin(.15)
-    # # - face colors
-    # colors = ['pink', 'lightblue', 'lightgreen', 'cyan']
-    # for patch, color in zip(bplot['boxes'], colors):
-    #     patch.set_facecolor(color)
-    #     patch.set_edgecolor('black')
-    #     patch.set_alpha(1)
-
-    # colors = ['black' for i in range(len(labels))]
-    # tags = ['cbars']
-    # for tag in tags:
-    #     bplot[tag].set_color(colors)
-    #     bplot[tag].set_decay_coeff(.5)
-    return fig
+# def plot_scores(data_ctr, data_sample, xlabel=''):
+#     """plots oob adn train scores as a box plot for ctr and mg side by side"""
+#     utils.serif_font()
+#     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
+#                              # gridspec_kw={'width_ratios': [2, 2]}
+#                              )
+#     data_s = [data_ctr, data_sample]
+#     labels = ['ctr', 'mg']
+#     ax = axes
+#     for data in data_s:
+#         bplot = ax.boxplot(data, notch=True, widths=[.5, .5], patch_artist=True, meanline=True)
+#     # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
+#     #     )
+#     ax.set_ylabel('Score')
+#     ax.set_xticks(range(1, len(labels) + 1))
+#     ax.set_xticklabels(labels, rotation=0)
+#     ax.axhline(0, color='red', linestyle='--', linewidth=1.5, alpha=.5)
+#     ax.set_ymargin(.1)
+#     ax.set_xmargin(.15)
+#     # # - face colors
+#     # colors = ['pink', 'lightblue', 'lightgreen', 'cyan']
+#     # for patch, color in zip(bplot['boxes'], colors):
+#     #     patch.set_facecolor(color)
+#     #     patch.set_edgecolor('black')
+#     #     patch.set_alpha(1)
+#
+#     # colors = ['black' for i in range(len(labels))]
+#     # tags = ['cbars']
+#     # for tag in tags:
+#     #     bplot[tag].set_color(colors)
+#     #     bplot[tag].set_decay_coeff(.5)
+#     return fig

@@ -2,7 +2,13 @@
     Process the results of GRN using RF by pooling them and adding oob scores to the links.
     Reads oob and train scores and plot them
 """
-from imports import *
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from scripts.imports import *
 
 def add_score_to_links(links, scores, protnames):
     links['FitScore'] = None
@@ -28,8 +34,7 @@ if __name__ == '__main__':
                                      f'links_ctr.csv'))  # save with pickle because there is a list of items in data
     links_sample.to_pickle(os.path.join(OUTPUT_DIR, 'GRN', method, f'links_mg.csv'))
 
-    #- pool oob and train scores
-
+    #- pool oob and train scores, and plot them
     def pool_scores(method, study, replica_n, OUTPUT_DIR):
         oob_scoress = []
         train_scoress = []
@@ -47,7 +52,9 @@ if __name__ == '__main__':
     oob_scores_mg, train_scores_mg = pool_scores(method, 'mg', replica_n, OUTPUT_DIR)
 
     # utils.links.plot_scores(data_ctr=[train_scores_ctr, train_scores_mg], data_sample=[oob_scores_ctr, oob_scores_mg])
-    utils.calibration.plot_oobscores(data_ctr=train_scores_ctr, data_sample=train_scores_mg)
-    utils.calibration.plot_oobscores(data_ctr=oob_scores_ctr, data_sample=oob_scores_mg)
+    fig = utils.calibration.plot_scores(data_ctr=train_scores_ctr, data_sample=train_scores_mg, ylabel='Training score')
+    fig.savefig(os.path.join(OUTPUT_DIR, 'GRN/RF', 'oobscores.pdf'))
+    fig = utils.calibration.plot_scores(data_ctr=oob_scores_ctr, data_sample=oob_scores_mg, ylabel='OOB score')
+    fig.savefig(os.path.join(OUTPUT_DIR, 'GRN/RF', 'trainscores.pdf'))
 
-    # plt.show()
+    plt.show()

@@ -88,7 +88,7 @@ def retreive_data(study, method, read_dir):
         oo = eval(f.read())
         bestparams_pool, bestscores_pool = oo['bestparams_pool'], oo['bestscores_pool']
     return bestparams, bestscores, bestparams_pool, bestscores_pool
-def plot_oobscores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels):
+def plot_scores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels):
     """plots scores as a box plot for a set"""
     fig, axes = plt.subplots(2, 1, tight_layout=True, figsize=(10, 6))
     data_s = [bestscores_pool_ctr, bestscores_pool_sample]
@@ -141,7 +141,7 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
-def plot_oobscores(data_ctr, data_sample, xlabel=''):
+def plot_scores(data_ctr, data_sample, xlabel='', ylabel='OOB score'):
     """plots oob scores as a box plot for ctr and mg side by side"""
     utils.serif_font()
     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
@@ -153,7 +153,7 @@ def plot_oobscores(data_ctr, data_sample, xlabel=''):
     bplot = ax.boxplot(data_s, notch=True, widths=[.5, .5], patch_artist=True, meanline=True)
     # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
     #     )
-    ax.set_ylabel('OOB Score')
+    ax.set_ylabel(ylabel)
     # ax.set_title('(A)')
     ax.set_xticks(range(1, len(labels) + 1))
     ax.set_xticklabels(labels, rotation=0)
@@ -213,7 +213,7 @@ def plot_oo(method, priors, protnames, OUTPUT_DIR):
                                                                                                            read_dir=dir)
 
     # - best score pool
-    fig = plot_oobscores_pool(bestscores_pool_ctr, bestscores_pool_mg, protnames)
+    fig = plot_scores_pool(bestscores_pool_ctr, bestscores_pool_mg, protnames)
     fig.savefig(os.path.join(dir, 'bestscores_pool.png'), dpi=300, transparent=True,
                 facecolor='white')
     # - best param pool
@@ -224,7 +224,7 @@ def plot_oo(method, priors, protnames, OUTPUT_DIR):
     fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
 
     # - best score mean
-    fig = plot_oobscores(bestscores_ctr, bestscores_mg)
+    fig = plot_scores(bestscores_ctr, bestscores_mg)
     fig.savefig(os.path.join(dir, 'bestscores.png'), dpi=300, transparent=True, facecolor='white')
     # - best param mean
     fig = plot_bestparams(bestparams_ctr, bestparams_mg, priors=priors)

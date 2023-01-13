@@ -126,7 +126,7 @@ np.savetxt(os.path.join(OUTPUT_DIR,'calibration', 'scores_ctr.csv'), scores_ctr,
 np.savetxt(os.path.join(OUTPUT_DIR,'calibration', 'scores_mg.csv'), scores_sample, delimiter=",")#- plot scores
 importlib.reload(utils)
 #- box plot of pool scores
-fig = utils.plot_oobscores_indivitualprots(data_ctr=oo_short_ctr['ScorePool'], 
+fig = utils.plot_scores_indivitualprots(data_ctr=oo_short_ctr['ScorePool'], 
                       data_sample=oo_short_sample['ScorePool'],
                       preferred_names_ctr= oo_short_ctr['Protein'],
                       preferred_names_sample= oo_short_sample['Protein'],
@@ -342,7 +342,7 @@ def plot_bestparams_individualprots(data_ctr,data_sample, priors, preferred_name
             axes[i][j].set_xticklabels(preferred_names_s[j], rotation=45)
     return fig
 
-def plot_oobscores_indivitualprots(data_ctr, data_sample, preferred_names_ctr,preferred_names_sample, xlabel=''):
+def plot_scores_indivitualprots(data_ctr, data_sample, preferred_names_ctr,preferred_names_sample, xlabel=''):
     """plots scores as a box plot for a set"""
     fig, axes = plt.subplots(1, 2, tight_layout=True, figsize=(12,4), gridspec_kw={'width_ratios': [2, 2]})
     data_s = [data_ctr, data_sample]

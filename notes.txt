@@ -2,8 +2,10 @@
 - estimated coeff on portia
 - plot mg and ctr for oob scores on one plot
 - false positive vs true negative from 100 to 250 top links
- 
 
+- difference between oob scores obtained during calibration vs grn. These are obtained:
+	-- calib: mean score across 100 runs are plotted for individual proteins. Variable is param
+	-- grn: mean score across 100 runs are plotted for individual proteins. param is the average of 100 calib runs
 
 
 # Network graph

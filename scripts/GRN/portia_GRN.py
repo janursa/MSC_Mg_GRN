@@ -1,4 +1,10 @@
-from imports import *
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from scripts.imports import *
 dir_portia = os.path.join(MAIN_DIR,'..','external/PORTIA-master')
 sys.path.insert(0,dir_portia)
 import portia as pt
