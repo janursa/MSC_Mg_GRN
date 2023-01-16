@@ -1,4 +1,10 @@
 	TODO:
+add collaborator
+
+calibration: control randomness in the rand_search faunction
+
+run VSA to random
+
 - estimated coeff on portia
 - plot mg and ctr for oob scores on one plot
 - false positive vs true negative from 100 to 250 top links

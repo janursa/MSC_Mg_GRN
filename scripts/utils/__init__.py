@@ -138,15 +138,15 @@ def listwise_deletion(df):
         df_copy = df_copy.drop(drop_line)
     df_copy.reset_index(inplace=True,drop=True)
     return df_copy
-def rename_missing_symbols(df,p_name,**kywrds): 
+def rename_missing_symbols(df,p_name='Entry', OUTPUT_DIR=''):
     """ Name the missing symbols in protein names """
     df_c = copy.deepcopy(df)
-    nulls = df_c[p_name].isnull() 
+    nulls = df_c[p_name].isnull()
     unique_names = ['p_{}'.format(ii) for ii in range(sum(nulls))]
     map_ = {i:name for i,name in zip([i for i, x in enumerate(nulls) if x],unique_names)}
     df_c.loc[nulls, p_name] = unique_names
     print('Remaining missing names: ',[x for x in df_c[p_name] if not isinstance(x,str)])
-    with open('results/data/missing_names.txt','w') as f:
+    with open(os.path.join(OUTPUT_DIR,'missing_names.txt'),'w') as f:
         for key,value in map_.items():
             f.write('original index: '+str(key)+' -> '+value+'\n')
     return df_c

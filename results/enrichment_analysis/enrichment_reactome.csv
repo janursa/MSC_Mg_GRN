@@ -1,3 +1,0 @@
-,ID,Description,ProteinCount,Strength,FDR,geneID,ProteinRatio,pvalue,qvalue
-49,HSA-71403,Citric acid cycle (TCA cycle),3,1.89,0.0232,"Q02218,P40926,P36957",0.08823529411764706,0.0232,0.0232
-50,HSA-71291,Metabolism of amino acids and derivatives,6,0.98,0.0412,"Q02218,P56192,P62917,O94925,P36957,P62854",0.17647058823529413,0.0412,0.0412
