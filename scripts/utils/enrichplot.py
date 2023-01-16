@@ -1,7 +1,13 @@
 """
     Sets of functions useful for ploting enriched terms
 """
+import sys
+import os
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+import utils
+from ._imports import *
 def mscatter(x,y,ax=None, m=None, **kw):
     """ a custom plot built on scatter plot to enable multi marker visualization
     """
@@ -39,7 +45,7 @@ def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_
 
     #-----------plot-----------------------
     fig, ax = plt.subplots(1,1, figsize=figsize, tight_layout=True)
-    sc = enrichplotmscatter(x, y, c=colors, s=scale_scatter_size*sizes, 
+    sc = mscatter(x, y, c=colors, s=scale_scatter_size*sizes,
         m=markers, ax=ax, 
         cmap='autumn'
         # cmap='Spectral'
