@@ -17,8 +17,8 @@ if __name__ == '__main__':
     test_size = 0
     istart = 54
     iend = 100
-    param_unique_ctr, _ = utils.calibration.read_write_oo('ctr', 'read', method, OUTPUT_DIR=OUTPUT_DIR)
-    param_unique_mg, _ = utils.calibration.read_write_oo('mg', 'read', method, OUTPUT_DIR=OUTPUT_DIR)
+    param_unique_ctr, _, _ = utils.calibration.read_write_oo('ctr', 'read', method, OUTPUT_DIR=OUTPUT_DIR)
+    param_unique_mg, _, _ = utils.calibration.read_write_oo('mg', 'read', method, OUTPUT_DIR=OUTPUT_DIR)
 
     # - network inference
     # utils.links.batch_GRN('ctr', method, data_ctr, param, protnames, test_size,time, param_unique_ctr, istart, iend, OUTPUT_DIR)

@@ -20,7 +20,16 @@ if __name__ == '__main__':
     #- define settings and tune
     param = dict(estimator_t = 'ridge')
     specs = dict(
+        random_state = 0,
+        n_jobs=1,
+        n_repeat=5
         #     train_flag=True # maximizing training data
     )
-    utils.calibration.batch_tune('ctr', 'ridge', data_ctr, param,protnames,test_size,time, param_grid_ridge, specs, istart=0, iend=100,OUTPUT_DIR=OUTPUT_DIR)
-    utils.calibration.batch_tune('mg', 'ridge', data_mg, param,protnames,test_size,time, param_grid_ridge, specs, istart=0, iend=100,OUTPUT_DIR=OUTPUT_DIR)
+    istart = 0
+    iend = 5
+
+    utils.calibration.batch_tune('ctr', 'ridge', data_ctr, param,protnames,test_size,time, param_grid_ridge, istart=istart, iend=iend, OUTPUT_DIR=OUTPUT_DIR, **specs)
+    utils.calibration.batch_tune('mg', 'ridge', data_mg, param,protnames,test_size,time, param_grid_ridge, istart=istart, iend=iend, OUTPUT_DIR=OUTPUT_DIR, **specs)
+
+with open(os.path.join(output_dir, 'sampled_permts.txt'), 'w') as f:
+    print({'permts': sampled_permts}, file=f)

@@ -1,6 +1,12 @@
 """
     Sets of functions useful vester's sensitivity analysis
 """
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+import utils
 from ._imports import *
 linewidth = 2
 markers = ['o','o','o','*']

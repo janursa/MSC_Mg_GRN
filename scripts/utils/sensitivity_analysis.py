@@ -1,7 +1,12 @@
 """
     Sets of functions useful for sensitivity analysis (robustness analysis)
 """
+import sys
+import os
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+import utils
 def multiGaussNoise(links_ctr, links_sample, protnames, target_prots, OUTPUT_DIR):
     """
         Multi step function to conduct multiplicative gaussian noise analysis
