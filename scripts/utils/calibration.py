@@ -9,96 +9,24 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 import utils
 
 from ._imports import *
-def read_write_oo(study='ctr', mode='read', method='RF', bestparams=None, besttestscores=None, besttrainscores=None, i=None, OUTPUT_DIR=''):
-    '''
-        Read and writes calibration results (best params and best scores) to file
-    '''
-    assert (mode in ['read', 'write'])
-    assert (study in ['ctr', 'mg', 'combined'])
-    DIR = os.path.join(OUTPUT_DIR, 'calibration', str(method))
-    if i is None:
-        FILE = os.path.join(DIR, f'oo_{study}.txt')
-    else:
-        FILE = os.path.join(DIR, 'pool', f'oo_{study}_{i}.txt')
-    if mode == 'write':
-        with open(FILE, 'w') as f:
-            print({'bestparams': bestparams, 'besttestscores': besttestscores, 'besttrainscores':besttrainscores}, file=f)
-    elif mode == 'read':
-        with open(FILE, 'r') as f:
-            oo = eval(f.read())
-        return oo['bestparams'], oo['besttrainscores'], oo['besttestscores']
-def main(repeat_n, study, method, data, gene_names, time_points, test_size, param, param_grid, **specs):
+def main(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i_start, i_end, test_size, **specs):
     """
         Interface to search function of geneRNI
     """
-    print(f'----Tuning for method: {method} study: {study}')
-    dataset = Data(gene_names=gene_names, ss_data=None, ts_data=[data], time_points=[time_points],
-                       test_size=test_size)
+    print(f'----Tuning for method: {method}, study: {study}')
+    dataset = Data(gene_names=gene_names, ss_data=None, ts_data=[data], time_points=[time_points])
     DIR = os.path.join(OUTPUT_DIR, 'calibration', method, study)
-    #TODO: create the DIR if it doesnt exist
-    return search_param.rand_search(dataset,
-                                    param=param,
-                                    param_grid=param_grid,
-                                    repeat_n=repeat_n,
-                                    output_dir=DIR,
-                                    **specs)
-def batch_tune(study, method, data, param, gene_names, test_size, time_points, param_grid, istart=None, iend=None,OUTPUT_DIR='', **specs):
+    search_param.rand_search(dataset,
+                             param_grid=param_grid,
+                             output_dir=DIR,
+                             i_start=i_start,
+                             i_end=i_end,
+                             **specs)
+    best_scores, best_params = search_param.pool(DIR, n_repeat=i_end)
+    #- save
+    np.save(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_scores_{study}.npy'), best_scores)
+    np.save(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'), best_params)
 
-
-    # read_write_oo(study, method=method, mode='write', bestparams=best_params, besttestscores=best_testscores, besttrainscores=best_trainscores,
-    #                     OUTPUT_DIR=OUTPUT_DIR, i=i)
-def pool_oo(study, method, n=100, OUTPUT_DIR=''):
-    '''
-        Read the results of hyper parameter tunning and pool them.
-    '''
-    best_paramss = []
-    best_trainscoress = []
-    best_testscoress = []
-    for i in range(n):
-        best_params, best_trainscores, best_testscores = read_write_oo(study, method=method, mode='read', OUTPUT_DIR=OUTPUT_DIR, i=i)
-        best_paramss.append(best_params)
-        best_trainscoress.append(best_trainscores)
-        best_testscoress.append(best_testscores)
-
-    # - process best scores
-    besttrainscores_pool = np.array(best_trainscoress).T.tolist()  # n_genes*n
-    besttrainscores = np.mean(besttrainscores_pool, axis=1).tolist()  # n_genes
-
-    besttestscores_pool = np.array(best_testscoress).T.tolist()  # n_genes*n
-    besttestscores = np.mean(besttestscores_pool, axis=1).tolist()  # n_genes
-
-    # - process best params
-    bestparams_pool = []  # n_gene*best_params (n values)
-    for prot_i in range(len(best_paramss[0])):
-        bestparams = {}
-        for key in best_paramss[0][0].keys():
-            vector = []
-            for item in best_paramss:
-                vector.append(item[prot_i][key])
-            bestparams[key] = vector
-        bestparams_pool.append(bestparams)
-    # - average best params for each gene
-    bestparams = [{key: np.mean(vector) for key, vector in bestparams.items()} for bestparams in bestparams_pool]
-    # - make some param int
-    bestparams = [{key: int(value) if (key == 'max_depth' or key == 'min_samples_leaf' or  key == 'max_features') else value for key, value in
-                   bestparam.items()} for bestparam in bestparams]
-
-    with open(os.path.join(OUTPUT_DIR, 'calibration', method, f'oo_{study}.txt'), 'w') as f:
-        print({'bestparams': bestparams, 'besttrainscores': besttrainscores, 'besttestscores': besttestscores}, file=f)
-
-    with open(os.path.join(OUTPUT_DIR, 'calibration', method, f'oo_pool_{study}.txt'), 'w') as f:
-        print({'bestparams_pool': bestparams_pool, 'besttrainscores_pool': besttrainscores_pool,'besttestscores_pool': besttestscores_pool}, file=f)
-def retreive_data(study, method, read_dir):
-    """
-        Reads results of pooling (#process_pool)
-    """
-    with open(os.path.join(read_dir, f'oo_{study}.txt')) as f:
-        oo = eval(f.read())
-        bestparams, besttrainscores, besttestscores  = oo['bestparams'], oo['besttrainscores'], oo['besttestscores']
-    with open(os.path.join(read_dir, f'oo_pool_{study}.txt')) as f:
-        oo = eval(f.read())
-        bestparams_pool, besttrainscores_pool, besttestscores_pool = oo['bestparams_pool'], oo['besttrainscores_pool'], oo['besttestscores_pool']
-    return bestparams,  besttrainscores, besttestscores, bestparams_pool, besttrainscores_pool, besttestscores_pool
 def plot_scores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels):
     """plots scores as a box plot for a set"""
     fig, axes = plt.subplots(2, 1, tight_layout=True, figsize=(10, 6))
@@ -212,38 +140,37 @@ def plot_bestparams(data_ctr, data_sample, priors):
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
     return fig
+def retreive_data(study, method, OUTPUT_DIR):
+    """
+        Reads results of pooling
+    """
+    best_scores = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_scores_{study}.npy'))
+    best_params = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'),allow_pickle=True)
+    return best_scores, best_params
 def plot_oo(method, priors, protnames, OUTPUT_DIR):
     """
      Plots a series of graphs for best params and best scores (individual protein and combined)
     """
     dir = os.path.join(OUTPUT_DIR, 'calibration', method)
-    bestparams_ctr, besttrainscores_ctr, besttestscores_ctr, bestparams_pool_ctr, besttrainscores_pool_ctr, besttestscores_pool_ctr = retreive_data(
-        'ctr', method=method, read_dir=dir)
-    bestparams_mg, besttrainscores_mg, besttestscores_mg, bestparams_pool_mg, besttrainscores_pool_mg, besttestscores_pool_mg = retreive_data('mg',
-                                                                                                           method=method,
-                                                                                                           read_dir=dir)
+    best_scores_ctr, best_params_ctr = retreive_data(
+        'ctr', method=method, OUTPUT_DIR=OUTPUT_DIR)
+    best_scores_mg, best_params_mg = retreive_data(
+        'mg', method=method, OUTPUT_DIR=OUTPUT_DIR)
+    # - pool score
+    # fig = plot_scores_pool(scores_pool_ctr, scores_pool_mg, protnames)
+    # fig.savefig(os.path.join(dir, 'scores_pool.png'), dpi=300, transparent=True,
+    #             facecolor='white')
 
-    # - best pool train score
-    fig = plot_scores_pool(besttrainscores_ctr, besttrainscores_mg, protnames)
-    fig.savefig(os.path.join(dir, 'besttrainscores_pool.png'), dpi=300, transparent=True,
-                facecolor='white')
-    # - best pool train score
-    fig = plot_scores_pool(besttestscores_ctr, besttestscores_mg, protnames)
-    fig.savefig(os.path.join(dir, 'besttestscores_pool.png'), dpi=300, transparent=True,
-                facecolor='white')
-    # - best param pool
-    fig = plot_bestparams_pool(bestparams_pool_ctr, priors, protnames)
-    fig.savefig(os.path.join(dir, 'bestparams_pool_ctr.png'), dpi=300, transparent=True, facecolor='white')
+    # - best param
+    # fig = plot_bestparams_pool(bestparams_pool_ctr, priors, protnames)
+    # fig.savefig(os.path.join(dir, 'bestparams_pool_ctr.png'), dpi=300, transparent=True, facecolor='white')
+    #
+    # fig = plot_bestparams_pool(bestparams_pool_mg, priors, protnames)
+    # fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
 
-    fig = plot_bestparams_pool(bestparams_pool_mg, priors, protnames)
-    fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
-
-    # - best train score mean
-    fig = plot_scores(besttrainscores_ctr, besttrainscores_mg)
+    #- best score mean
+    fig = plot_scores(best_scores_ctr, best_scores_mg)
     fig.savefig(os.path.join(dir, 'besttrainscores.png'), dpi=300, transparent=True, facecolor='white')
-    # - best test score mean
-    fig = plot_scores(besttestscores_ctr, besttestscores_mg)
-    fig.savefig(os.path.join(dir, 'besttestscores.png'), dpi=300, transparent=True, facecolor='white')
-    # - best param mean
-    fig = plot_bestparams(bestparams_ctr, bestparams_mg, priors=priors)
-    fig.savefig(os.path.join(dir, 'bestparams.png'), dpi=300, transparent=True, facecolor='white')
+    # # - best param
+    # fig = plot_bestparams(best_params_ctr, best_params_mg, priors=priors)
+    # fig.savefig(os.path.join(dir, 'bestparams.png'), dpi=300, transparent=True, facecolor='white')

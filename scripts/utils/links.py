@@ -10,32 +10,38 @@ import utils
 
 from ._imports import *
 
-def batch_GRN(study, method, data, param, gene_names, test_size, time_points, param_unique, istart=None, iend=None,OUTPUT_DIR=''):
+def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
     """
         Runs network inference for a number of times
     """
-    for i in range(istart, iend):
+    #- create/check dirs for method, study, (links and scores)
+    DIR_METHOD = utils.create_check_dir(output_dir, method)
+    DIR_STUDY = utils.create_check_dir(DIR_METHOD, study)
+    DIR_LINKS = utils.create_check_dir(DIR_STUDY, 'links')
+    DIR_TESTSCORES = utils.create_check_dir(DIR_STUDY, 'testscores')
+    DIR_TRAINSCORES = utils.create_check_dir(DIR_STUDY, 'trainscores')
+    #- run iteration
+    for i in range(i_start, i_end):
         print(f'----GRN for {study} iteration {i}-----')
-        train_scores, oob_scores, links_df = network_inference(data, gene_names, time_points, test_size, param, param_unique)
-        read_write_links(links=links_df, study=study, mode='write_links', method=method, OUTPUT_DIR=OUTPUT_DIR, i=i)
-        read_write_links(oob_scores=oob_scores, study=study, mode='write_oob_scores', method=method, OUTPUT_DIR=OUTPUT_DIR, i=i)
-        read_write_links(train_scores=train_scores, study=study, mode='write_train_scores', method=method, OUTPUT_DIR=OUTPUT_DIR, i=i)
-        
+        ests, train_scores, links_df, oob_scores, test_scores = grn(**specs)
+        if method=='RF':
+            test_scores = oob_scores
+        #- save
+        np.savetxt(os.path.join(DIR_TESTSCORES, f'data_{i}.csv'), test_scores)
+        np.savetxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'), train_scores)
+        links_df.to_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index=False)
 
-def network_inference(data, gene_names, time_points, test_size, param, param_unique):
+def retreive_scores(study, method, output_dir):
     """
-    Interface to network_inference of geneRNI
+        Retreiev train and test scores
     """
-    dataset = Data(gene_names=gene_names, ss_data=None, ts_data=[data], time_points=[time_points],
-                   test_size=test_size)
-    ests, train_scores, links_df, oob_scores, test_scores = \
-        geneRNI.network_inference(dataset,
-                                  gene_names=gene_names,
-                                  param=param,
-                                  param_unique=param_unique,
-                                  )
+    testscores = np.genfromtxt(os.path.join(output_dir, 'GRN', method, f'testscores_{study}.csv'))
+    trainscores = np.genfromtxt(os.path.join(output_dir, 'GRN', method, f'trainscores_{study}.csv'))
 
-    return train_scores, oob_scores, links_df
+    return trainscores, testscores
+def grn(data, time_points, gene_names, **specs):
+    dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
+    return geneRNI.network_inference(dataset, gene_names=gene_names, **specs)
 
 def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     '''
@@ -65,39 +71,22 @@ def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     n= links['inString'].values.tolist().count(True)
     
     return n
-def read_write_links(links=None, oob_scores=None, train_scores=None, study='ctr', mode='read_links', i=None, OUTPUT_DIR='', method=None) -> pd.DataFrame or None:
+def read_write_links(method, study, mode:str, links:pd.DataFrame=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
     '''
     assert(study in ['ctr','mg','combined','random'])
-    assert(mode in ['read_links', 'write_links', 'read_oob_scores', 'write_oob_scores', 'read_train_scores', 'write_train_scores'])
+    assert(mode in ['read', 'write'])
     #- determine file location
-    DIR = os.path.join(OUTPUT_DIR, 'GRN', method)
-    if i is None:
-        FILE= os.path.join(DIR, f'{study}.csv')
-    else:
-        if mode in ['read_links', 'write_links']:
-            Folder = 'pool_links'
-        elif mode=='read_oob_scores' or mode=='write_oob_scores':
-            Folder = 'pool_oob_scores'
-        elif mode=='read_train_scores' or mode=='write_train_scores':
-            Folder = 'pool_train_scores'
-        FILE = os.path.join(DIR, Folder,f'{study}_{i}.csv')
+    DIR = os.path.join(output_dir, 'GRN', method)
+    FILE = os.path.join(DIR, f'links_{study}.csv')
 
-
-    if mode=='read_links':
+    if mode=='read':
         return pd.read_csv(FILE, index_col=False)
-    elif mode in ['read_oob_scores','read_train_scores']:
-        return np.genfromtxt(FILE, delimiter=',')
-    elif mode=='write_links':
+    else:
         assert(links is not None)
         links.to_csv(FILE, index=False)
-    elif mode=='write_oob_scores':
-        assert (oob_scores is not None)
-        np.savetxt(FILE, oob_scores, delimiter=",")
-    elif mode == 'write_train_scores':
-        assert (train_scores is not None)
-        np.savetxt(FILE, train_scores, delimiter=",")
+
 
 def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     '''
@@ -113,7 +102,7 @@ def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     # links_temp = read_write_links(study=study, mode='read', OUTPUT_DIR=output_dir)
     # links_list = [fake_it(links_temp) for i in range(n)]
     
-    links_list = [read_write_links(study=study, mode='read_links', i=i, OUTPUT_DIR=output_dir, method=method) for i in range(n)]
+    # links_list = [read_write_links(study=study, mode='read', i=i, OUTPUT_DIR=output_dir, method=method) for i in range(n)]
 
     #- pool the weights 
     ws_pool = np.array([ll['Weight'].values for ll in links_list]).T
@@ -124,6 +113,51 @@ def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     links['Weight'] = ws_mean
     links['WeightPool'] = list(ws_pool)
     return links
+def pool_data(method, study, replica_n, output_dir):
+    """ pools iteration results such links and scores
+    """
+    DIR_METHOD = os.path.join(output_dir, 'GRN', method)
+    DIR_STUDY = os.path.join(DIR_METHOD, study)
+    DIR_LINKS = os.path.join(DIR_STUDY, 'links')
+    DIR_TRAINSCORES = os.path.join(DIR_STUDY, 'trainscores')
+    DIR_TESTSCORES = os.path.join(DIR_STUDY, 'testscores')
+    testscores_stack = []
+    trainscores_stack = []
+    links_stack = []
+    for i in range(replica_n):
+        #- retreive
+        links = pd.read_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index_col=False)
+        testscores = np.genfromtxt(os.path.join(DIR_TESTSCORES, f'data_{i}.csv'))
+        trainscores = np.genfromtxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'))
+        #- stack them
+        testscores_stack.append(testscores)
+        trainscores_stack.append(trainscores)
+        links_stack.append(links)
+    # - pool the weights and  create average links df
+    ws_pool = np.array([ll['Weight'].values for ll in links_stack]).T
+    ws_mean = np.mean(ws_pool, axis=1)
+    links = pd.DataFrame()
+    links.loc[:, ['Regulator', 'Target']] = links_stack[0].loc[:, ['Regulator', 'Target']]
+    links_mean = links.copy()
+    links_pool = links.copy()
+    links_mean['Weight'] = ws_mean
+    links_pool['WeightPool'] = list(ws_pool)
+    #- average pool scores
+    testscores_mean = np.mean(testscores_stack, axis=1)
+    trainscores_mean = np.mean(trainscores_stack, axis=1)
+    #- save
+    links_mean.to_csv(os.path.join(DIR_METHOD, f'links_{study}.csv'))
+    links_pool.to_pickle(os.path.join(DIR_METHOD, f'links_pool_{study}.csv'))
+
+    write_scores(method=method, study=study, trainscores=trainscores_mean,
+                 testscores=testscores_mean, output_dir=DIR_METHOD)
+
+def write_scores(method, study, trainscores, testscores , output_dir):
+    """
+    Write train test scores to files
+    """
+    np.savetxt(os.path.join(output_dir, f'testscores_{study}.csv'), testscores)
+    np.savetxt(os.path.join(output_dir, f'trainscores_{study}.csv'), trainscores)
 def filter_ttest(links) ->pd.DataFrame:
     '''
         Conducts t test and select those significanly different than 0

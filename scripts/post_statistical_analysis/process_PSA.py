@@ -8,7 +8,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import *
+from imports import *
 from scripts.edit_data.edit import correct_entry
 
 def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> typing.Tuple[list,pd.DataFrame]:

@@ -7,7 +7,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import *
+from imports import *
 #- create random links
 def create_random_links(links_assembly, n=1000):
     #- TODO: create matrix (using protname)

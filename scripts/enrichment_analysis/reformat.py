@@ -9,7 +9,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import *
+from imports import *
 
 
 def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_protname: dict, term_length_cut_threshold: float) -> pd.DataFrame:

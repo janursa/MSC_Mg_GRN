@@ -4,7 +4,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import *
+from imports import *
 
 specs = dict(
     o_df_dir = os.path.join(MAIN_DIR,'data','original_omics.xlsx'),

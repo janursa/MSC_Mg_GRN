@@ -207,7 +207,14 @@ def plot_hist(xs, names, **specs):
     for (x, name, ax) in zip(xs, names, axs):
         plot_host_single(ax, x, name, **specs)
 
-
+def create_check_dir(master_dir, name):
+    DIR = os.path.join(master_dir, name)
+    if not os.path.isdir(DIR):
+        os.makedirs(DIR)
+    else:
+        if os.listdir(DIR):
+            print(f'{name} directory is not empty')
+    return DIR
 def process_data(df_target, study='ctr', standardize=False) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
@@ -220,9 +227,10 @@ def process_data(df_target, study='ctr', standardize=False) -> np.array :
         df_ctr = df_target.loc[:,['ctr_'+str(day) for day in time]].T
         df_mg = df_target.loc[:,['mg_'+str(day) for day in time]].T
         # add mg as a regulatory factor with 0 for ctr and 1 for mg
-        df_ctr['ctr_mg'] = np.zeros(len(time)) 
-        df_mg['mg_mg'] = np.ones(len(time)) 
-        df = None #TODO: how to concatenate
+        df_ctr['mg'] = np.zeros(len(time))
+        df_mg['mg'] = np.ones(len(time))
+
+        df = pd.concat([df_ctr, df_mg], axis=0)
         protnames.append('mg') #TODO: needs evaluation
 
     if standardize:
