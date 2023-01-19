@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # imputation_method = 'noImputation'
     imputation_method = 'KNN'
     sig_t = .05
-    DIR_STATISTICAL_ANALYSIS =  os.path.join(MAIN_DIR,'statistical_analysis_2')
+    DIR_STATISTICAL_ANALYSIS =  os.path.join(MAIN_DIR,'statistical_analysis')
     IMPUT_FILE =  os.path.join(DIR_STATISTICAL_ANALYSIS, f'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imputation_method}.csv')  # dir for the imputated df
     SIG_FILE = os.path.join(DIR_STATISTICAL_ANALYSIS, f'DiffExp_tables/TopTable_TimeCourse_{imputation_method}.csv')  # dir for the sig analysis
 
