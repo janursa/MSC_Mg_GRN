@@ -5,8 +5,11 @@ import sys
 import os
 import statistics
 import scipy
+import matplotlib
 import matplotlib.pyplot as plt
 import copy
+import numpy as np
+import random
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +55,7 @@ def grn(data, time_points, gene_names, **specs):
 
 def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     '''
-        Compare extracted links by GRN to those suggested by string. Returns number of match links.
+        Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
     '''
 
     STR_LINKS_FILE = os.path.join(OUTPUT_DIR,'enrichment_analysis','string_interactions.tsv')
@@ -60,17 +63,17 @@ def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     links_string = links_string.rename(columns={'#node1':'Regulator','node2':'Target','combined_score':'Weight'})
     links_string = links_string.loc[:,['Regulator','Target','Weight']]  
     if verbose:
-        print(f'Number of string links: {len(links_string)}')
+        print(f'Number of vs_string links: {len(links_string)}')
         print(f'Number of extracted links: {len(links)}')
     if len(links_string)>len(links):
         raise ValueError('Extracted links cannot be lesser than golden links')
 
     with open(os.path.join(OUTPUT_DIR, 'postprocess/map_genename_protname.json')) as f:
         map_genename_protname = json.load(f)['map']
-    #- convert genenames to protnames in string 
+    #- convert genenames to protnames in vs_string
     links_string.loc[:,'Regulator'] = [map_genename_protname[name] for name in links_string['Regulator']]
     links_string.loc[:,'Target'] = [map_genename_protname[name] for name in links_string['Target']]
-    #- find string links in the extracted links, label them and add stringweight
+    #- find vs_string links in the extracted links, label them and add stringweight
     links['inString'] = False
     for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
         links.loc[(links['Regulator']==reg) & (links['Target']==target),'inString'] = True 
@@ -120,7 +123,7 @@ def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     links['Weight'] = ws_mean
     links['WeightPool'] = list(ws_pool)
     return links
-def pool_data(method, study, replica_n, output_dir):
+def pool_GRN_oo(method, study, replica_n, output_dir):
     """ pools iteration results such links and scores
     """
     DIR_METHOD = os.path.join(output_dir, 'GRN', method)
@@ -149,6 +152,7 @@ def pool_data(method, study, replica_n, output_dir):
     links_pool = links.copy()
     links_mean['Weight'] = ws_mean
     links_pool['WeightPool'] = list(ws_pool)
+    links_pool['Weight'] = ws_mean
     #- average pool scores
     testscores_mean = np.mean(testscores_stack, axis=1)
     trainscores_mean = np.mean(trainscores_stack, axis=1)
@@ -294,6 +298,7 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
     x = np.linspace(min(top_quantile_list), max(top_quantile_list), len(top_quantile_list))
     colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan', 'grey']
     linestyles = ['-', '--', '-.', ':']
+    assert (len(match_counts_list) == len(links_names))
     for i, data in enumerate(match_counts_list):
         ax.plot(top_quantile_list, data, label=links_names[i], color=colors[i], alpha=1, linewidth=2,
                 linestyle=linestyles[i],
@@ -319,7 +324,19 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
     #                 )
 
     return fig
-def nomalize(links):
+def create_random_links(links_assembly, n=1000):
+    #- TODO: create matrix (using protname)
+    links_assembly = [normalize_links(links) for links in links_assembly]
+    weights = [links['Weight'].values.tolist() for links in links_assembly]
+    weights = [i for j in weights for i in j] #flatten
+    random_links = links_assembly[0].copy()
+    weightpoolvector = []
+    for i in range(len(links_assembly[0])):
+        weightpoolvector.append(random.sample(weights, n))
+    random_links['WeightPool'] = weightpoolvector
+    random_links['Weight']= np.mean(weightpoolvector, axis=1)
+    return random_links
+def normalize_links(links):
     """
         Nornalize the links based on the std
     """

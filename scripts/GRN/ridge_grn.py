@@ -18,20 +18,19 @@ if __name__ == '__main__':
     #- params
     method='ridge'
     param = dict(estimator_t=method, alpha=1)
-    # estimated_decay_coeffs = utils.estimate_decay_rates([data_ctr, data_mg], [time, time])
 
     #- network inference
     test_size = 0
-    # _, param_unique_ctr = retreive_data(study='ctr', method=method, OUTPUT_DIR=OUTPUT_DIR)
-    # _, param_unique_mg = retreive_data(study='mg', method=method, OUTPUT_DIR=OUTPUT_DIR)
-    param_unique_ctr = None
-    param_unique_mg = None
+    _, param_unique_ctr = retreive_data(study='ctr', method=method, OUTPUT_DIR=OUTPUT_DIR)
+    _, param_unique_mg = retreive_data(study='mg', method=method, OUTPUT_DIR=OUTPUT_DIR)
+    # param_unique_ctr = None
+    # param_unique_mg = None
 
     _, trainscores_ctr, links_ctr, _, testscores_ctr = grn(data=data_ctr, gene_names=protnames, time_points=time_points(),
                                     test_size=test_size, param=param, param_unique=param_unique_ctr)
     _, trainscores_mg, links_mg, _, testscores_mg = grn(data=data_mg, gene_names=protnames, time_points=time_points(),
                                             test_size=test_size, param=param, param_unique=param_unique_mg)
-    print(np.mean(links_ctr['Weight']))
+    # print(np.mean(links_ctr['Weight']))
     #- write to files
     read_write_links(links=links_ctr, study='ctr', mode='write', method=method, output_dir=OUTPUT_DIR)
     read_write_links(links=links_mg, study='mg', mode='write', method=method, output_dir=OUTPUT_DIR)
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     fig.savefig(os.path.join(OUTPUT_DIR, 'GRN', method, 'trainscores.pdf'))
     #
     plt.show()
-    #- compare to string
+    #- compare to vs_string
     # def compare(links):
     #     # top_n = 100
     #     # links_short = utils.links.choose_top_count(links_ctr, n=top_n)

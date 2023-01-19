@@ -16,17 +16,17 @@ from enrichment_analysis import annotaion_map
 def main(DE_protnames: list) -> typing.Tuple[dict,dict,dict,dict]:
     #- mao protname to geneID
     map_protname_geneID = annotaion_map.protname_geneID(DE_protnames)
-    #- map protname to genename according to string: because it is different using the website
+    #- map protname to genename according to vs_string: because it is different using the website
     string_map = pd.read_csv(os.path.join(MAIN_DIR, 'results/enrichment_analysis/string_mapping.tsv'), sep='\t',
                              index_col=False)
     map_protname_genename = {key: value for key, value in zip(string_map['queryItem'], string_map['preferredName'])}
-    #- check if string imported all protnames successfully
+    #- check if vs_string imported all protnames successfully
     try:
         assert (len(map_protname_genename) == len(DE_protnames))
     except:
         for prot in DE_protnames:
             if prot not in string_map['queryItem'].values:
-                print(f'prot {prot} was not mapped in string')
+                print(f'prot {prot} was not mapped in vs_string')
     #- gene name to protname
     map_genename_protname = {value: key for value, key in
                              zip(map_protname_genename.values(), map_protname_genename.keys())}

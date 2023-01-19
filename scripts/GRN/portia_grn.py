@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # decay_coeffs = utils.estimate_decay_rates([data_ctr,data_mg], [time, time])
     links_ctr = GRN(data_ctr, 'ctr')
     links_mg = GRN(data_mg, 'mg')
-    #- compare to string
+    #- compare to vs_string
     # def compare(links):
     #     top_n = 150
     #     # links_short = utils.links.choose_top_count(links_ctr, n=top_n)
