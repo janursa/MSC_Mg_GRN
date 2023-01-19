@@ -4,12 +4,13 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
+from scripts import utils
 from imports import *
 
 specs = dict(
-    o_df_dir = os.path.join(MAIN_DIR,'data','original_omics.xlsx'),
-    df_dir = os.path.join(MAIN_DIR,'results/data','edited_data.csv'),
-    time = time,
+    o_df_dir = os.path.join(DATA_DIR,'original_omics.xlsx'),
+    df_dir = os.path.join(DATA_DIR,'edited_data.csv'),
+    time = time_points(),
     p_name = 'Entry',  # The column name in the original data to be used as protein name
     c_tag = 'ctr_',
     s_tag = 'mg_',

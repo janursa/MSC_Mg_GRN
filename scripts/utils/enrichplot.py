@@ -3,11 +3,13 @@
 """
 import sys
 import os
+import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-import utils
-from ._imports import *
+from imports import *
+from utils import comic_font
+
 def mscatter(x,y,ax=None, m=None, **kw):
     """ a custom plot built on scatter plot to enable multi marker visualization
     """
@@ -29,7 +31,7 @@ def mscatter(x,y,ax=None, m=None, **kw):
 def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True, 
         legend_size=True, legend_marker=True, title=''):
     #-----------define prop---------------
-    utils.comic_font()
+    comic_font()
 
     scale_scatter_size = 60
     

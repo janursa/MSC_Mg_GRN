@@ -3,12 +3,16 @@
 """
 import sys
 import os
+import matplotlib.pylab as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-import utils
 
-from ._imports import *
+from utils import serif_font
+from imports import *
+from geneRNI import search_param
+from geneRNI.data import Data
+
 def main(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i_start, i_end, test_size, **specs):
     """
         Interface to search function of geneRNI
@@ -82,7 +86,7 @@ def plot_bestparams_pool(data, priors, xticks_labels):
     return fig
 def plot_scores(data_ctr, data_sample, xlabel='', ylabel='OOB score'):
     """plots oob scores as a box plot for ctr and mg side by side"""
-    utils.serif_font()
+    serif_font()
     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
                              # gridspec_kw={'width_ratios': [2, 2]}
                              )
@@ -116,7 +120,7 @@ def plot_bestparams(data_ctr, data_sample, priors):
     """
         Plots boxplot for indivual param in seperate window.
     """
-    utils.serif_font()
+    serif_font()
     fig, axes = plt.subplots(1, 2, tight_layout=True, figsize=(7, 4))
     datas = [data_ctr, data_sample]
     titles = ['ctr', 'mg']

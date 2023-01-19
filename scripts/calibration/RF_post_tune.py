@@ -9,12 +9,13 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import *
+from utils import calibration
 
 if __name__ == '__main__':
     # replica_n=5
     # utils.calibration.pool_oo('ctr', 'RF', n=replica_n, OUTPUT_DIR=OUTPUT_DIR)
     # utils.calibration.pool_oo('mg', 'RF', n=replica_n, OUTPUT_DIR=OUTPUT_DIR)
 
-    utils.calibration.plot_oo('RF', param_grid_RF, protnames, OUTPUT_DIR)
+    calibration.plot_oo('RF', param_grid_RF, protnames, OUTPUT_DIR)
     # plt.show()
 

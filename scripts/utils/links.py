@@ -3,23 +3,30 @@
 """
 import sys
 import os
+import statistics
+import scipy
+import matplotlib.pyplot as plt
+import copy
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-import utils
+from imports import *
+from utils import create_check_dir, serif_font
 
-from ._imports import *
+from geneRNI.geneRNI import network_inference
+from geneRNI.data import Data
 
 def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
     """
         Runs network inference for a number of times
     """
     #- create/check dirs for method, study, (links and scores)
-    DIR_METHOD = utils.create_check_dir(output_dir, method)
-    DIR_STUDY = utils.create_check_dir(DIR_METHOD, study)
-    DIR_LINKS = utils.create_check_dir(DIR_STUDY, 'links')
-    DIR_TESTSCORES = utils.create_check_dir(DIR_STUDY, 'testscores')
-    DIR_TRAINSCORES = utils.create_check_dir(DIR_STUDY, 'trainscores')
+    DIR_METHOD = create_check_dir(output_dir, method)
+    DIR_STUDY = create_check_dir(DIR_METHOD, study)
+    DIR_LINKS = create_check_dir(DIR_STUDY, 'links')
+    DIR_TESTSCORES = create_check_dir(DIR_STUDY, 'testscores')
+    DIR_TRAINSCORES = create_check_dir(DIR_STUDY, 'trainscores')
     #- run iteration
     for i in range(i_start, i_end):
         print(f'----GRN for {study} iteration {i}-----')
@@ -41,7 +48,7 @@ def retreive_scores(study, method, output_dir):
     return trainscores, testscores
 def grn(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
-    return geneRNI.network_inference(dataset, gene_names=gene_names, **specs)
+    return network_inference(dataset, gene_names=gene_names, **specs)
 
 def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     '''
@@ -208,7 +215,7 @@ def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
     links_short = links.iloc[:n,:].reset_index(drop=True)
     return links_short
 def plot_mean_weights(links_s, labels, colors):
-    utils.serif_font()
+    serif_font()
     nrows = 1
     ncols = 3
     fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*3, nrows*2.5))
@@ -281,7 +288,7 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
     match_counts_sum = np.sum(match_counts_list, axis=1).astype(int) #final scores
     # add scores to the names
     links_names = [f'{name}: {score}' for name, score in zip(links_names,match_counts_sum)]
-    utils.serif_font()
+    serif_font()
     fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7, 3.5))
     # x_range = [min(xticks_labels), max(xticks_labels)]
     x = np.linspace(min(top_quantile_list), max(top_quantile_list), len(top_quantile_list))
@@ -402,7 +409,7 @@ def read_write_nodes_edges(nodes=None, edges=None, study='ctr', mode='read', OUT
         return nodes, edges
 # def plot_scores(data_ctr, data_sample, xlabel=''):
 #     """plots oob adn train scores as a box plot for ctr and mg side by side"""
-#     utils.serif_font()
+#     serif_font()
 #     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
 #                              # gridspec_kw={'width_ratios': [2, 2]}
 #                              )

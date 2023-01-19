@@ -4,12 +4,13 @@ We use KNN as the chosen imputation method.
 """
 import sys
 import os
+import typing
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import *
-from scripts.edit_data.edit import correct_entry
+from edit_data.edit import correct_entry
 
 def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> typing.Tuple[list,pd.DataFrame]:
     # load the imputed df

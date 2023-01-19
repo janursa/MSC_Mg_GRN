@@ -4,16 +4,40 @@ Created on Mon Jul 25 16:08:06 2022
 
 @author: nourisa
 """
-from ._imports import *
+import os
+import pathlib
+import sys
+
+import numpy as np
+import pandas as pd
+pd.options.mode.chained_assignment = None
+
+import typing
+import copy
+
+from sklearn import preprocessing
+from sklearn import inspection
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+# MAIN_DIR = os.path.join(pathlib.Path(__file__).parent.resolve(), '../..')
+# sys.path.insert(0, MAIN_DIR)
+#
+# -- import from geneRNI
+# geneRNI_dir = os.path.join(MAIN_DIR,'..','geneRNI')
+# sys.path.insert(0, geneRNI_dir)
+# from geneRNI import geneRNI, search_param
+# from geneRNI.data import Data
+# from geneRNI.models import get_estimator_wrapper
 # from . import links
-from utils import links
-from utils import calibration
-from utils import enrichplot
-from utils import sensitivity_analysis
-from utils import VSA
+# from utils import links
+# from utils import calibration
+# from utils import enrichplot
+# from utils import sensitivity_analysis
+# from utils import VSA
+#
 
-
-time = [1,2,3,4,7,8,9,10,11,14,21]
 
 
 def comic_font():
@@ -25,110 +49,110 @@ def serif_font():
     matplotlib.rc('text', usetex='false')
     matplotlib.rcParams.update({'font.size': 10})
 
-def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_name='Protein', time=time, ee=0.5, **kywrds):
-    """ plots ctr and sample in time series indicating the sig margin """
-    n_prots = len(prots)
-    if n_prots == 1:
-        n_cols = 1
-        n_rows = 1
-        fig = plt.figure(tight_layout=True, figsize=(5*n_prots,3))
-        axs = [[fig.add_subplot(1, 1, 1)]]
-    else:
-        n_cols = min([3,n_prots])
-        n_rows = 1+int((n_prots-n_cols)/3) + (1+n_prots-n_cols)%3
-
-        fig, axs = plt.subplots(n_rows, n_cols,  sharey=True, tight_layout=True, figsize=(4*n_cols,2*n_rows+2))
-    
-    linewidth = 2
-    ctrs = [c_tag + str(ii) for ii in time]
-    samples = [s_tag + str(ii) for ii in time]
-    def plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d):
-        ax.plot(time, ctrs_data, '-o', linewidth=linewidth, color ='b', label ='Ctr')
-        ax.plot(time, samples_data, '-x', linewidth=linewidth, color ='g', label ='Mg')
-        ax.plot(time, ee_u, color = 'r',linewidth=linewidth-1, linestyle = '--', label = '0.5 error bounds')
-        ax.plot(time, ee_d, linewidth=linewidth-1, linestyle = '--', color = 'r')
-        ax.set_xticks(time)
-        ax.set_title(prot)
-        ax.set_xlabel('Days')
-        ax.set_ylabel('Intensity (log2)')
-
-    count = 0
-
-    for i in range(n_rows):
-        for j in range(n_cols):
-            try:
-                prot = prots[count]
-            except:
-                return
-            df_tag = df.loc[df[p_name] == prot]
-            try:
-                
-                ctrs_data = df_tag[ctrs].iloc[0,:].to_list()
-            except:
-                print(f'check if {prot} exist in df')
-                raise ValueError()
-            ee_u = [ii + ee for ii in ctrs_data]
-            ee_d = [ii - ee for ii in ctrs_data]
-            samples_data = df_tag[samples].iloc[0,:].to_list()
-            # print(ctrs_data)
-            # print(samples_data)
-            plot_single(axs[i][j], prot, ctrs_data, samples_data, ee_u, ee_d)
-            if count == 0:
-                axs[i][j].legend(loc='best', bbox_to_anchor=(1.1, 1.7),  ncol=3)
-            count+=1
-            if count == len(prots):
-                break
+# def plot_time_series(df, prots, c_tag='ctr_', s_tag='mg_', p_name='Protein', time=time, ee=0.5, **kywrds):
+#     """ plots ctr and sample in time series indicating the sig margin """
+#     n_prots = len(prots)
+#     if n_prots == 1:
+#         n_cols = 1
+#         n_rows = 1
+#         fig = plt.figure(tight_layout=True, figsize=(5*n_prots,3))
+#         axs = [[fig.add_subplot(1, 1, 1)]]
+#     else:
+#         n_cols = min([3,n_prots])
+#         n_rows = 1+int((n_prots-n_cols)/3) + (1+n_prots-n_cols)%3
+#
+#         fig, axs = plt.subplots(n_rows, n_cols,  sharey=True, tight_layout=True, figsize=(4*n_cols,2*n_rows+2))
+#
+#     linewidth = 2
+#     ctrs = [c_tag + str(ii) for ii in time]
+#     samples = [s_tag + str(ii) for ii in time]
+#     def plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d):
+#         ax.plot(time, ctrs_data, '-o', linewidth=linewidth, color ='b', label ='Ctr')
+#         ax.plot(time, samples_data, '-x', linewidth=linewidth, color ='g', label ='Mg')
+#         ax.plot(time, ee_u, color = 'r',linewidth=linewidth-1, linestyle = '--', label = '0.5 error bounds')
+#         ax.plot(time, ee_d, linewidth=linewidth-1, linestyle = '--', color = 'r')
+#         ax.set_xticks(time)
+#         ax.set_title(prot)
+#         ax.set_xlabel('Days')
+#         ax.set_ylabel('Intensity (log2)')
+#
+#     count = 0
+#
+#     for i in range(n_rows):
+#         for j in range(n_cols):
+#             try:
+#                 prot = prots[count]
+#             except:
+#                 return
+#             df_tag = df.loc[df[p_name] == prot]
+#             try:
+#
+#                 ctrs_data = df_tag[ctrs].iloc[0,:].to_list()
+#             except:
+#                 print(f'check if {prot} exist in df')
+#                 raise ValueError()
+#             ee_u = [ii + ee for ii in ctrs_data]
+#             ee_d = [ii - ee for ii in ctrs_data]
+#             samples_data = df_tag[samples].iloc[0,:].to_list()
+#             # print(ctrs_data)
+#             # print(samples_data)
+#             plot_single(axs[i][j], prot, ctrs_data, samples_data, ee_u, ee_d)
+#             if count == 0:
+#                 axs[i][j].legend(loc='best', bbox_to_anchor=(1.1, 1.7),  ncol=3)
+#             count+=1
+#             if count == len(prots):
+#                 break
             
-def plot_time_series_mutual(df1, df2, prots, c_tag='ctr_', s_tag='mg_', p_name='Entry', time=time, ee=0.5, **kywrds):
-    """ plots ctr and sample in time series indicating the sig margin """
-    n_prots = len(prots)
-
-    n_cols = 2
-    n_rows = len(prots)
-
-    fig, axs = plt.subplots(n_rows, n_cols,  sharey=True, tight_layout=True, figsize=(8,2*n_rows+2))
-    
-    linewidth = 2
-    ctrs = [c_tag + str(ii) for ii in time]
-    samples = [s_tag + str(ii) for ii in time]
-    def plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d):
-        ax.plot(time, ctrs_data, '-o', linewidth=linewidth, color ='b', label ='Ctr')
-        ax.plot(time, samples_data, '-x', linewidth=linewidth, color ='g', label ='Mg')
-        ax.plot(time, ee_u, color = 'r',linewidth=linewidth-1, linestyle = '--', label = '0.5 error bounds')
-        ax.plot(time, ee_d, linewidth=linewidth-1, linestyle = '--', color = 'r')
-        ax.set_xticks(time)
-        ax.set_title(prot)
-        ax.set_xlabel('Days')
-        ax.set_ylabel('Intensity (log2)')
-    def func(df_tag, ax): #auxillary function
-        try:
-            ctrs_data = df_tag[ctrs].iloc[0,:].to_list()
-        except:
-            print(f'check if {prot} exist in df')
-            raise ValueError()
-        ee_u = [ii + ee for ii in ctrs_data]
-        ee_d = [ii - ee for ii in ctrs_data]
-        samples_data = df_tag[samples].iloc[0,:].to_list()
-
-        plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d)
-
-    count = 0
-
-    for i in range(n_rows):
-        
-        try:
-            prot = prots[count]
-        except:
-            return
-        
-        func(df1.loc[df1[p_name] == prot],axs[i][0])
-        func(df2.loc[df2[p_name] == prot],axs[i][1])
-
-        if count == 0:
-            axs[i][0].legend(loc='best', bbox_to_anchor=(1.1, 1.7),  ncol=3)
-        count+=1
-        if count == len(prots):
-            break
+# def plot_time_series_mutual(df1, df2, prots, c_tag='ctr_', s_tag='mg_', p_name='Entry', time=time, ee=0.5, **kywrds):
+#     """ plots ctr and sample in time series indicating the sig margin """
+#     n_prots = len(prots)
+#
+#     n_cols = 2
+#     n_rows = len(prots)
+#
+#     fig, axs = plt.subplots(n_rows, n_cols,  sharey=True, tight_layout=True, figsize=(8,2*n_rows+2))
+#
+#     linewidth = 2
+#     ctrs = [c_tag + str(ii) for ii in time]
+#     samples = [s_tag + str(ii) for ii in time]
+#     def plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d):
+#         ax.plot(time, ctrs_data, '-o', linewidth=linewidth, color ='b', label ='Ctr')
+#         ax.plot(time, samples_data, '-x', linewidth=linewidth, color ='g', label ='Mg')
+#         ax.plot(time, ee_u, color = 'r',linewidth=linewidth-1, linestyle = '--', label = '0.5 error bounds')
+#         ax.plot(time, ee_d, linewidth=linewidth-1, linestyle = '--', color = 'r')
+#         ax.set_xticks(time)
+#         ax.set_title(prot)
+#         ax.set_xlabel('Days')
+#         ax.set_ylabel('Intensity (log2)')
+#     def func(df_tag, ax): #auxillary function
+#         try:
+#             ctrs_data = df_tag[ctrs].iloc[0,:].to_list()
+#         except:
+#             print(f'check if {prot} exist in df')
+#             raise ValueError()
+#         ee_u = [ii + ee for ii in ctrs_data]
+#         ee_d = [ii - ee for ii in ctrs_data]
+#         samples_data = df_tag[samples].iloc[0,:].to_list()
+#
+#         plot_single(ax, prot, ctrs_data, samples_data, ee_u, ee_d)
+#
+#     count = 0
+#
+#     for i in range(n_rows):
+#
+#         try:
+#             prot = prots[count]
+#         except:
+#             return
+#
+#         func(df1.loc[df1[p_name] == prot],axs[i][0])
+#         func(df2.loc[df2[p_name] == prot],axs[i][1])
+#
+#         if count == 0:
+#             axs[i][0].legend(loc='best', bbox_to_anchor=(1.1, 1.7),  ncol=3)
+#         count+=1
+#         if count == len(prots):
+#             break
 
 def listwise_deletion(df): 
     """ removes rows with a single zero """
@@ -215,20 +239,20 @@ def create_check_dir(master_dir, name):
         if os.listdir(DIR):
             print(f'{name} directory is not empty')
     return DIR
-def process_data(df_target, study='ctr', standardize=False) -> np.array :
+def process_data(df_target, study, time_points, standardize=False) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
     '''
     assert(study in ['ctr','mg','combined'])
     # extract ctr and mg data
     if study=='ctr' or study=='mg':
-        df = df_target.loc[:,[study+'_'+str(day) for day in time]].T
+        df = df_target.loc[:,[study+'_'+str(day) for day in time_points]].T
     elif study=='combined':
-        df_ctr = df_target.loc[:,['ctr_'+str(day) for day in time]].T
-        df_mg = df_target.loc[:,['mg_'+str(day) for day in time]].T
+        df_ctr = df_target.loc[:,['ctr_'+str(day) for day in time_points]].T
+        df_mg = df_target.loc[:,['mg_'+str(day) for day in time_points]].T
         # add mg as a regulatory factor with 0 for ctr and 1 for mg
-        df_ctr['mg'] = np.zeros(len(time))
-        df_mg['mg'] = np.ones(len(time))
+        df_ctr['mg'] = np.zeros(len(time_points))
+        df_mg['mg'] = np.ones(len(time_points))
 
         df = pd.concat([df_ctr, df_mg], axis=0)
         protnames.append('mg') #TODO: needs evaluation
