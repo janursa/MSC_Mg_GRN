@@ -366,3 +366,9 @@ def make_html(fontname):
 code = "\n".join([make_html(font) for font in sorted(set([f.name for f in matplotlib.font_manager.fontManager.ttflist]))])
 
 # HTML("<div style='column-count: 2;'>{}</div>".format(code))
+
+# def add_score_to_links(links, scores, protnames):
+#     links['FitScore'] = None
+#     for target, score in zip(protnames, scores):
+#         links.loc[links['Target'] == target, 'FitScore'] = score
+#     return links

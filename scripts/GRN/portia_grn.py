@@ -5,7 +5,7 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import time_points, protnames, OUTPUT_DIR, MAIN_DIR, df_target
+from imports import time_points, protnames, OUTPUT_DIR, MAIN_DIR, df_target, GRN_DIR
 from utils import process_data
 from utils.links import read_write_links
 
@@ -17,7 +17,7 @@ def GRN(data, study):
     dataset = data_process(data, time_points())
     M_bar = pt.run(dataset, method='fast')
     links_df = format_links(M_bar, protnames)
-    read_write_links(links=links_df, study=study, mode='write',method='portia', output_dir=OUTPUT_DIR)
+    read_write_links(links=links_df, study=study, mode='write',method='portia', output_dir=GRN_DIR)
     return links_df
 
 def data_process(data, time_points):

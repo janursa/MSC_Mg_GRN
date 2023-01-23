@@ -38,7 +38,22 @@ import matplotlib.pyplot as plt
 # from utils import VSA
 #
 
-
+def MG_noise_F(links, n_relica=100, std=.15) -> typing.Tuple[pd.DataFrame]:
+    """ Multiplicitive noise
+         Creates n_relica noised links
+    """
+    noised_link = links.copy()
+    noised_links = [noised_link.assign(Weight= noised_link['Weight']*np.random.normal(loc=1, scale=std, size=len(links)))
+                                       for i in range(n_relica)]
+    return noised_links
+def AG_noise_F(links, n_relica=100, std=.1)-> typing.Tuple[pd.DataFrame]:
+    """ Additive noise
+             Creates n_relica noised links
+    """
+    noised_link = links.copy()
+    noised_links = [noised_link.assign(Weight= noised_link['Weight']+np.random.normal(loc=1, scale=std, size=len(links)))
+                                       for i in range(n_relica)]
+    return noised_links
 
 def comic_font():
     matplotlib.rc('font', family='Comic Sans MS')

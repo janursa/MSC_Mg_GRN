@@ -81,14 +81,14 @@ def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     n= links['inString'].values.tolist().count(True)
     
     return n
-def read_write_links(method, study, mode:str, links:pd.DataFrame=None, output_dir='') -> pd.DataFrame:
+def read_write_links(method, study, mode:str, linkse=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
     '''
     assert(study in ['ctr','mg','combined','random'])
     assert(mode in ['read', 'write'])
     #- determine file location
-    DIR = os.path.join(output_dir, 'GRN', method)
+    DIR = os.path.join(output_dir, method)
     FILE = os.path.join(DIR, f'links_{study}.csv')
 
     if mode=='read':
@@ -253,6 +253,7 @@ def plot_mean_weights(links_s, labels, colors):
 #         ax.set_xmargin(.1)
         # ax.set_xlim([-.5,8])
         ax.set_title(labels[idx])
+    return fig
 def plot_match_counts(datas, labels, sig_signs):
     matplotlib.rcParams.update({'font.size': 12})
 

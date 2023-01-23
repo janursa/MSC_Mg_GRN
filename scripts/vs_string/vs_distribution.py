@@ -62,9 +62,9 @@ def obtain_links(n_repeat):
     # - retreive links for different method
     links_rf = pd.read_pickle(os.path.join(GRN_DIR, 'RF', 'links_pool_ctr.csv'))
     # -- ridge
-    links_ridge = read_write_links(study='ctr', method='ridge', mode='read', output_dir=OUTPUT_DIR)
+    links_ridge = read_write_links(study='ctr', method='ridge', mode='read', output_dir=GRN_DIR)
     # -- portia
-    links_portia = read_write_links(study='ctr', method='portia', mode='read', output_dir=OUTPUT_DIR)
+    links_portia = read_write_links(study='ctr', method='portia', mode='read', output_dir=GRN_DIR)
     # - create random links: run only once and then retreive it
     links_random = create_random_links([links_rf, links_ridge, links_portia], n=n_repeat)
     return links_rf, links_ridge, links_portia, links_random
