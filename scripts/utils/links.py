@@ -18,8 +18,9 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import *
 from utils import create_check_dir, serif_font
 
-from geneRNI.geneRNI import network_inference
+from geneRNI.core import network_inference
 from geneRNI.data import Data
+
 
 def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
     """
@@ -42,7 +43,8 @@ def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
         np.savetxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'), train_scores)
         links_df.to_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index=False)
 
-def retreive_scores(study, method, output_dir):
+
+def retrieve_scores(study, method, output_dir):
     """
         Retreiev train and test scores
     """
@@ -50,9 +52,12 @@ def retreive_scores(study, method, output_dir):
     trainscores = np.genfromtxt(os.path.join(output_dir, 'GRN', method, f'trainscores_{study}.csv'))
 
     return trainscores, testscores
+
+
 def grn(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)
+
 
 def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     '''
@@ -82,20 +87,22 @@ def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     n= links['inString'].values.tolist().count(True)
     
     return n
-def read_write_links(method, study, mode:str, linkse=None, output_dir='') -> pd.DataFrame:
+
+
+def read_write_links(method, study, mode: str, links=None, output_dir: str='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
     '''
-    assert(study in ['ctr','mg','combined','random'])
-    assert(mode in ['read', 'write'])
+    assert(study in {'ctr', 'mg', 'combined', 'random'})
+    assert(mode in {'read', 'write'})
     #- determine file location
     DIR = os.path.join(output_dir, method)
     FILE = os.path.join(DIR, f'links_{study}.csv')
 
-    if mode=='read':
+    if mode == 'read':
         return pd.read_csv(FILE, index_col=False)
     else:
-        assert(links is not None)
+        assert links is not None
         links.to_csv(FILE, index=False)
 
 
@@ -120,10 +127,12 @@ def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     #- create average links df
     ws_mean = np.mean(ws_pool, axis=1)
     links = pd.DataFrame()
-    links.loc[:,['Regulator','Target']] = links_list[0].loc[:,['Regulator','Target']]
+    links.loc[:, ['Regulator', 'Target']] = links_list[0].loc[:, ['Regulator', 'Target']]
     links['Weight'] = ws_mean
     links['WeightPool'] = list(ws_pool)
     return links
+
+
 def pool_GRN_oo(method, study, replica_n, output_dir):
     """ pools iteration results such links and scores
     """
@@ -164,13 +173,16 @@ def pool_GRN_oo(method, study, replica_n, output_dir):
     write_scores(method=method, study=study, trainscores=trainscores_mean,
                  testscores=testscores_mean, output_dir=DIR_METHOD)
 
+
 def write_scores(method, study, trainscores, testscores , output_dir):
     """
     Write train test scores to files
     """
     np.savetxt(os.path.join(output_dir, f'testscores_{study}.csv'), testscores)
     np.savetxt(os.path.join(output_dir, f'trainscores_{study}.csv'), trainscores)
-def filter_ttest(links) ->pd.DataFrame:
+
+
+def filter_ttest(links) -> pd.DataFrame:
     '''
         Conducts t test and select those significanly different than 0
     '''
@@ -180,7 +192,7 @@ def filter_ttest(links) ->pd.DataFrame:
         m = len(vector)
         std = np.std(vector)
         t_value = mode/(std/np.sqrt(m))
-        p_value = scipy.stats.t.ppf(q=1-.05,df=m-1)
+        p_value = scipy.stats.t.ppf(q=1-.05, df=m-1)
         return t_value, p_value
     # tvalue = np.array([t_test(item)[0] for item in links['WeightPool']])
     # pvalue = np.array([t_test(item)[1] for item in links['WeightPool']])
@@ -194,23 +206,29 @@ def filter_ttest(links) ->pd.DataFrame:
     links = links.loc[pvalue<0.05,:]
     print(f'number of links after ttest {len(links)}')
     return links
+
+
 def filter_fitscore(links) -> pd.DataFrame:
     '''
         Filters the given df based on the fitscore
     '''
     #- keep those with FitScore over 0
-    links = links.loc[links['FitScore']>0,:].reset_index(drop=True)
+    links = links.loc[links['FitScore'] > 0, :].reset_index(drop=True)
     # print(f'number of links after fitscore {len(links)}')
     return links
+
+
 def choose_top_quantile(links: pd.DataFrame, quantile=0.75)->pd.DataFrame:
     '''
         Filters the given df based on the top quantile
     ''' 
     # links.reset_index(inplace=True, drop=True)
     # links.sort_values('Weight',ascending=True,inplace=True)
-    cut_off = np.quantile(links['Weight'].values.tolist(),q=quantile)
-    links_short = links.loc[links['Weight']>=cut_off,:].reset_index(drop=True)
+    cut_off = np.quantile(links['Weight'].values.tolist(), q=quantile)
+    links_short = links.loc[links['Weight'] >= cut_off, :].reset_index(drop=True)
     return links_short
+
+
 def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
     '''
         Filters the given df based on the top count
@@ -219,6 +237,8 @@ def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
     links.sort_values('Weight',ascending=False,inplace=True)
     links_short = links.iloc[:n,:].reset_index(drop=True)
     return links_short
+
+
 def plot_mean_weights(links_s, labels, colors):
     serif_font()
     nrows = 1
@@ -239,7 +259,7 @@ def plot_mean_weights(links_s, labels, colors):
                             # density = True
                            )
         handles = []
-        tags = ['ctr','mg']
+        tags = ['ctr', 'mg']
         for i, color in enumerate(colors):
             handles.append(ax.scatter([],[],marker='o', label=tags[i],
              edgecolor='black', color=color, linewidth=.2))
@@ -255,6 +275,8 @@ def plot_mean_weights(links_s, labels, colors):
         # ax.set_xlim([-.5,8])
         ax.set_title(labels[idx])
     return fig
+
+
 def plot_match_counts(datas, labels, sig_signs):
     matplotlib.rcParams.update({'font.size': 12})
 
@@ -326,6 +348,8 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
     #                 )
 
     return fig
+
+
 def create_random_links(links_assembly, n=1000):
     #- TODO: create matrix (using protname)
     links_assembly = [normalize_links(links) for links in links_assembly]
@@ -336,8 +360,10 @@ def create_random_links(links_assembly, n=1000):
     for i in range(len(links_assembly[0])):
         weightpoolvector.append(random.sample(weights, n))
     random_links['WeightPool'] = weightpoolvector
-    random_links['Weight']= np.mean(weightpoolvector, axis=1)
+    random_links['Weight'] = np.mean(weightpoolvector, axis=1)
     return random_links
+
+
 def normalize_links(links):
     """
         Nornalize the links based on the std
@@ -345,6 +371,7 @@ def normalize_links(links):
     links_n = links.copy()
     links_n.loc[:,'Weight'] = links['Weight']/np.std(links['Weight'])
     return links_n
+
 
 def convert_links_to_nodes_edges(links, protnames, scores):
     '''
@@ -355,6 +382,7 @@ def convert_links_to_nodes_edges(links, protnames, scores):
     sum_ws = [sum(links.loc[links['Regulator']==gene,:]['Weight']) for gene in protnames]
     nodes = pd.DataFrame(data={'Entry':protnames,'SumWeight':sum_ws, 'FitScore': scores})
     return nodes, edges
+
 
 def visualize_network(nodes, edges, study, protnames, preferred_names=None, OUTPUT_DIR=''):
     import igraph as ig
@@ -409,7 +437,6 @@ def visualize_network(nodes, edges, study, protnames, preferred_names=None, OUTP
     fig.savefig(os.path.join(DIR,f'GRN_{study}.png'), dpi=300, transparent=True)
 
 
-    
 def read_write_nodes_edges(nodes=None, edges=None, study='ctr', mode='read', OUTPUT_DIR=''):
     '''
         Manages links for network visualization (nodes and edges)

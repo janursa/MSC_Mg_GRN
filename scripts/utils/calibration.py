@@ -13,6 +13,7 @@ from imports import *
 from geneRNI import search_param
 from geneRNI.data import Data
 
+
 def main(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i_start, i_end, test_size, **specs):
     """
         Interface to search function of geneRNI
@@ -30,6 +31,7 @@ def main(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i
     #- save
     np.save(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_scores_{study}.npy'), best_scores)
     np.save(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'), best_params)
+
 
 def plot_scores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels):
     """plots scores as a box plot for a set"""
@@ -54,10 +56,9 @@ def plot_scores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels)
             patch.set_facecolor('lightgreen')
             patch.set_edgecolor('black')
             patch.set_alpha(1)
-
-
-
     return fig
+
+
 def plot_bestparams_pool(data, priors, xticks_labels):
     """
         Plots boxplot for indivual param in seperate window. In each window, the variation in
@@ -84,6 +85,8 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
+
+
 def plot_scores(data_ctr, data_sample, xlabel='', ylabel='OOB score'):
     """plots oob scores as a box plot for ctr and mg side by side"""
     serif_font()
@@ -116,6 +119,8 @@ def plot_scores(data_ctr, data_sample, xlabel='', ylabel='OOB score'):
     #     bplot[tag].set_color(colors)
     #     bplot[tag].set_decay_coeff(.5)
     return fig
+
+
 def plot_bestparams(data_ctr, data_sample, priors):
     """
         Plots boxplot for indivual param in seperate window.
@@ -144,21 +149,25 @@ def plot_bestparams(data_ctr, data_sample, priors):
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
     return fig
-def retreive_data(study, method, OUTPUT_DIR):
+
+
+def retrieve_data(study, method, OUTPUT_DIR):
     """
         Reads results of pooling
     """
     best_scores = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_scores_{study}.npy'))
-    best_params = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'),allow_pickle=True)
+    best_params = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'), allow_pickle=True)
     return best_scores, best_params
+
+
 def plot_oo(method, priors, protnames, OUTPUT_DIR):
     """
      Plots a series of graphs for best params and best scores (individual protein and combined)
     """
     dir = os.path.join(OUTPUT_DIR, 'calibration', method)
-    best_scores_ctr, best_params_ctr = retreive_data(
+    best_scores_ctr, best_params_ctr = retrieve_data(
         'ctr', method=method, OUTPUT_DIR=OUTPUT_DIR)
-    best_scores_mg, best_params_mg = retreive_data(
+    best_scores_mg, best_params_mg = retrieve_data(
         'mg', method=method, OUTPUT_DIR=OUTPUT_DIR)
     # - pool score
     # fig = plot_scores_pool(scores_pool_ctr, scores_pool_mg, protnames)
