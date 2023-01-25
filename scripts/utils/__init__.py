@@ -246,6 +246,7 @@ def plot_hist(xs, names, **specs):
     for (x, name, ax) in zip(xs, names, axs):
         plot_host_single(ax, x, name, **specs)
 
+
 def create_check_dir(master_dir, name):
     DIR = os.path.join(master_dir, name)
     if not os.path.isdir(DIR):
@@ -254,26 +255,28 @@ def create_check_dir(master_dir, name):
         if os.listdir(DIR):
             print(f'{name} directory is not empty')
     return DIR
+
+
 def process_data(df_target, study, time_points, standardize=False) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
     '''
-    assert(study in ['ctr','mg','combined'])
+    assert(study in ['ctr', 'mg', 'combined'])
     # extract ctr and mg data
-    if study=='ctr' or study=='mg':
-        df = df_target.loc[:,[study+'_'+str(day) for day in time_points]].T
-    elif study=='combined':
-        df_ctr = df_target.loc[:,['ctr_'+str(day) for day in time_points]].T
-        df_mg = df_target.loc[:,['mg_'+str(day) for day in time_points]].T
+    if study == 'ctr' or study == 'mg':
+        df = df_target.loc[:, [study+'_'+str(day) for day in time_points]].T
+    elif study == 'combined':
+        df_ctr = df_target.loc[:, ['ctr_'+str(day) for day in time_points]].T
+        df_mg = df_target.loc[:, ['mg_'+str(day) for day in time_points]].T
         # add mg as a regulatory factor with 0 for ctr and 1 for mg
         df_ctr['mg'] = np.zeros(len(time_points))
         df_mg['mg'] = np.ones(len(time_points))
 
         df = pd.concat([df_ctr, df_mg], axis=0)
-        protnames.append('mg') #TODO: needs evaluation
+        # protnames.append('mg') #TODO: needs evaluation
 
     if standardize:
-        df.iloc[:,:] = preprocessing.scale(df.iloc[:,:])
+        df.iloc[:, :] = preprocessing.scale(df.iloc[:, :])
 
     return df.values
 
