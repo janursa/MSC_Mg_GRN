@@ -13,7 +13,7 @@ from imports import *
 from geneRNI import search_param
 from geneRNI.data import Data
 
-def main(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i_start, i_end, test_size, **specs):
+def calibrate(study, method, data, gene_names, time_points, param_grid, OUTPUT_DIR, i_start, i_end, test_size, **specs):
     """
         Interface to search function of geneRNI
     """
@@ -84,7 +84,7 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
-def plot_scores(data_ctr, data_sample, xlabel='', ylabel='OOB score'):
+def plot_scores(data_ctr, data_sample, ylabel, xlabel=''):
     """plots oob scores as a box plot for ctr and mg side by side"""
     serif_font()
     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
@@ -151,7 +151,7 @@ def retreive_data(study, method, OUTPUT_DIR):
     best_scores = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_scores_{study}.npy'))
     best_params = np.load(os.path.join(OUTPUT_DIR, 'calibration', method, f'best_params_{study}.npy'),allow_pickle=True)
     return best_scores, best_params
-def plot_oo(method, priors, protnames, OUTPUT_DIR):
+def plot_oo(method, priors, protnames, OUTPUT_DIR, ylabel='OOB score'):
     """
      Plots a series of graphs for best params and best scores (individual protein and combined)
     """
@@ -173,7 +173,7 @@ def plot_oo(method, priors, protnames, OUTPUT_DIR):
     # fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
 
     #- best score mean
-    fig = plot_scores(best_scores_ctr, best_scores_mg)
+    fig = plot_scores(best_scores_ctr, best_scores_mg, ylabel=ylabel)
     fig.savefig(os.path.join(dir, 'besttrainscores.png'), dpi=300, transparent=True, facecolor='white')
     # # - best param
     # fig = plot_bestparams(best_params_ctr, best_params_mg, priors=priors)

@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import *
 from utils import create_check_dir, serif_font
 
-from geneRNI.geneRNI import network_inference
+from geneRNI.core import network_inference
 from geneRNI.data import Data
 
 def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
@@ -82,7 +82,7 @@ def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
     n= links['inString'].values.tolist().count(True)
     
     return n
-def read_write_links(method, study, mode:str, linkse=None, output_dir='') -> pd.DataFrame:
+def read_write_links(method, study, mode:str, links=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
     '''

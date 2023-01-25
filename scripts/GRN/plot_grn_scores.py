@@ -28,5 +28,5 @@ def main(method):
     fig.savefig(os.path.join(OUTPUT_DIR, 'GRN', method, 'trainscores.pdf'))
 
 if __name__ == '__main__':
-    main(method='RF')
+    # main(method='RF')
     main(method='ridge')

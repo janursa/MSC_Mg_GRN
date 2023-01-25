@@ -38,5 +38,5 @@ if __name__ == '__main__':
         n_jobs=10,
     )
 
-    calibration.main(study='ctr', data=data_ctr, **specs)
-    # calibration.main(study='mg', data=data_mg, **specs)
+    calibration.calibrate(study='ctr', data=data_ctr, **specs)
+    # calibration.calibrate(study='mg', data=data_mg, **specs)

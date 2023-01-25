@@ -22,10 +22,10 @@ if __name__ == '__main__':
     test_size = 0
     cv=5
     #- define settings and calibration
-    param = dict(estimator_t = method, alpha=100000000000)
+    param = dict(estimator_t = method)
     specs = dict(
         i_start=0,
-        i_end=5,
+        i_end=1,
         param=param,
         gene_names=protnames,
         time_points=time_points(),
@@ -36,7 +36,8 @@ if __name__ == '__main__':
         OUTPUT_DIR=OUTPUT_DIR,
         random_state=0,
         n_jobs=1,
+        loo=True, #leave one out
     )
 
-    calibration.main(study='ctr', data=data_ctr, **specs)
-    # utils.calibration.main(study='mg', data=data_mg, **specs)
+    calibration.calibrate(study='ctr', data=data_ctr, **specs)
+    calibration.calibrate(study='mg', data=data_mg, **specs)

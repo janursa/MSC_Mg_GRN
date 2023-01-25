@@ -17,14 +17,12 @@ if __name__ == '__main__':
     print('Data shape:', np.array(data_ctr).shape, '(n_samples_time_series*n_genes)')
     #- params
     method='ridge'
-    param = dict(estimator_t=method, alpha=1)
+    param = dict(estimator_t=method)
 
     #- network inference
     test_size = 0
     _, param_unique_ctr = retreive_data(study='ctr', method=method, OUTPUT_DIR=OUTPUT_DIR)
     _, param_unique_mg = retreive_data(study='mg', method=method, OUTPUT_DIR=OUTPUT_DIR)
-    # param_unique_ctr = None
-    # param_unique_mg = None
 
     _, trainscores_ctr, links_ctr, _, testscores_ctr = grn(data=data_ctr, gene_names=protnames, time_points=time_points(),
                                     test_size=test_size, param=param, param_unique=param_unique_ctr)
