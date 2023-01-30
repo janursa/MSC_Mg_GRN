@@ -21,13 +21,17 @@ if __name__ == '__main__':
     if not os.path.isdir(os.path.join(GRN_DIR, method)):
         os.makedirs(os.path.join(GRN_DIR, method))
     test_size = 0
-    for study in ['ctr', 'mg']:
+    for study in ['ctr', 'mg', 'combined']:
+        if study == 'combined':
+            gene_names = protnames()+['mg']
+        else:
+            gene_names = protnames()
         # - read the data
         data = process_data(df_target(), study=study, time_points=time_points(), standardize=False)
         print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
         #- read results of calibration
         _, param_unique = retrieve_data(study=study, method=method, output_dir=CALIBRATION_DIR)
-        _, trainscores, links, _, testscores = grn(data=data, gene_names=protnames(), time_points=time_points(),
+        _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=time_points(),
                                         test_size=test_size, param=param, param_unique=param_unique)
         #- write to file
         read_write_links(links=links, study=study, mode='write', method=method, output_dir=GRN_DIR)

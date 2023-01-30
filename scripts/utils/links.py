@@ -11,6 +11,7 @@ import copy
 import numpy as np
 import random
 import pandas as pd
+import json
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,34 +55,68 @@ def grn(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)
 
-def compare_network_string(links, OUTPUT_DIR, verbose=True) -> int:
+def compare_network_string(links_, top_quantile, enrich_output_dir, verbose=False) -> int:
     '''
         Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
     '''
-
-    STR_LINKS_FILE = os.path.join(OUTPUT_DIR,'enrichment_analysis','string_interactions.tsv')
+    links_short = choose_top_quantile(links_, quantile=top_quantile)
+    STR_LINKS_FILE = os.path.join(enrich_output_dir, 'string_interactions.tsv')
     links_string = pd.read_csv(STR_LINKS_FILE,sep='\t',index_col=False)
     links_string = links_string.rename(columns={'#node1':'Regulator','node2':'Target','combined_score':'Weight'})
     links_string = links_string.loc[:,['Regulator','Target','Weight']]  
     if verbose:
         print(f'Number of vs_string links: {len(links_string)}')
-        print(f'Number of extracted links: {len(links)}')
-    if len(links_string)>len(links):
+        print(f'Number of extracted links: {len(links_short)}')
+    if len(links_string)>len(links_short):
         raise ValueError('Extracted links cannot be lesser than golden links')
 
-    with open(os.path.join(OUTPUT_DIR, 'postprocess/map_genename_protname.json')) as f:
+    with open(os.path.join(enrich_output_dir, 'map_genename_protname.json')) as f:
         map_genename_protname = json.load(f)['map']
     #- convert genenames to protnames in vs_string
     links_string.loc[:,'Regulator'] = [map_genename_protname[name] for name in links_string['Regulator']]
     links_string.loc[:,'Target'] = [map_genename_protname[name] for name in links_string['Target']]
     #- find vs_string links in the extracted links, label them and add stringweight
-    links['inString'] = False
+    links_short['inString'] = False
     for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
-        links.loc[(links['Regulator']==reg) & (links['Target']==target),'inString'] = True 
-        links.loc[(links['Regulator']==reg) & (links['Target']==target),'StringWeight'] = weight
-    n= links['inString'].values.tolist().count(True)
+        links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'inString'] = True
+        links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'StringWeight'] = weight
+    n= links_short['inString'].values.tolist().count(True)
     
     return n
+def compare_network_string_batch(links, top_quantile, enrich_output_dir):
+    """
+    Compare the given links to vs_string for each weight set in weightpool
+    """
+    match_counts = []
+    weightpool = np.array(links['WeightPool'].values.tolist()).T
+    for weight in weightpool:
+        links['Weight'] = weight
+        match_count = compare_network_string(links, top_quantile, enrich_output_dir=enrich_output_dir)
+        match_counts.append(match_count)
+    return np.array(match_counts)
+def determine_sig_signes(datas):
+    """ to test sig distribtion from noise links
+    Conducts t test to determine whether datas[1:] are significantly different than datas[0], which is ctr
+    Datas: Tuple(DataFrame), e.g. [ctr, RF, Ridge, Portia]
+    """
+    ctr = datas[0] #random
+    #- determine p values: compared to ctr
+    pvalues = np.array([])
+    for data in datas[1:]:
+        s, p = scipy.stats.ttest_ind(data, ctr)
+        pvalues = np.append(pvalues, p)
+    #- determine whether mean distribution is higher than ctr: we only plot higher ones
+    increase_flags = np.array((np.mean(datas[1:], axis=1) - np.mean(ctr))>0)
+    #- use p values with value flags
+    def define_sign(p):
+        if p:
+            sign = r'$*$'
+        else:
+            sign=''
+        return sign
+    flags = (pvalues<0.05)*increase_flags
+    sig_signs = ['']+[define_sign(flag) for flag in flags]
+    return sig_signs
 def read_write_links(method, study, mode:str, links=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 

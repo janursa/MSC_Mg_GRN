@@ -17,7 +17,8 @@ CALIBRATION_DIR = os.path.join(OUTPUT_DIR, 'calibration')
 GRN_DIR = os.path.join(OUTPUT_DIR, 'GRN')
 DATA_DIR = os.path.join(OUTPUT_DIR, 'data')
 VSA_DIR = os.path.join(OUTPUT_DIR, 'VSA')
-
+ENRICH_DIR = os.path.join(OUTPUT_DIR, 'enrichment_analysis')
+VS_STRING_DIR = os.path.join(OUTPUT_DIR, 'vs_string')
 
 geneRNI_dir = os.path.join(MAIN_DIR,'..','geneRNI')
 sys.path.insert(0, geneRNI_dir)

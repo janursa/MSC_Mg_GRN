@@ -12,5 +12,5 @@ from scripts.imports import param_grid_RF, protnames, CALIBRATION_DIR
 from scripts.utils import calibration
 
 if __name__ == '__main__':
-    calibration.plot_oo('RF', param_grid_RF(), protnames(), CALIBRATION_DIR)
+    calibration.plot_oo('RF', CALIBRATION_DIR)
 

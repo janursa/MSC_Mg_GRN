@@ -84,16 +84,15 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
-def plot_scores(data_ctr, data_sample, ylabel, xlabel=''):
+def plot_scores(data_s, ylabel, xlabel=''):
     """plots oob scores as a box plot for ctr and mg side by side"""
     serif_font()
     fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
                              # gridspec_kw={'width_ratios': [2, 2]}
                              )
-    data_s = [data_ctr, data_sample]
     labels = ['ctr', 'mg']
     ax = axes
-    bplot = ax.boxplot(data_s, notch=True, widths=[.5, .5], patch_artist=True, meanline=True)
+    bplot = ax.boxplot(data_s, notch=True, patch_artist=True, meanline=True)
     # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
     #     )
     ax.set_ylabel(ylabel)
@@ -151,15 +150,20 @@ def retrieve_data(study, method, output_dir):
     best_scores = np.load(os.path.join(output_dir, method, f'best_scores_{study}.npy'))
     best_params = np.load(os.path.join(output_dir, method, f'best_params_{study}.npy'),allow_pickle=True)
     return best_scores, best_params
-def plot_oo(method, priors, protnames, output_dir, ylabel='OOB score'):
+def plot_oo(method, output_dir, ylabel='OOB score'):
     """
      Plots a series of graphs for best params and best scores (individual protein and combined)
     """
     dir = os.path.join(output_dir, method)
-    best_scores_ctr, best_params_ctr = retrieve_data(
-        'ctr', method=method, output_dir=output_dir)
-    best_scores_mg, best_params_mg = retrieve_data(
-        'mg', method=method, output_dir=output_dir)
+    best_scores_stack = []
+    for study in ['ctr', 'mg', 'combined']:
+        try:
+            best_scores, best_params = retrieve_data(
+                study, method=method, output_dir=output_dir)
+            best_scores_stack.append(best_scores)
+        except:
+            print(f'data for {study} is not available ')
+
     # - pool score
     # fig = plot_scores_pool(scores_pool_ctr, scores_pool_mg, protnames)
     # fig.savefig(os.path.join(dir, 'scores_pool.png'), dpi=300, transparent=True,
@@ -173,7 +177,7 @@ def plot_oo(method, priors, protnames, output_dir, ylabel='OOB score'):
     # fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
 
     #- best score mean
-    fig = plot_scores(best_scores_ctr, best_scores_mg, ylabel=ylabel)
+    fig = plot_scores(best_scores_stack, ylabel=ylabel)
     fig.savefig(os.path.join(dir, f'{ylabel}.png'), dpi=300, transparent=True, facecolor='white')
     # # - best param
     # fig = plot_bestparams(best_params_ctr, best_params_mg, priors=priors)

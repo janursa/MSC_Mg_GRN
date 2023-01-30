@@ -6,17 +6,18 @@ String data should be available beforehand.
 import sys
 import os
 import typing
+import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import enrichplot
-from imports import *
+from scripts.utils import enrichplot
+from scripts.imports import ENRICH_DIR
 
 
 if __name__ == '__main__':
     #- retrieve the enriched terms
-    read_EA = lambda term: pd.read_csv(os.path.join(OUTPUT_DIR, 'enrichment_analysis', f'enrichment_{term}.csv'), index_col=False)
+    read_EA = lambda term: pd.read_csv(os.path.join(ENRICH_DIR, f'enrichment_{term}.csv'), index_col=False)
     data_process = read_EA('process')
     data_component = read_EA('component')
     data_function = read_EA('function')
@@ -44,8 +45,8 @@ if __name__ == '__main__':
     fig = enrichplot.plot_enrich(datas_2, tags_2, size_tag, color_tag, xlabel, marker_types_2, figsize=(6, 5),
                                legend_color=True, legend_size=True, legend_marker=False,
                                title='GO: Biological Component')
-    fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'biological_component.png'), dpi=300, transparent=True)
-    fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'biological_component.pdf'))
+    fig.savefig(os.path.join(ENRICH_DIR, 'biological_component.png'), dpi=300, transparent=True)
+    fig.savefig(os.path.join(ENRICH_DIR, 'biological_component.pdf'))
 
 
     fig = enrichplot.plot_enrich(datas_3, tags_3, size_tag, color_tag, xlabel, marker_types_3, figsize=(6, 3.5),

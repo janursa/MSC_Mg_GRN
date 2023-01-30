@@ -13,18 +13,24 @@ from scripts.utils.links import batch_GRN
 if __name__ == '__main__':
     method = 'RF'
     param = dict(estimator_t=method)
-    specs = dict(
-        i_start=0,
-        i_end=10,
-        param=param,
-        gene_names=protnames(),
-        time_points=time_points(),
-        test_size=0,
-        method=method,
-        output_dir=GRN_DIR,
-    )
 
-    for study in ['ctr', 'mg']:
+    # studies = ['combined']
+    studies = ['ctr', 'mg', 'combined']
+    for study in studies:
+        if study == 'combined':
+            gene_names = protnames()+['mg']
+        else:
+            gene_names = protnames()
+        specs = dict(
+            i_start=0,
+            i_end=10,
+            param=param,
+            gene_names=gene_names,
+            time_points=time_points(),
+            test_size=0,
+            method=method,
+            output_dir=GRN_DIR,
+        )
         data = process_data(df_target(), study=study, time_points=time_points(), standardize=False)
         data = np.asarray(data)
         print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')

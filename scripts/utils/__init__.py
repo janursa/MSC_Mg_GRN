@@ -273,7 +273,7 @@ def process_data(df_target, study, time_points, standardize=False) -> np.array :
         df_mg['mg'] = np.ones(len(time_points))
 
         df = pd.concat([df_ctr, df_mg], axis=0)
-        # protnames.append('mg') #TODO: needs evaluation
+
 
     if standardize:
         df.iloc[:, :] = preprocessing.scale(df.iloc[:, :])

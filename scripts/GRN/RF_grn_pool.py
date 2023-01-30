@@ -16,6 +16,6 @@ if __name__ == '__main__':
     method = 'RF'
     replica_n = 10
 
-    for study in ['ctr', 'mg']:
+    for study in ['ctr', 'mg', 'combined']:
         pool_GRN_oo(method=method, study=study, replica_n=replica_n, output_dir=OUTPUT_DIR)
     print('GRN results are successfully pooled for RF')

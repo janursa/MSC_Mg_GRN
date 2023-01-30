@@ -20,7 +20,11 @@ if __name__ == '__main__':
     if not os.path.isdir(os.path.join(GRN_DIR, 'portia')):
         os.makedirs(os.path.join(GRN_DIR, 'portia'))
 
-    for study in ['ctr', 'mg']:
+    for study in ['ctr', 'mg', 'combined']:
+        if study == 'combined':
+            gene_names = protnames()+['mg']
+        else:
+            gene_names = protnames()
         data = process_data(df_target(), study=study, time_points=time_points(), standardize=False)
         data = np.asarray(data)
         print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')
@@ -32,7 +36,7 @@ if __name__ == '__main__':
             portia_dataset.add(pt.Experiment(exp_id, data_i))
         #- GRN inference
         M_bar = pt.run(portia_dataset, method='fast')
-        links_df = format_links(M_bar, protnames())
+        links_df = format_links(M_bar, gene_names)
         read_write_links(links=links_df, study=study, mode='write', method='portia', output_dir=GRN_DIR)
 
         #- compare to vs_string

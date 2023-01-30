@@ -17,15 +17,19 @@ from scripts.utils.calibration import plot_scores
 
 
 def main(method):
-    for study in ['ctr', 'mg']:
+    trainscores_stack = []
+    testscores_stack = []
+    for study in ['ctr', 'mg', 'combined']:
         # - retreive scores
         trainscores, testscores = retrieve_scores(method=method, study=study, output_dir=GRN_DIR)
+        trainscores_stack.append(trainscores)
+        testscores_stack.append(testscores)
 
-        fig = plot_scores(data_ctr=trainscores, data_sample=testscores, ylabel='Train score')
-        fig.savefig(os.path.join(GRN_DIR, method, 'trainscores.pdf'))
-
-        fig = plot_scores(data_ctr=testscores, data_sample=testscores, ylabel='Test score')
-        fig.savefig(os.path.join(GRN_DIR, method, 'testscores.pdf'))
+    fig = plot_scores(trainscores_stack, ylabel='Train score')
+    fig.savefig(os.path.join(GRN_DIR, method, 'trainscores.pdf'))
+    #
+    fig = plot_scores(testscores_stack, ylabel='Test score')
+    fig.savefig(os.path.join(GRN_DIR, method, 'testscores.pdf'))
 
 
 if __name__ == '__main__':

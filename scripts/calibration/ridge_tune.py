@@ -14,32 +14,32 @@ from scripts.utils import process_data, calibration
 if __name__ == '__main__':
     method = 'ridge'
     param_grid = param_grid_ridge()
-    # - read the data
-    data_ctr = process_data(df_target(), study='ctr', time_points=time_points(), standardize=False)
-    data_mg = process_data(df_target(), study='mg', time_points=time_points(), standardize=False)
-    # data_combined = process_data(df_target(), study='mg', time_points=time_points(), standardize=False)
-    print('Data shape:', np.array(data_ctr).shape, '(n_samples_time_series*n_genes)')
-    #- create the dataaset
-    # test_size = 1 / len(time)
     test_size = 0
-    cv=5
-    #- define settings and calibration
-    param = dict(estimator_t = method)
-    specs = dict(
-        i_start=0,
-        i_end=1,
-        param=param,
-        gene_names=protnames(),
-        time_points=time_points(),
-        test_size=test_size,
-        cv=cv,
-        method=method,
-        param_grid=param_grid,
-        output_dir=CALIBRATION_DIR,
-        random_state=0,
-        n_jobs=1,
-        loo=True, #leave one out
-    )
-
-    calibration.calibrate(study='ctr', data=data_ctr, **specs)
-    calibration.calibrate(study='mg', data=data_mg, **specs)
+    cv = 5
+    for study in ['ctr', 'mg', 'combined']:
+        # - read the data
+        data = process_data(df_target(), study=study, time_points=time_points(), standardize=False)
+        print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+        #- create the dataaset
+        if study == 'combined':
+            gene_names = protnames()+['mg']
+        else:
+            gene_names = protnames()
+        #- define settings and calibration
+        param = dict(estimator_t = method)
+        specs = dict(
+            i_start=0,
+            i_end=1,
+            param=param,
+            gene_names=gene_names,
+            time_points=time_points(),
+            test_size=test_size,
+            cv=cv,
+            method=method,
+            param_grid=param_grid,
+            output_dir=CALIBRATION_DIR,
+            random_state=0,
+            n_jobs=1,
+            loo=True, #leave one out
+        )
+        calibration.calibrate(study=study, data=data, **specs)

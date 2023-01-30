@@ -12,5 +12,5 @@ from scripts.imports import param_grid_ridge, protnames, CALIBRATION_DIR
 from scripts.utils import calibration
 
 if __name__ == '__main__':
-    calibration.plot_oo('ridge', param_grid_ridge(), protnames(), CALIBRATION_DIR, ylabel='Leave-one-out score')
+    calibration.plot_oo('ridge', CALIBRATION_DIR, ylabel='Leave-one-out score')
 
