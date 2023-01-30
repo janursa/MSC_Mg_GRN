@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import *
 
 
-def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_protname: dict, term_length_cut_threshold: float) -> pd.DataFrame:
+def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_protname: dict, term_length_cut_threshold: int) -> pd.DataFrame:
     '''
         Reads vs_string EA data such as enrichment.Function
     '''
@@ -51,6 +51,7 @@ def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_prot
         else:
             aa = item
         short_descript.append(aa)
+    enrich_data['Description'] = short_descript
     return enrich_data
 
 if __name__ == '__main__':
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     #- retreieve enrichmenetn analysis results
     FILE = os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'enrichment.all.tsv')
     #- setting
-    term_length_cut_threshold = 40 # letters
+    term_length_cut_threshold = 10 # letters
     #- process
     data_process = reireive_string_data_F(FILE, 'GO Process', map_genename_protname, term_length_cut_threshold)
     data_process.to_csv(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'enrichment_process.csv'), index=False)

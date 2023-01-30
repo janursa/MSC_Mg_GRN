@@ -42,12 +42,12 @@ def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
         np.savetxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'), train_scores)
         links_df.to_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index=False)
 
-def retreive_scores(study, method, output_dir):
+def retrieve_scores(study, method, output_dir):
     """
         Retreiev train and test scores
     """
-    testscores = np.genfromtxt(os.path.join(output_dir, 'GRN', method, f'testscores_{study}.csv'))
-    trainscores = np.genfromtxt(os.path.join(output_dir, 'GRN', method, f'trainscores_{study}.csv'))
+    testscores = np.genfromtxt(os.path.join(output_dir, method, f'testscores_{study}.csv'))
+    trainscores = np.genfromtxt(os.path.join(output_dir, method, f'trainscores_{study}.csv'))
 
     return trainscores, testscores
 def grn(data, time_points, gene_names, **specs):

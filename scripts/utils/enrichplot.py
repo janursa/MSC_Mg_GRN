@@ -28,13 +28,11 @@ def mscatter(x,y,ax=None, m=None, **kw):
             paths.append(path)
         sc.set_paths(paths)
     return sc
-def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True, 
+def plot_enrich(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True,
         legend_size=True, legend_marker=True, title=''):
     #-----------define prop---------------
     comic_font()
-
     scale_scatter_size = 60
-    
     #-----------calculations---------------
     x = [j for sub in [data[xlabel].values.tolist() for data in datas] for j in sub]
     terms =[j for sub in [data['Description'].values.tolist() for data in datas] for j in sub]
@@ -64,7 +62,7 @@ def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_
         for i, marker in enumerate(marker_types):
             handles.append(ax.scatter([],[],marker=marker, label=tags[i], color='black'))
         l2 = plt.legend(handles=handles, 
-            bbox_to_anchor=(2.6,1), 
+            bbox_to_anchor=(1.3,1.4),
             # title='Enriched Term'
             )
         ax.add_artist(l2)
@@ -80,21 +78,21 @@ def plot(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_
                 s= size*scale_scatter_size,
                 alpha=1
                 ))
-        l1 = plt.legend(bbox_to_anchor=(1, 1), handles=handles, 
+        l1 = plt.legend(bbox_to_anchor=(1, 1), handles=handles,
                         title=size_tag, fancybox=False, frameon=False)
 
         ax.add_artist(l1)
-    #- color legend
+    #- color legend: FDR
     if legend_color:
         PCM=ax.get_children()[0]
         CB = plt.colorbar(PCM, ax=ax, 
                     aspect=3, 
                     location='right',
-                    anchor=(1, 0), 
+                    anchor=(.8, 0),
                     # extend='both', 
                     ticks=[min(colors), max(colors)], 
                     # format="%4.2e",
-                    shrink=1
+                    shrink=.3
                     )
         CB.ax.set_title(color_tag)
         # CB.ax.tick_params(labelsize=fontsize['fontsize'])

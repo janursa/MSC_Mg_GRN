@@ -19,12 +19,16 @@ def retreive_grn(method):
     links_mg= read_write_links(method=method, study='mg', mode='read', output_dir=GRN_DIR)
     return links_ctr, links_mg
 if __name__ == '__main__':
+    #- create dir
+    if not os.path.isdir(VSA_DIR):
+        os.makedirs(VSA_DIR)
+
     method = 'portia'
     links_ctr, links_sample = retreive_grn(method)
-    oo_vsa_ctr = VestersSA(links_ctr, protnames)
-    oo_vsa_sample = VestersSA(links_sample, protnames)
+    oo_vsa_ctr = VestersSA(links_ctr, protnames())
+    oo_vsa_sample = VestersSA(links_sample, protnames())
     # - plot 1: seperate windows for ctr and sample
-    VSA_plot.plot_ctr_vs_sample(oo_vsa_ctr, oo_vsa_sample, protnames, save_dir=VSA_DIR)
+    VSA_plot.plot_ctr_vs_sample(oo_vsa_ctr, oo_vsa_sample, protnames(), save_dir=VSA_DIR)
 
     # - plot 2: change in the role from critical to anything or the opposite:
     df_role_change = role_change(oo_vsa_ctr, oo_vsa_sample, target_role=3)

@@ -1,14 +1,15 @@
 import sys
 import os
+import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts import utils
-from imports import *
+from scripts.imports import OUTPUT_DIR, DATA_DIR, MAIN_DIR, time_points
 
 specs = dict(
-    o_df_dir = os.path.join(DATA_DIR,'original_omics.xlsx'),
+    o_df_dir = os.path.join(MAIN_DIR, 'data', 'original_omics.xlsx'),
     df_dir = os.path.join(DATA_DIR,'edited_data.csv'),
     time = time_points(),
     p_name = 'Entry',  # The column name in the original data to be used as protein name
@@ -20,6 +21,9 @@ specs = dict(
     o_s_func = lambda t: 'LogLFQ intensity ' + str(t) + '_1',  # Func to extract the sample data from the original database
 )
 def correct_entry(df, entry_name='Entry'):
+    '''
+    There is some problems with the entry names in the original data. Here, we replace them with the correct versions.
+    '''
     # - protnames needs correction: the original protnames are not homo sapiens
     entry_corrections = {'P81644': 'P02652'}
     for key in entry_corrections.keys():
@@ -28,6 +32,8 @@ def correct_entry(df, entry_name='Entry'):
     return df
 
 if __name__ == '__main__':
+    if not os.path.isdir(DATA_DIR):
+        os.makedirs(DATA_DIR)
     #- read the original data 
     o_df = pd.read_excel(specs['o_df_dir'])
     #- process the data

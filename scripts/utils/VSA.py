@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+import math
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -134,7 +135,7 @@ class VSA_plot:
             oo_prots: AS/PS data for ctr and sample, for each protein
         '''
         ncols = 3
-        nrows = 2
+        nrows = math.ceil(len(oo_prots.keys())/3)
         comic_font()
         matplotlib.rcParams.update({'font.size': 8})
         arrow_specs = {'arrow_type': 'arc3', 'rad': .2}

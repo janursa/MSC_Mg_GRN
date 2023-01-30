@@ -10,11 +10,10 @@ import pandas as pd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import GRN_DIR, protnames, VSA_DIR
-from utils.links import read_write_links
-from utils.VSA import VestersSA, VSA_plot, role_change
+from scripts.imports import protnames, VSA_DIR
+from scripts.utils.VSA import VestersSA, VSA_plot
 from step1 import retreive_grn
-from utils import MG_noise_F, AG_noise_F
+from scripts.utils import MG_noise_F, AG_noise_F
 def filter_and_sort(batch_results_1, batch_results_2, target_genes):
     """
         Sorts batch VSA results based on target proteins
@@ -58,12 +57,13 @@ if __name__ == '__main__':
     links_ctr, links_sample = retreive_grn(method)
     role_change = pd.read_csv(os.path.join(VSA_DIR, f'role_change_{method}.csv'), index_col=False)
     target_genes = role_change['Entry'].values.tolist()
+    print('Number of target genes ', len(target_genes))
     # - create noised dfs
     links_ctr_noised = MG_noise_F(links_ctr) # 100 noised links
     links_sample_noised = MG_noise_F(links_sample)
     # - run VSA for noised dfs
-    batch_results_ctr = batch_VSA(links_ctr_noised, gene_names=protnames, target_genes=target_genes)
-    batch_results_sample = batch_VSA(links_sample_noised, gene_names=protnames, target_genes=target_genes)
+    batch_results_ctr = batch_VSA(links_ctr_noised, gene_names=protnames(), target_genes=target_genes)
+    batch_results_sample = batch_VSA(links_sample_noised, gene_names=protnames(), target_genes=target_genes)
     # - we plot noisy role change for each protein: filter batch results for target proteins
     rr_sorted = filter_and_sort(batch_results_ctr, batch_results_sample, target_genes=target_genes)
     # - plot
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     links_ctr_noised = AG_noise_F(links_ctr)
     links_sample_noised = AG_noise_F(links_sample)
     # - run VSA for noised dfs
-    batch_results_ctr = batch_VSA(links_ctr_noised, gene_names=protnames, target_genes=target_genes)
-    batch_results_sample = batch_VSA(links_sample_noised, gene_names=protnames, target_genes=target_genes)
+    batch_results_ctr = batch_VSA(links_ctr_noised, gene_names=protnames(), target_genes=target_genes)
+    batch_results_sample = batch_VSA(links_sample_noised, gene_names=protnames(), target_genes=target_genes)
     # - filter series for target proteins and sort them as a dict
     rr_sorted = filter_and_sort(batch_results_ctr, batch_results_sample, target_genes=target_genes)
     # - plot

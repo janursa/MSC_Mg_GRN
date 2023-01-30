@@ -41,14 +41,14 @@ if __name__ == '__main__':
     #                            legend_color=True, legend_size=True, legend_marker=False, title='GO: Biological Process')
     # fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'biological_process.png'), dpi=300, transparent=True)
 
-    fig = enrichplot.plot(datas_2, tags_2, size_tag, color_tag, xlabel, marker_types_2, figsize=(6, 5),
+    fig = enrichplot.plot_enrich(datas_2, tags_2, size_tag, color_tag, xlabel, marker_types_2, figsize=(6, 5),
                                legend_color=True, legend_size=True, legend_marker=False,
                                title='GO: Biological Component')
     fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'biological_component.png'), dpi=300, transparent=True)
     fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'biological_component.pdf'))
 
 
-    fig = enrichplot.plot(datas_3, tags_3, size_tag, color_tag, xlabel, marker_types_3, figsize=(6, 3.5),
+    fig = enrichplot.plot_enrich(datas_3, tags_3, size_tag, color_tag, xlabel, marker_types_3, figsize=(6, 3.5),
                                legend_color=True, legend_size=True, legend_marker=True, title='')
     fig.savefig(os.path.join(OUTPUT_DIR, 'enrichment_analysis', 'multiple.png'), dpi=300, transparent=True,
                 bbox_inches='tight')

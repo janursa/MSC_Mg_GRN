@@ -5,11 +5,12 @@ We use KNN as the chosen imputation method.
 import sys
 import os
 import typing
+import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import *
+from imports import STATISTICAL_ANALYSIS_DIR, DATA_DIR
 from edit_data.edit import correct_entry
 
 def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> typing.Tuple[list,pd.DataFrame]:
@@ -40,17 +41,15 @@ if __name__ == '__main__':
     # imputation_method = 'noImputation'
     imputation_method = 'KNN'
     sig_t = .05
-    DIR_STATISTICAL_ANALYSIS =  os.path.join(MAIN_DIR,'statistical_analysis')
-    IMPUT_FILE =  os.path.join(DIR_STATISTICAL_ANALYSIS, f'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imputation_method}.csv')  # dir for the imputated df
-    SIG_FILE = os.path.join(DIR_STATISTICAL_ANALYSIS, f'DiffExp_tables/TopTable_TimeCourse_{imputation_method}.csv')  # dir for the sig analysis
+    IMPUT_FILE =  os.path.join(STATISTICAL_ANALYSIS_DIR, f'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imputation_method}.csv')  # dir for the imputated df
+    SIG_FILE = os.path.join(STATISTICAL_ANALYSIS_DIR, f'DiffExp_tables/TopTable_TimeCourse_{imputation_method}.csv')  # dir for the sig analysis
 
     DE_protnames, DE_data = main(IMPUT_FILE, SIG_FILE, sig_t)
     DE_protnames_str = ''
     for gene in DE_protnames:
         DE_protnames_str += gene + ','
-    DIR = os.path.join(OUTPUT_DIR, 'data')
-    with open(os.path.join(DIR, 'DE_protnames.txt'), 'w') as f:
+    with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'w') as f:
         print({'DE_protnames': DE_protnames, 'DE_protnames_str': DE_protnames_str}, file=f)
-    print(f'DE proteins names are outputted to {DIR}')
-    DE_data.to_csv(os.path.join(DIR, 'DE_data.csv'), index=False)
-    print(f'Shortlisted data are outputted to {DIR}')
+    print(f'DE proteins names are outputted to {DATA_DIR}')
+    DE_data.to_csv(os.path.join(DATA_DIR, 'DE_data.csv'), index=False)
+    print(f'Shortlisted data are outputted to {DATA_DIR}')

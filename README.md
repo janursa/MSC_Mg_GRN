@@ -1,0 +1,5 @@
+- data: the folder that contains original proteomics data
+- statistical_analysis: results of time-series statitical analysis
+- scripts: python scripts that process the whole analysis after statistical analysis
+- results: results produced by this study, exluding statistical analysis
+- R: contains R scripts, which are for tests and are not used for the purpose of this study
