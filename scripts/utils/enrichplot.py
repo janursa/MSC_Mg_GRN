@@ -4,11 +4,12 @@
 import sys
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import *
-from utils import comic_font
+from scripts.imports import OUTPUT_DIR
+from scripts.utils import comic_font, serif_font
 
 def mscatter(x,y,ax=None, m=None, **kw):
     """ a custom plot built on scatter plot to enable multi marker visualization
@@ -28,24 +29,29 @@ def mscatter(x,y,ax=None, m=None, **kw):
             paths.append(path)
         sc.set_paths(paths)
     return sc
-def plot_enrich(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True,
+def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True,
         legend_size=True, legend_marker=True, title=''):
     #-----------define prop---------------
-    comic_font()
-    scale_scatter_size = 60
-    #-----------calculations---------------
-    x = [j for sub in [data[xlabel].values.tolist() for data in datas] for j in sub]
-    terms =[j for sub in [data['Description'].values.tolist() for data in datas] for j in sub]
-
+    import matplotlib
+    # comic_font()
+    serif_font()
+    matplotlib.rcParams.update({'font.size': 14})
+    #-----------assignment---------------
+    def flatten(data, tag):
+        return [j for sub in [item[tag].values.tolist() for item in data] for j in sub]
+    x = flatten(df_stack, xlabel)
+    terms = flatten(df_stack,'Description' )
     y = list(range(len(terms), 0, -1)) # numbers for each term
-    sizes = np.array([j for sub in [data[size_tag].values.tolist() for data in datas] for j in sub])
-    colors = [j for sub in [data[color_tag].values.tolist() for data in datas] for j in sub]
-    counts = [len(data['Description'].values.tolist()) for data in datas]
+    sizes = np.array(flatten(df_stack, size_tag))
+    colors = flatten(df_stack, color_tag)
+    counts = [len(data['Description'].values) for data in df_stack]
     markers = [marker_types[i] for sub in [np.full(shape=n, fill_value=i, dtype=int) for i,n in enumerate(counts)] for i in sub]
+    #-----------scale----------------------
+    adj_sizes = .1 * len(y) * figsize[1] * sizes/np.std(sizes)
 
     #-----------plot-----------------------
-    fig, ax = plt.subplots(1,1, figsize=figsize, tight_layout=True)
-    sc = mscatter(x, y, c=colors, s=scale_scatter_size*sizes,
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    sc = mscatter(x, y, c=colors, s=adj_sizes,
         m=markers, ax=ax, 
         cmap='autumn'
         # cmap='Spectral'
@@ -60,26 +66,20 @@ def plot_enrich(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,
     if legend_marker:
         handles = []
         for i, marker in enumerate(marker_types):
-            handles.append(ax.scatter([],[],marker=marker, label=tags[i], color='black'))
-        l2 = plt.legend(handles=handles, 
-            bbox_to_anchor=(1.3,1.4),
-            # title='Enriched Term'
-            )
+            handles.append(ax.scatter([],[],marker=marker, label=tags[i], color='black', s=100))
+        l2 = plt.legend(loc='right', bbox_to_anchor=(-.5,-.3), handles=handles, title='Enriched Term')
         ax.add_artist(l2)
     #- size legend 
     if legend_size:
         handles = []
-        labels = []
         n_classes = 4
-        sizes_classes = np.arange(min(sizes), max(sizes), (max(sizes)-min(sizes))/n_classes)
+        sizes_classes = np.linspace(min(sizes), max(sizes), n_classes)
+
         for i, size in enumerate(sizes_classes):
-            handles.append(ax.scatter([],[], marker='o', label=round(size,1),
-                color='black', 
-                s= size*scale_scatter_size,
-                alpha=1
-                ))
-        l1 = plt.legend(bbox_to_anchor=(1, 1), handles=handles,
-                        title=size_tag, fancybox=False, frameon=False)
+            adj_size = 50*size/np.std(sizes)
+            handles.append(ax.scatter([],[], marker='o', label=round(size,1), color = 'black',
+                                      s = adj_size,alpha = 1))
+        l1 = ax.legend(loc='right', bbox_to_anchor=(.2,-.3), handles=handles, title=size_tag, fancybox=False, frameon=False)
 
         ax.add_artist(l1)
     #- color legend: FDR
@@ -88,7 +88,7 @@ def plot_enrich(datas, tags, size_tag, color_tag, xlabel, marker_types, figsize,
         CB = plt.colorbar(PCM, ax=ax, 
                     aspect=3, 
                     location='right',
-                    anchor=(.8, 0),
+                    anchor=(0, 0),
                     # extend='both', 
                     ticks=[min(colors), max(colors)], 
                     # format="%4.2e",

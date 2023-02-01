@@ -13,7 +13,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import ENRICH_DIR, DATA_DIR
-from scripts.enrichment_analysis import annotaion_map
+from scripts.enrichment_analysis import _annotaion_map
 def main(DE_protnames: list) -> typing.Tuple[dict,dict,dict,dict]:
     #- mao protname to geneID
     map_protname_geneID = annotaion_map.protname_geneID(DE_protnames)
