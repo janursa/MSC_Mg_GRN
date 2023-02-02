@@ -13,11 +13,11 @@ library(ggpubr)
 # all, rank product and rank plot
 #####################
 
-setwd("subsetTime_knn_minprob/")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # read masterList
 mlist <- fread(file = "MasterList_imps_days.csv", drop = 1)
 
-mthd <- c("KNN", "MinProb"); fln <- "rank_prod_plot_2methods.png"
+mthd <- c("KNN", "MinProb");
 
 # remove junk proteins (all starting with 'p_')
 mstl <- mlist[method %in% mthd] %>%
@@ -63,9 +63,9 @@ rnk.dt.both <- rbindlist(
 
 
 ## save ranked lists
-write.csv(rnk.dt.knn, file = file.path(topdir, paste0("knn_rankedList.csv")))
-write.csv(rnk.dt.minprob, file = file.path(topdir, paste0("MinProb_rankedList.csv")))
-write.csv(rnk.dt.both, file = file.path(topdir, paste0("BothMethods_rankedList.csv")))
+#write.csv(rnk.dt.knn, file = file.path(topdir, paste0("knn_rankedList.csv")))
+#write.csv(rnk.dt.minprob, file = file.path(topdir, paste0("MinProb_rankedList.csv")))
+#write.csv(rnk.dt.both, file = file.path(topdir, paste0("BothMethods_rankedList.csv")))
 
 
 
@@ -85,28 +85,28 @@ f.rnk.plot <- function(dat, n, cls, gcl, ttl, xlab, ylab) {
    ) +
       scale_color_viridis(discrete = F) +
       labs(title = ttl, x = xlab, y = ylab) +
-      theme_light() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1),
-            plot.title = element_text(size = 10)
-      )
+      theme_light()
 }
 
+ylabel <- "Rank (standardised)" 
+xlabel <- ""
+title <- ""
 # method knn
 rpl.knn <-  f.rnk.plot(dat = rnk.dt.knn, n = 100, cls = 10:11, gcl = 10,
-                        ttl = "method KNN - top 100 of short.term effect",
-                        xlab =  "time span",
-                        ylab = "rank product of pvalues\n(standardised)")
+                        ttl = title,
+                        xlab =  xlabel,
+                        ylab = ylabel)
 # method MinProb
 rpl.minprob <- f.rnk.plot(dat = rnk.dt.minprob, n = 100, cls = 10:11, gcl = 10,
-                          ttl = "method MinProb - top 100 of short.term effect",
-                          xlab =  "time span",
-                          ylab = "rank product of pvalues\n(standardised)")
+                          ttl = title,
+                          xlab =  xlabel,
+                          ylab = ylabel)
 
 # both method
 rpl.both <- f.rnk.plot(dat = rnk.dt.both, n = 100, cls = 8:9, gcl = 8,
-                       ttl = "both methods - top 100 of short.term effect",
-                       xlab =  "time span",
-                       ylab = "rank product of pvalues\n(standardised)")
+                       ttl = title,
+                       xlab =  xlabel,
+                       ylab = ylabel)
 
 
 

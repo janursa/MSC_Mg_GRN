@@ -20,7 +20,6 @@ if __name__ == '__main__':
     # - define settings and calibration
     param = dict(estimator_t=method)
 
-    # studies = ['combined']
     studies = ['ctr', 'mg', 'combined']
     for study in studies:
         # - read the data
