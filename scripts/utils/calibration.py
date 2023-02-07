@@ -4,32 +4,30 @@
 import sys
 import os
 import matplotlib.pylab as plt
+import numpy as np
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import serif_font
-from imports import *
+from scripts.imports import F_DE_data
 from geneRNI import search_param
 from geneRNI.data import Data
 
-def calibrate(study, method, data, gene_names, time_points, param_grid, output_dir, i_start, i_end, test_size, **specs):
+def calibrate(study, method, data, gene_names, time_points, param_grid, output_dir, i_start, i_end, **specs):
     """
         Interface to search function of geneRNI
     """
     print(f'----Tuning for method: {method}, study: {study}')
     dataset = Data(gene_names=gene_names, ss_data=None, ts_data=[data], time_points=[time_points])
-    DIR = os.path.join(output_dir, method, study)
     search_param.rand_search(dataset,
                              param_grid=param_grid,
-                             output_dir=DIR,
+                             output_dir=output_dir,
                              i_start=i_start,
                              i_end=i_end,
                              **specs)
-    best_scores, best_params = search_param.pool(DIR, n_repeat=i_end)
-    #- save
-    np.save(os.path.join(output_dir, method, f'best_scores_{study}.npy'), best_scores)
-    np.save(os.path.join(output_dir, method, f'best_params_{study}.npy'), best_params)
+    return search_param.pool(output_dir, n_repeat=i_end)
+
 
 def plot_scores_pool(bestscores_pool_ctr, bestscores_pool_sample, xticks_labels):
     """plots scores as a box plot for a set"""
@@ -84,21 +82,20 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
-def plot_scores(data_s, ylabel, xlabel=''):
+def plot_scores(data_s, ylabel, xtickslabels, xlabel='', ax=None):
     """plots oob scores as a box plot for ctr and mg side by side"""
     serif_font()
-    fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
                              # gridspec_kw={'width_ratios': [2, 2]}
                              )
-    labels = ['ctr', 'mg']
-    ax = axes
     bplot = ax.boxplot(data_s, notch=True, patch_artist=True, meanline=True)
     # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
     #     )
     ax.set_ylabel(ylabel)
     # ax.set_title('(A)')
-    ax.set_xticks(range(1, len(labels) + 1))
-    ax.set_xticklabels(labels, rotation=0)
+    ax.set_xticks(range(1, len(xtickslabels) + 1))
+    ax.set_xticklabels(xtickslabels, rotation=0)
     ax.axhline(0, color='red', linestyle='--', linewidth=1.5, alpha=.5)
     ax.set_ymargin(.1)
     ax.set_xmargin(.15)
@@ -114,7 +111,8 @@ def plot_scores(data_s, ylabel, xlabel=''):
     # for tag in tags:
     #     bplot[tag].set_color(colors)
     #     bplot[tag].set_decay_coeff(.5)
-    return fig
+    if ax is None:
+        return fig
 def plot_bestparams(data_ctr, data_sample, priors):
     """
         Plots boxplot for indivual param in seperate window.
@@ -143,42 +141,45 @@ def plot_bestparams(data_ctr, data_sample, priors):
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
     return fig
-def retrieve_data(study, method, output_dir):
+def retrieve_data(study, method, DE_type ,output_dir):
     """
         Reads results of pooling
     """
-    best_scores = np.load(os.path.join(output_dir, method, f'best_scores_{study}.npy'))
-    best_params = np.load(os.path.join(output_dir, method, f'best_params_{study}.npy'),allow_pickle=True)
+    best_scores = np.load(os.path.join(output_dir, method, DE_type, f'best_scores_{study}.npy'))
+    best_params = np.load(os.path.join(output_dir, method, DE_type, f'best_params_{study}.npy'),allow_pickle=True)
     return best_scores, best_params
 def plot_oo(method, output_dir, ylabel='OOB score'):
     """
      Plots a series of graphs for best params and best scores (individual protein and combined)
     """
     dir = os.path.join(output_dir, method)
-    best_scores_stack = []
-    for study in ['ctr', 'mg', 'combined']:
-        try:
+    DE_types = F_DE_data().keys()
+    studies = ['ctr', 'mg', 'all-in']
+    for DE_type in DE_types:
+        best_scores_stack = []
+        for study in studies:
+            # try:
             best_scores, best_params = retrieve_data(
-                study, method=method, output_dir=output_dir)
+                study, method=method, DE_type=DE_type, output_dir=output_dir)
             best_scores_stack.append(best_scores)
-        except:
-            print(f'data for {study} is not available ')
+            # except:
+            #     print(f'data for {study} is not available ')
 
-    # - pool score
-    # fig = plot_scores_pool(scores_pool_ctr, scores_pool_mg, protnames)
-    # fig.savefig(os.path.join(dir, 'scores_pool.png'), dpi=300, transparent=True,
-    #             facecolor='white')
+        # - pool score
+        # fig = plot_scores_pool(scores_pool_ctr, scores_pool_mg, protnames)
+        # fig.savefig(os.path.join(dir, 'scores_pool.png'), dpi=300, transparent=True,
+        #             facecolor='white')
 
-    # - best param
-    # fig = plot_bestparams_pool(bestparams_pool_ctr, priors, protnames)
-    # fig.savefig(os.path.join(dir, 'bestparams_pool_ctr.png'), dpi=300, transparent=True, facecolor='white')
-    #
-    # fig = plot_bestparams_pool(bestparams_pool_mg, priors, protnames)
-    # fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
+        # - best param
+        # fig = plot_bestparams_pool(bestparams_pool_ctr, priors, protnames)
+        # fig.savefig(os.path.join(dir, 'bestparams_pool_ctr.png'), dpi=300, transparent=True, facecolor='white')
+        #
+        # fig = plot_bestparams_pool(bestparams_pool_mg, priors, protnames)
+        # fig.savefig(os.path.join(dir, 'bestparams_pool_mg.png'), dpi=300, transparent=True, facecolor='white')
 
-    #- best score mean
-    fig = plot_scores(best_scores_stack, ylabel=ylabel)
-    fig.savefig(os.path.join(dir, f'{ylabel}.png'), dpi=300, transparent=True, facecolor='white')
-    # # - best param
-    # fig = plot_bestparams(best_params_ctr, best_params_mg, priors=priors)
-    # fig.savefig(os.path.join(dir, 'bestparams.png'), dpi=300, transparent=True, facecolor='white')
+        #- best score mean
+        fig = plot_scores(best_scores_stack, xtickslabels=studies,ylabel=ylabel)
+        fig.savefig(os.path.join(dir, f'{DE_type}_{ylabel}.png'), dpi=300, transparent=True, facecolor='white')
+        # # - best param
+        # fig = plot_bestparams(best_params_ctr, best_params_mg, priors=priors)
+        # fig.savefig(os.path.join(dir, 'bestparams.png'), dpi=300, transparent=True, facecolor='white')

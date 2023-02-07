@@ -41,7 +41,8 @@ def VestersSA(links, protnames) -> pd.DataFrame:
     output: VSA (DataFrame) -> protname: AS, PS, Role
     '''
     AS = [sum(links.loc[links['Regulator']==gene,:]['Weight']) for gene in protnames]
-    PS = [sum(links.loc[links['Target']==gene,:]['Weight']) for gene in protnames] 
+    PS = [sum(links.loc[links['Target']==gene,:]['Weight']) for gene in protnames]
+
     #- normalize links
     AS, PS = AS/np.std(AS), PS/np.std(PS)
     vsa_results = pd.DataFrame(data={'Entry':protnames,'AS':AS, 'PS':PS})
@@ -83,7 +84,7 @@ class VSA_plot:
     colors = ['lightgreen', 'lightblue', 'yellow', 'r']
     sizes = [40 * i for i in [1, 1.5, 2, 5]]
     roles = ['Buffering', 'Passive', 'Active', 'Critical']
-    def plot_role_change(df, save_dir):
+    def plot_role_change(df, ax=None, title=''):
         '''
             Plots AS/PS for role change betwen ctr and sample
         '''
@@ -96,10 +97,10 @@ class VSA_plot:
         # gene names shown on ctr and not mg
         # an arrow from ctr to mg only for any change from or to critical role
         # names of ctr or mg on the symbols
-        rows = 1
-        cols = 1
-        fig, axes = plt.subplots(rows, cols, tight_layout=True, figsize=(cols * 4, rows * 4))
-        ax = axes
+        if ax is None:
+            rows = 1
+            cols = 1
+            fig, ax = plt.subplots(rows, cols, tight_layout=True, figsize=(cols * 4, rows * 4))
         # - first ctr
         VSA_plot.scatter(ax, PS=df['PS_1'], AS=df['AS_1'], roles=df['Role_1'])
         # - second sample
@@ -108,13 +109,13 @@ class VSA_plot:
         fontsize = 8
         for prot, x0, y0, x1, y1 in zip(df['Entry'].values, df['PS_1'].values, df['AS_1'].values, df['PS_2'].values,
                                         df['AS_2'].values):
-            print(prot)
             x, y = x0 - .15, y0 - .012
             # if prot == 'Q07954' or prot=='Q14444':
             #     x, y = x0-.14, y0+.01
             # if prot == 'P12956':
             #     x, y = x1-.1, y1-.012
-            ax.annotate(f'{prot}', xy=(x, y), fontsize=7)
+            if False: # to show the prot names on each point
+                ax.annotate(f'{prot}', xy=(x, y), fontsize=7)
             arrow_t = arrow_specs[prot]['arrow_type']
             rad = arrow_specs[prot]['rad']
             ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
@@ -124,10 +125,11 @@ class VSA_plot:
         VSA_plot.mark_x(ax, 0)
         VSA_plot.mark_y(ax, 0)
         VSA_plot.plot_roles(ax)
-        VSA_plot.postprocess(ax, title='')
-
-        # fig.savefig(os.path.join(save_dir, 'roles_ctr_to_mg.png'), dpi=300, transparent=True)
-        fig.savefig(os.path.join(save_dir, 'roles_ctr_to_mg.pdf'))
+        VSA_plot.postprocess(ax, title=title)
+        try:
+            return fig
+        except:
+            pass
     def plot_noise_analysis(oo_prots, study_1='ctr', study_2='sample'):
         '''
             Plots AS/PS for ctr and mg conditions, for n different runs of sensitivity analysis, one window for each prot
@@ -146,7 +148,10 @@ class VSA_plot:
         for idx, (prot, data) in enumerate(oo_prots.items()): #- plot for each prot on a seperate window
             i = int(idx / (ncols))
             j = idx % ncols
-            ax = axes[i][j]
+            try:
+                ax = axes[i][j]
+            except:
+                ax = axes[j]
 
             for idxx, study in enumerate(data.keys()):
                 sc = ax.scatter(data[study]['PS'], data[study]['AS'],
@@ -167,8 +172,8 @@ class VSA_plot:
             VSA_plot.mark_x(ax, 0)
             VSA_plot.mark_y(ax, 0)
             VSA_plot.plot_roles(ax)
-            ax.set_xlim([-3, 3])
-            ax.set_ylim([-3, 3])
+            # ax.set_xlim([-3, 3])
+            # ax.set_ylim([-3, 3])
             # - arrow
             fontsize = 8
             x0, y0, x1, y1 = np.mean(data[study_1]['PS']), np.mean(data[study_1]['AS']), np.mean(data[study_2]['PS']), np.mean(
@@ -191,7 +196,7 @@ class VSA_plot:
         # fig.savefig(os.path.join(OUTPUT_DIR, f'VSA/{name}.pdf'),bbox_extra_artists=(ll,), bbox_inches='tight')
         return fig
 
-    def plot_ctr_vs_sample(df_ctr, df_sample, preferred_names, save_dir):
+    def plot_ctr_vs_sample(df_ctr, df_sample, preferred_names):
         '''
             Plots AS/PS for ctr and mg conditions in a 1*2 subplot
         '''
@@ -200,7 +205,7 @@ class VSA_plot:
         cols = 2
         fig, axes = plt.subplots(rows, cols, tight_layout=True, figsize=(cols * 3.5, rows * 3))
         dfs = [df_ctr, df_sample]
-        titles = ['Ctr', 'Mg']
+        titles = ['ctr', 'mg']
         for j in range(cols):
             df = dfs[j]
             if df is None:
@@ -218,19 +223,18 @@ class VSA_plot:
         for i, color in enumerate(VSA_plot.colors):
             handles.append(ax.scatter([], [], marker='o', label=VSA_plot.roles[i],
                                       edgecolor='black', color=color, linewidth=.2))
-        ll = plt.legend(handles=handles,
-                        bbox_to_anchor=(1, 1), prop={'size': 8}
+        ll = ax.legend(handles=handles,
+                        bbox_to_anchor=(1.4, 1), prop={'size': 8}
                         # title='Enriched Term'
                         )
-        # ax.add_artist(ll)
+        ax.add_artist(ll)
+        return fig
 
-        fig.savefig(os.path.join(save_dir, 'roles_ctr_mg.pdf'), bbox_extra_artists=(ll,), bbox_inches='tight')
-        fig.savefig(os.path.join(save_dir, 'roles_ctr_mg.png'), dpi=300, transparent=True, bbox_extra_artists=(ll,),
-                    bbox_inches='tight')
+
     def postprocess(ax, title, show_axis_names=True):
         if show_axis_names:
-            ax.set_xlabel('PS')
-            ax.set_ylabel('AS')
+            ax.set_xlabel('PS (relative to top 25 %)')
+            ax.set_ylabel('AS (relative to top 25 %)')
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]

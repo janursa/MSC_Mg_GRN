@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import df_target, time_points, protnames, GRN_DIR, CALIBRATION_DIR
+from scripts.imports import F_DE_data, time_points, GRN_DIR, CALIBRATION_DIR
 from scripts.utils import process_data
 from scripts.utils.calibration import retrieve_data, plot_scores
-from scripts.utils.links import grn, read_write_links, write_scores
+from scripts.utils.links import grn
 
 if __name__ == '__main__':
 
@@ -20,24 +20,25 @@ if __name__ == '__main__':
     # - create dir
     if not os.path.isdir(os.path.join(GRN_DIR, method)):
         os.makedirs(os.path.join(GRN_DIR, method))
-    test_size = 0
-    for study in ['ctr', 'mg', 'combined']:
-        if study == 'combined':
-            gene_names = protnames()+['mg']
-        else:
-            gene_names = protnames()
-        # - read the data
-        data = process_data(df_target(), study=study, time_points=time_points(), standardize=False)
-        print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
-        #- read results of calibration
-        _, param_unique = retrieve_data(study=study, method=method, output_dir=CALIBRATION_DIR)
-        _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=time_points(),
-                                        test_size=test_size, param=param, param_unique=param_unique)
-        #- write to file
-        read_write_links(links=links, study=study, mode='write', method=method, output_dir=GRN_DIR)
 
-        output_dir = os.path.join(GRN_DIR, method)
-        write_scores(method=method, study=study, trainscores=trainscores, testscores=testscores, output_dir=output_dir)
+    for DE_data_type, DE_data in F_DE_data().items():
+        for study in ['ctr', 'mg', 'all-in']:
+            if study == 'all-in':
+                gene_names = DE_data['Protein'].values.tolist() + ['mg']
+            else:
+                gene_names = DE_data['Protein'].values
+            # - read the data
+            data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
+            print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+            #- read results of calibration
+            _, param_unique = retrieve_data(study=study, DE_type=DE_data_type, method=method, output_dir=CALIBRATION_DIR)
+            _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=time_points(),
+                                             param=param, param_unique=param_unique)
+            #- write to file
+            links.to_csv(os.path.join(GRN_DIR, method, f'links_{DE_data_type}_{study}.csv'), index=False)
+            # TODO: test scores are not calculated
+            # np.savetxt(os.path.join(GRN_DIR, method, f'testscores_{DE_data_type}_{study}.csv'), testscores)
+            np.savetxt(os.path.join(GRN_DIR, method, f'trainscores_{DE_data_type}_{study}.csv'), trainscores)
 
 
     #- compare to vs_string

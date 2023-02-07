@@ -26,18 +26,33 @@ sys.path.insert(0, geneRNI_dir)
 from geneRNI.models import get_estimator_wrapper
 
 #- import training data
-def df_target():
-    return pd.read_csv(os.path.join(DATA_DIR,'DE_data.csv'))
+def F_DE_data():
+    """
+    returns DE_data that is a dict of df
+    """
+    # return pd.read_csv(os.path.join(DATA_DIR,'DE_data.csv'))
+    with open(os.path.join(DATA_DIR,'DE_data.csv')) as f:
+        data = json.load(f)
+    data = {ky: pd.read_json(df_string) for ky, df_string in data.items()}
+    return data
+def F_DE_protiens():
+    """
+    returns DE_proteins that is a dict of list
+    """
+    with open(os.path.join(DATA_DIR,'DE_protnames.txt')) as f:
+        data = eval(f.read())
+    return data
 #- DE protnames
-def protnames():
-    return list(df_target()['Protein'].values)
+# def protnames():
+#     return list(df_target()['Protein'].values)
 
-def param_grid_RF():
+
+def param_grid_RF(n_proteins):
     return dict(
         decay_coeff=np.arange(0,1,.05),
         # min_samples_leaf=np.arange(1,5,1),
         # max_depth=np.arange(5,34,1),
-        max_features=np.arange(int(np.sqrt(len(protnames()))),len(protnames()),1),
+        max_features=np.arange(int(np.sqrt(n_proteins)),n_proteins,1),
     )
 def param_grid_ridge():
     param_grid_ridge_ = get_estimator_wrapper('ridge').get_grid_parameters()

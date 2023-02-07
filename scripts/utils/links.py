@@ -16,19 +16,20 @@ import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import *
-from utils import create_check_dir, serif_font
+from scripts.imports import *
+from scripts.utils import create_check_dir, serif_font
 
 from geneRNI.core import network_inference
 from geneRNI.data import Data
 
-def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
+def batch_GRN(study, method, DE_type, i_start, i_end, output_dir, **specs):
     """
         Runs network inference for a number of times
     """
     #- create/check dirs for method, study, (links and scores)
     DIR_METHOD = create_check_dir(output_dir, method)
-    DIR_STUDY = create_check_dir(DIR_METHOD, study)
+    DIR_DE_type = create_check_dir(DIR_METHOD, DE_type)
+    DIR_STUDY = create_check_dir(DIR_DE_type, study)
     DIR_LINKS = create_check_dir(DIR_STUDY, 'links')
     DIR_TESTSCORES = create_check_dir(DIR_STUDY, 'testscores')
     DIR_TRAINSCORES = create_check_dir(DIR_STUDY, 'trainscores')
@@ -43,47 +44,106 @@ def batch_GRN(study, method, i_start, i_end, output_dir, **specs):
         np.savetxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'), train_scores)
         links_df.to_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index=False)
 
-def retrieve_scores(study, method, output_dir):
+    #------ pools iteration results such links and scores ---
+    testscores_stack = []
+    trainscores_stack = []
+    links_stack = []
+    for i in range(i_end):
+        # - retreive
+        links = pd.read_csv(os.path.join(DIR_LINKS, f'data_{i}.csv'), index_col=False)
+        testscores = np.genfromtxt(os.path.join(DIR_TESTSCORES, f'data_{i}.csv'))
+        trainscores = np.genfromtxt(os.path.join(DIR_TRAINSCORES, f'data_{i}.csv'))
+        # - stack them
+        testscores_stack.append(testscores)
+        trainscores_stack.append(trainscores)
+        links_stack.append(links)
+    # - pool the weights and  create average links df
+    ws_pool = np.array([ll['Weight'].values for ll in links_stack]).T
+    ws_mean = np.mean(ws_pool, axis=1)
+    links = pd.DataFrame()
+    links.loc[:, ['Regulator', 'Target']] = links_stack[0].loc[:, ['Regulator', 'Target']]
+    links_mean = links.copy()
+    links_pool = links.copy()
+    links_mean['Weight'] = ws_mean
+    links_pool['WeightPool'] = list(ws_pool)
+    links_pool['Weight'] = ws_mean
+    # - average pool scores
+    testscores_mean = np.mean(testscores_stack, axis=1)
+    trainscores_mean = np.mean(trainscores_stack, axis=1)
+    # - save
+    links_mean.to_csv(os.path.join(DIR_METHOD, f'links_{DE_type}_{study}.csv'))
+    links_pool.to_pickle(os.path.join(DIR_METHOD, f'links_pool_{DE_type}_{study}.csv'))
+
+    np.savetxt(os.path.join(DIR_DE_type, f'testscores_{study}.csv'), testscores)
+    np.savetxt(os.path.join(DIR_DE_type, f'trainscores_{study}.csv'), trainscores)
+
+def retrieve_scores(study, method, DE_type, output_dir):
     """
         Retreiev train and test scores
     """
-    testscores = np.genfromtxt(os.path.join(output_dir, method, f'testscores_{study}.csv'))
-    trainscores = np.genfromtxt(os.path.join(output_dir, method, f'trainscores_{study}.csv'))
+    testscores = np.genfromtxt(os.path.join(output_dir, method, DE_type, f'testscores_{study}.csv'))
+    trainscores = np.genfromtxt(os.path.join(output_dir, method, DE_type, f'trainscores_{study}.csv'))
 
     return trainscores, testscores
 def grn(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)
 
-def compare_network_string(links_, top_quantile, enrich_output_dir, verbose=False) -> int:
+def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verbose=False) -> int:
     '''
         Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
     '''
-    links_short = choose_top_quantile(links_, quantile=top_quantile)
-    STR_LINKS_FILE = os.path.join(enrich_output_dir, 'string_interactions.tsv')
-    links_string = pd.read_csv(STR_LINKS_FILE,sep='\t',index_col=False)
-    links_string = links_string.rename(columns={'#node1':'Regulator','node2':'Target','combined_score':'Weight'})
-    links_string = links_string.loc[:,['Regulator','Target','Weight']]  
+    links_short = choose_top_quantile(links, quantile=top_quantile)
+    links_string = pd.read_csv(os.path.join(enrich_output_dir, f'network_{DE_type}.csv'), index_col=False)
+    links_string.rename(columns={'node1':'Regulator','node2':'Target','score':'Weight'}, inplace=True)
+    links_string = links_string.loc[:,['Regulator','Target','Weight']]
     if verbose:
         print(f'Number of vs_string links: {len(links_string)}')
         print(f'Number of extracted links: {len(links_short)}')
     if len(links_string)>len(links_short):
-        raise ValueError('Extracted links cannot be lesser than golden links')
+        print('Extracted links cannot be lesser than golden links')
+        print('Golden links are shortened')
+        links_string.sort_values('Weight', ascending=False)
+        links_string = links_string.head(len(links_short))
+        # raise ValueError('Extracted links cannot be lesser than golden links')
 
-    with open(os.path.join(enrich_output_dir, 'map_genename_protname.json')) as f:
-        map_genename_protname = json.load(f)['map']
-    #- convert genenames to protnames in vs_string
-    links_string.loc[:,'Regulator'] = [map_genename_protname[name] for name in links_string['Regulator']]
-    links_string.loc[:,'Target'] = [map_genename_protname[name] for name in links_string['Target']]
     #- find vs_string links in the extracted links, label them and add stringweight
     links_short['inString'] = False
     for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
         links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'inString'] = True
         links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'StringWeight'] = weight
-    n= links_short['inString'].values.tolist().count(True)
-    
-    return n
-def compare_network_string_batch(links, top_quantile, enrich_output_dir):
+    n = links_short['inString'].values.tolist().count(True)
+    n_norm = n/len(links_string)
+
+    return n_norm
+def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verbose=False) -> int:
+    '''
+        Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
+    '''
+    links_short = choose_top_quantile(links, quantile=top_quantile)
+    links_string = pd.read_csv(os.path.join(enrich_output_dir, f'network_{DE_type}.csv'), index_col=False)
+    links_string.rename(columns={'node1':'Regulator','node2':'Target','score':'Weight'}, inplace=True)
+    links_string = links_string.loc[:,['Regulator','Target','Weight']]
+    if verbose:
+        print(f'Number of vs_string links: {len(links_string)}')
+        print(f'Number of extracted links: {len(links_short)}')
+    if len(links_string)>len(links_short):
+        print('Extracted links cannot be lesser than golden links')
+        print('Golden links are shortened')
+        links_string.sort_values('Weight', ascending=False)
+        links_string = links_string.head(len(links_short))
+        # raise ValueError('Extracted links cannot be lesser than golden links')
+
+    #- find vs_string links in the extracted links, label them and add stringweight
+    links_short['inString'] = False
+    for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
+        links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'inString'] = True
+        links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'StringWeight'] = weight
+    n = links_short['inString'].values.tolist().count(True)
+    n_norm = n/len(links_string)
+
+    return n_norm
+def compare_network_string_batch(DE_type, links, top_quantile, enrich_output_dir):
     """
     Compare the given links to vs_string for each weight set in weightpool
     """
@@ -91,7 +151,7 @@ def compare_network_string_batch(links, top_quantile, enrich_output_dir):
     weightpool = np.array(links['WeightPool'].values.tolist()).T
     for weight in weightpool:
         links['Weight'] = weight
-        match_count = compare_network_string(links, top_quantile, enrich_output_dir=enrich_output_dir)
+        match_count = compare_network_string(DE_type=DE_type,links=links, top_quantile=top_quantile, enrich_output_dir=enrich_output_dir)
         match_counts.append(match_count)
     return np.array(match_counts)
 def determine_sig_signes(datas):
@@ -117,11 +177,11 @@ def determine_sig_signes(datas):
     flags = (pvalues<0.05)*increase_flags
     sig_signs = ['']+[define_sign(flag) for flag in flags]
     return sig_signs
-def read_write_links(method, study, mode:str, links=None, output_dir='') -> pd.DataFrame:
+def _read_write_links(method, study, mode:str, links=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
     '''
-    assert(study in ['ctr','mg','combined','random'])
+    assert(study in ['ctr','mg','all-in','random'])
     assert(mode in ['read', 'write'])
     #- determine file location
     DIR = os.path.join(output_dir, method)
@@ -159,7 +219,7 @@ def pool_links(study, protnames, output_dir, n, method='') -> pd.DataFrame:
     links['Weight'] = ws_mean
     links['WeightPool'] = list(ws_pool)
     return links
-def pool_GRN_oo(method, study, replica_n, output_dir):
+def _pool_GRN_oo(method, study, replica_n, output_dir):
     """ pools iteration results such links and scores
     """
     DIR_METHOD = os.path.join(output_dir, 'GRN', method)
@@ -199,7 +259,8 @@ def pool_GRN_oo(method, study, replica_n, output_dir):
     write_scores(method=method, study=study, trainscores=trainscores_mean,
                  testscores=testscores_mean, output_dir=DIR_METHOD)
 
-def write_scores(method, study, trainscores, testscores , output_dir):
+
+def _write_scores(method, study, trainscores, testscores , output_dir):
     """
     Write train test scores to files
     """
@@ -254,50 +315,46 @@ def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
     links.sort_values('Weight',ascending=False,inplace=True)
     links_short = links.iloc[:n,:].reset_index(drop=True)
     return links_short
-def plot_mean_weights(links_s, labels, colors):
+def plot_mean_weights(links_s, methods, colors, studies):
     serif_font()
     nrows = 1
     ncols = 3
     fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*3, nrows*2.5))
-    for idx in range(len(labels)):
-        # i = int(idx/(nrows-1))
-        # j = idx%ncols
-        # ax = axes[i][j]
-
+    for idx in range(len(methods)):
         ax = axes[idx]
         for i,study in enumerate(links_s[idx]):
             ax.hist(study['Weight'], bins=100, alpha=0.5,
                             histtype='bar', #'bar', 'barstacked', 'step', 'stepfilled'
                             color=colors[i],
-                            ec='black',
+                            # ec='black',
                             rwidth=1.1,
                             # density = True
                            )
         handles = []
-        tags = ['ctr','mg']
+
         for i, color in enumerate(colors):
-            handles.append(ax.scatter([],[],marker='o', label=tags[i],
+            handles.append(ax.scatter([],[],marker='o', label=studies[i],
              edgecolor='black', color=color, linewidth=.2))
+
         ll = plt.legend(handles=handles, 
             bbox_to_anchor=(1,1), prop={'size': 9}
             # title='Enriched Term'
             )
         # ax.add_artist(ll)
-        ax.set_xlabel('Normalized interaction strength')
+        ax.set_xlabel('Interaction strength')
         ax.set_ylabel('Density')
         ax.set_ymargin(.2)
 #         ax.set_xmargin(.1)
         # ax.set_xlim([-.5,8])
-        ax.set_title(labels[idx])
+        ax.set_title(methods[idx])
     return fig
-def plot_match_counts(datas, labels, sig_signs):
+def plot_match_counts(ax, data_stack, labels, sig_signs):
     matplotlib.rcParams.update({'font.size': 12})
 
-    fig, axes = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5), 
-        )
+    # fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5),
+    #     )
 
-    ax = axes
-    bplot = ax.violinplot(datas, showmeans=True, showextrema=False)
+    bplot = ax.violinplot(data_stack, showmeans=True, showextrema=False)
 
     ax.set_ylabel('Number of matched interactions')
     ax.set_xticks(list(range(1,len(labels)+1)))
@@ -311,45 +368,56 @@ def plot_match_counts(datas, labels, sig_signs):
         patch.set_alpha(1)
     #- plot sig        
     xs = ax.get_xticks()
-    ys = np.max(datas, axis=1) 
+    ys = np.max(data_stack, axis=1)
     for i, sign in enumerate(sig_signs):
         if sign != '':
             ax.annotate(sign, xy=(xs[i],ys[i]),
                 ha='center', 
                 va='bottom',
                 )
-    return fig
 
 
-def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
+def format_links_string(links, gene_names) -> pd.DataFrame:
+    """Converts links to golden links style
+    Links are given as gene 1 to gene 2 with a weight.
+    Golden link is combination of all genes with 0 or 1 for the true links.
+    We assume that any link given in links is 1 disgarding quantity of Weight.
+    """
+    regs = np.repeat(gene_names, len(gene_names)-1)
+    targs = []
+    for i in range(len(gene_names)):
+        targs.extend(gene_names[:i] + gene_names[i+1:])
+    golden_links = pd.DataFrame({'Regulator':regs, 'Target': targs})
+    golden_links['Weight'] = (golden_links['Regulator'].isin(links['Regulator']) & golden_links['Target'].isin(links['Target'])).astype(int)
+    # golden_links.to_csv('test.csv')
+    return golden_links
+def plot_match_counts_series(match_counts_list, links_names, top_quantile_list, ax=None):
     """
     Plots match counts for different top selected links as a line plot. Each line is for different methods such as RF and Ridge
     """
     top_quantile_list = np.round(top_quantile_list, 2)
-    match_counts_sum = np.sum(match_counts_list, axis=1).astype(int) #final scores
+    match_counts_sum = np.round(np.sum(match_counts_list, axis=1),2) #final scores
     # add scores to the names
-    links_names = [f'{name}: {score}' for name, score in zip(links_names,match_counts_sum)]
+    links_names = [f'{name}: (score={score})' for name, score in zip(links_names, match_counts_sum)]
     serif_font()
-    fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7, 3.5))
-    # x_range = [min(xticks_labels), max(xticks_labels)]
-    x = np.linspace(min(top_quantile_list), max(top_quantile_list), len(top_quantile_list))
-    colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan', 'grey']
-    linestyles = ['-', '--', '-.', ':']
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7, 3.5))
+    colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan', 'grey', 'blue']
+    linestyles = ['-', '--', '-.', ':', '-', '--']
     assert (len(match_counts_list) == len(links_names))
     for i, data in enumerate(match_counts_list):
         ax.plot(top_quantile_list, data, label=links_names[i], color=colors[i], alpha=1, linewidth=2,
                 linestyle=linestyles[i],
                 marker='o')
-        # ax.fill_between(x, data, alpha=.1)
-
-    ax.set_ylabel('Number of matched interactions')
+    ax.set_ylabel('Fraction of network match')
     ax.set_xlabel('Selected top quantile')
     xticks = np.arange(min(top_quantile_list), max(top_quantile_list), .05)
     ax.set_xticks(xticks)
-    ax.set_xmargin(.15)
-    ax.set_ymargin(.15)
+    # ax.set_xmargin(.15)
+    # ax.set_ymargin(.25)
+    ax.set_ylim([-.01,.25])
 
-    plt.legend(frameon=False)
+    ax.legend(frameon=False)
     # - annotate score on the right side of each line
     
     # for i, (score, y) in enumerate(zip(match_counts_sum, match_counts_list)):
@@ -358,9 +426,13 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list):
     #                 va='bottom',
     #                 size=10,
     #                 alpha=.5
+    #
     #                 )
 
-    return fig
+    try:
+        return fig
+    except:
+        pass
 def create_random_links(links_assembly, n=1000):
     #- TODO: create matrix (using protname)
     links_assembly = [normalize_links(links) for links in links_assembly]

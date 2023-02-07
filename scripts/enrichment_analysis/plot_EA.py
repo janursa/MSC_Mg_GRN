@@ -17,7 +17,7 @@ from scripts.imports import ENRICH_DIR
 
 
 if __name__ == '__main__':
-    for phase in ['early', 'late']:
+    for phase in ['early_30', 'late_30']:
         # - assignments
         size_tag, color_tag, xlabel = 'Strength', 'FDR', 'ProteinCount'
         markers = ['o', '>', '*', 's', 'p']
