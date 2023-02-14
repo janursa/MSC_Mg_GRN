@@ -20,13 +20,14 @@ def visualize_scores(method, ylabel, ylim):
     # ----------  combined plot-------------------
     if True:
         DE_types = F_DE_data().keys()
-        studies = ['ctr', 'mg', 'all-in']
+        # studies = ['ctr', 'mg', 'all-in']
+        studies = ['ctr', 'mg']
 
         serif_font()
         ncols = 2
         nrows = int(len(DE_types) / ncols)
 
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.5 * ncols, 2.5 * nrows))
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2.2 * nrows))
         for idx, DE_type in enumerate(DE_types):
             best_scores_stack = []
             for study in studies:

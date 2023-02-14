@@ -6,6 +6,7 @@ import os
 import numpy as np
 import scipy
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 
 
@@ -14,7 +15,69 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import VS_STRING_DIR, GRN_DIR, ENRICH_DIR, F_DE_data
 from scripts.utils import make_title_pretty
-from scripts.utils.links import plot_match_counts, determine_sig_signes, compare_network_string, compare_network_string_batch, plot_match_counts_series, create_random_links
+from scripts.utils.links import compare_network_string, plot_match_counts_series, create_random_links
+
+def determine_sig_signes(datas):
+    """ to test sig distribtion from noise links
+    Conducts t test to determine whether datas[1:] are significantly different than datas[0], which is ctr
+    Datas: Tuple(DataFrame), e.g. [ctr, RF, Ridge, Portia]
+    """
+    ctr = datas[0] #random
+    #- determine p values: compared to ctr
+    pvalues = np.array([])
+    for data in datas[1:]:
+        s, p = scipy.stats.ttest_ind(data, ctr)
+        pvalues = np.append(pvalues, p)
+    #- determine whether mean distribution is higher than ctr: we only plot higher ones
+    increase_flags = np.array((np.mean(datas[1:], axis=1) - np.mean(ctr))>0)
+    #- use p values with value flags
+    def define_sign(p):
+        if p:
+            sign = r'$*$'
+        else:
+            sign=''
+        return sign
+    flags = (pvalues<0.05)*increase_flags
+    sig_signs = ['']+[define_sign(flag) for flag in flags]
+    return sig_signs
+def compare_network_string_batch(DE_type, links, top_quantile, n_repeat, enrich_output_dir):
+    """
+    Compare the given links to vs_string for each weight set in weightpool
+    """
+    match_counts = []
+    weightpool = np.array(links['WeightPool'].values.tolist()).T
+    for weight in weightpool[0:n_repeat]:
+        links['Weight'] = weight
+        match_count = compare_network_string(DE_type=DE_type,links=links, top_quantile=top_quantile, enrich_output_dir=enrich_output_dir)
+        match_counts.append(match_count)
+    return np.array(match_counts)
+def plot_match_counts_dist(ax, data_stack, labels, sig_signs):
+    matplotlib.rcParams.update({'font.size': 12})
+
+    # fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5),
+    #     )
+
+    bplot = ax.violinplot(data_stack, showmeans=True, showextrema=False)
+
+    ax.set_ylabel('Number of matched interactions')
+    ax.set_xticks(list(range(1,len(labels)+1)))
+    ax.set_xticklabels(labels,rotation=0)
+    ax.set_ymargin(.25)
+    #- face colors
+    colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan','grey']
+    for patch, color in zip(bplot['bodies'], colors):
+        patch.set_facecolor(color)
+        patch.set_edgecolor('black')
+        patch.set_alpha(1)
+    #- plot sig
+    xs = ax.get_xticks()
+    ys = np.max(data_stack, axis=1)
+    for i, sign in enumerate(sig_signs):
+        if sign != '':
+            ax.annotate(sign, xy=(xs[i],ys[i]),
+                ha='center',
+                va='bottom',
+                )
 
 
 if __name__ == '__main__':
@@ -22,53 +85,55 @@ if __name__ == '__main__':
     if not os.path.isdir(VS_STRING_DIR):
         os.makedirs(VS_STRING_DIR)
 
-    n_repeat = 10
-    methods = ['arbitrary', 'RF', 'ridge', 'portia']
+    n_repeat = 100
+    methods = ['RF', 'ridge', 'portia', 'ensemble', 'arbitrary']
+    methods_ordered = ['arbitrary', 'RF', 'ridge', 'portia', 'ensemble']
     DE_types = F_DE_data().keys()
     study = 'ctr'
 
     ncols = 2
     nrows = int(len(DE_types) / ncols)
 
-    links_stack = []
-    # - get the links
-    for top_quantile in [.75, .9]:
+    for top_quantile in [.75, .9]: #one plot for each
+
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(4 * ncols, 3 * nrows))
         for idx, DE_type in enumerate(DE_types):
-            #- portia
-            links_portia = pd.read_csv(os.path.join(GRN_DIR, 'portia', f'links_{DE_type}_{study}.csv'), index_col=False)
-            links_stack.append(links_portia)
-            mc_portia = compare_network_string(DE_type=DE_type, links=links_portia, top_quantile=top_quantile,
-                                   enrich_output_dir=ENRICH_DIR)
-            mc_dist_portia = np.repeat(mc_portia, n_repeat)
-            # - ridge
-            links_ridge = pd.read_csv(os.path.join(GRN_DIR, 'ridge', f'links_{DE_type}_{study}.csv'), index_col=False)
-            links_stack.append(links_ridge)
-            mc_ridge = compare_network_string(DE_type=DE_type, links=links_ridge, top_quantile=top_quantile,
-                                               enrich_output_dir=ENRICH_DIR)
-            mc_dist_ridge = np.repeat(mc_ridge, n_repeat)
-            #- rf
-            links_rf = pd.read_pickle(os.path.join(GRN_DIR, 'RF', DE_type, f'links_pool_{study}.csv'))
-            links_stack.append(links_rf)
-            mc_dist_rf = compare_network_string_batch(links=links_rf, DE_type=DE_type, top_quantile=top_quantile, enrich_output_dir=ENRICH_DIR)
-            # - arbitrary
-            links_arbit = create_random_links(links_stack, n=n_repeat)
-            mc_dist_arbit = compare_network_string_batch(links=links_arbit, DE_type=DE_type, top_quantile=top_quantile, enrich_output_dir=ENRICH_DIR)
+            links_stack = []
+            mc_dist_list = []
+            for method in methods:
+                if method in ['ensemble', 'portia', 'ridge']:
+                    # - single weight
+                    links = pd.read_csv(os.path.join(GRN_DIR, method, f'links_{DE_type}_{study}.csv'), index_col=False)
+                    links_stack.append(links)
+                    mc= compare_network_string(DE_type=DE_type, links=links, top_quantile=top_quantile,
+                                                       enrich_output_dir=ENRICH_DIR)
+                    mc_dist = np.repeat(mc, n_repeat)
+                elif method == 'RF':
+                    links = pd.read_pickle(os.path.join(GRN_DIR, method, f'links_pool_{DE_type}_{study}.csv'))
+                    links_stack.append(links)
+                    mc_dist = compare_network_string_batch(links=links, DE_type=DE_type, n_repeat=n_repeat, top_quantile=top_quantile, enrich_output_dir=ENRICH_DIR)
+                elif method == 'arbitrary':
+                    links = create_random_links(links_stack, n=n_repeat)
+                    mc_dist = compare_network_string_batch(links=links, DE_type=DE_type, n_repeat=n_repeat,
+                                                                 top_quantile=top_quantile,
+                                                                 enrich_output_dir=ENRICH_DIR)
 
-            mc_dist_list = [mc_dist_arbit, mc_dist_rf, mc_dist_ridge, mc_dist_portia]
+                mc_dist_list.append(mc_dist)
+            #- change the position of arbit to the first one
+            mc_dist_list.insert(0, mc_dist_list[-1])
+            del mc_dist_list[-1]
+
 
             sig_signs = determine_sig_signes(mc_dist_list)
             i = int(idx/ncols)
             j = idx%ncols
             ax = axes[i][j]
             ax.set_title(make_title_pretty(DE_type))
-            plot_match_counts(ax=ax,data_stack=mc_dist_list, labels=methods, sig_signs=sig_signs)
-
-    #- get the links
+            plot_match_counts_dist(ax=ax,data_stack=mc_dist_list, labels=methods_ordered, sig_signs=sig_signs)
 
         fig.savefig(os.path.join(VS_STRING_DIR, f'match_count_{top_quantile}.png'), dpi=300, transparent=True)
         fig.savefig(os.path.join(VS_STRING_DIR, f'match_count_{top_quantile}.pdf'))
-        # plt.show()
+
 
 
 

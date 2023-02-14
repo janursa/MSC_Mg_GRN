@@ -89,7 +89,7 @@ def plot_scores(data_s, ylabel, xtickslabels, xlabel='', ax=None):
         fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(2.5, 3),
                              # gridspec_kw={'width_ratios': [2, 2]}
                              )
-    bplot = ax.boxplot(data_s, notch=True, patch_artist=True, meanline=True)
+    bplot = ax.boxplot(data_s, notch=True, patch_artist=True, meanline=True, widths=.5)
     # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
     #     )
     ax.set_ylabel(ylabel)

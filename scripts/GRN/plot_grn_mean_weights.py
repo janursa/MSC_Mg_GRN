@@ -23,7 +23,8 @@ def retreive_grn(method, DE_type, studies):
     return links_stack
 if __name__ == '__main__':
     studies = ['ctr', 'mg']
-    methods = ['RF', 'Portia', 'Ridge']
+    methods = ['RF', 'Ridge', 'Portia']
+    methods_preferred_names= ['RF', 'Ridge', 'RPME']
 
     for DE_type, _ in F_DE_protiens().items():
         links_combined = []
@@ -31,7 +32,8 @@ if __name__ == '__main__':
             links_combined.append(retreive_grn(method, DE_type, studies))
         colors = ['lightblue', 'pink']
 
-        fig = plot_mean_weights(links_combined, methods, colors, studies)
+        fig = plot_mean_weights(links_combined, methods_preferred_names, colors, studies)
         fig.savefig(os.path.join(GRN_DIR, f'mean_weights_{DE_type}.pdf'))
+        fig.savefig(os.path.join(GRN_DIR, f'mean_weights_{DE_type}.png'), dpi=300, transparent=True)
 
     # plt.show()

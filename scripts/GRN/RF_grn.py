@@ -16,21 +16,29 @@ if __name__ == '__main__':
     if not os.path.isdir(os.path.join(GRN_DIR, method)):
         os.makedirs(os.path.join(GRN_DIR, method))
 
-    studies = ['ctr', 'mg', 'all-in']
-    for DE_type, DE_data in F_DE_data().items():
+    # studies = ['ctr', 'mg', 'all-in']
+    studies = [ 'ctr', 'mg']
+    # studies = ['mg']
+    DE_types = ['combined_30', 'combined_50']
+    for DE_type in DE_types:
+    # for DE_type, DE_data in F_DE_data().items():
+        DE_data = F_DE_data()[DE_type]
         for study in studies:
+            print(f'----------------------{DE_type}, {study} ---------------')
             if study == 'all-in':
                 gene_names = DE_data['Protein'].values.tolist() + ['mg']
             else:
                 gene_names = DE_data['Protein'].values.tolist()
             specs = dict(
-                i_start=0,
-                i_end=1,
+                i_start=50,
+                i_end=100,
                 param=param,
                 gene_names=gene_names,
                 time_points=time_points(),
                 method=method,
                 output_dir=GRN_DIR,
+                verbose=False,
+
             )
             data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
             data = np.asarray(data)

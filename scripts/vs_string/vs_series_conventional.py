@@ -48,8 +48,6 @@ if __name__ == '__main__':
         ax_roc = axes_roc[idx]
         # - get the links
         for i, DE_type in enumerate(DE_types):
-            # if '50' in DE_type: #TODO: remove this
-            #     continue
             links = pd.read_csv(os.path.join(GRN_DIR, method, f'links_{DE_type}_{study}.csv'), index_col=False)
 
             golden_links = format_links_string(links_string_dict[DE_type], F_DE_protiens()[DE_type])

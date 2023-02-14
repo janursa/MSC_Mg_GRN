@@ -143,40 +143,7 @@ def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verb
     n_norm = n/len(links_string)
 
     return n_norm
-def compare_network_string_batch(DE_type, links, top_quantile, enrich_output_dir):
-    """
-    Compare the given links to vs_string for each weight set in weightpool
-    """
-    match_counts = []
-    weightpool = np.array(links['WeightPool'].values.tolist()).T
-    for weight in weightpool:
-        links['Weight'] = weight
-        match_count = compare_network_string(DE_type=DE_type,links=links, top_quantile=top_quantile, enrich_output_dir=enrich_output_dir)
-        match_counts.append(match_count)
-    return np.array(match_counts)
-def determine_sig_signes(datas):
-    """ to test sig distribtion from noise links
-    Conducts t test to determine whether datas[1:] are significantly different than datas[0], which is ctr
-    Datas: Tuple(DataFrame), e.g. [ctr, RF, Ridge, Portia]
-    """
-    ctr = datas[0] #random
-    #- determine p values: compared to ctr
-    pvalues = np.array([])
-    for data in datas[1:]:
-        s, p = scipy.stats.ttest_ind(data, ctr)
-        pvalues = np.append(pvalues, p)
-    #- determine whether mean distribution is higher than ctr: we only plot higher ones
-    increase_flags = np.array((np.mean(datas[1:], axis=1) - np.mean(ctr))>0)
-    #- use p values with value flags
-    def define_sign(p):
-        if p:
-            sign = r'$*$'
-        else:
-            sign=''
-        return sign
-    flags = (pvalues<0.05)*increase_flags
-    sig_signs = ['']+[define_sign(flag) for flag in flags]
-    return sig_signs
+
 def _read_write_links(method, study, mode:str, links=None, output_dir='') -> pd.DataFrame:
     '''
         Read write links extracted from GRN 
@@ -290,7 +257,7 @@ def filter_ttest(links) ->pd.DataFrame:
     links = links.loc[pvalue<0.05,:]
     print(f'number of links after ttest {len(links)}')
     return links
-def filter_fitscore(links) -> pd.DataFrame:
+def _filter_fitscore(links) -> pd.DataFrame:
     '''
         Filters the given df based on the fitscore
     '''
@@ -319,63 +286,38 @@ def plot_mean_weights(links_s, methods, colors, studies):
     serif_font()
     nrows = 1
     ncols = 3
-    fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*3, nrows*2.5))
+    fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*2.7, nrows*2.3))
     for idx in range(len(methods)):
         ax = axes[idx]
         for i,study in enumerate(links_s[idx]):
-            ax.hist(study['Weight'], bins=100, alpha=0.5,
+            ax.hist(study['Weight'], bins=50, alpha=0.6,
                             histtype='bar', #'bar', 'barstacked', 'step', 'stepfilled'
                             color=colors[i],
                             # ec='black',
-                            rwidth=1.1,
+                            rwidth=1.5,
                             # density = True
                            )
         handles = []
 
         for i, color in enumerate(colors):
-            handles.append(ax.scatter([],[],marker='o', label=studies[i],
+            handles.append(ax.scatter([],[], marker='o', label=studies[i],
              edgecolor='black', color=color, linewidth=.2))
 
-        ll = plt.legend(handles=handles, 
+        ax.legend(handles=handles,
             bbox_to_anchor=(1,1), prop={'size': 9}
             # title='Enriched Term'
             )
         # ax.add_artist(ll)
         ax.set_xlabel('Interaction strength')
-        ax.set_ylabel('Density')
+        if idx == 0:
+            ax.set_ylabel('Density')
+        else:
+            ax.set_ylabel('')
         ax.set_ymargin(.2)
 #         ax.set_xmargin(.1)
         # ax.set_xlim([-.5,8])
         ax.set_title(methods[idx])
     return fig
-def plot_match_counts(ax, data_stack, labels, sig_signs):
-    matplotlib.rcParams.update({'font.size': 12})
-
-    # fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(4.7,3.5),
-    #     )
-
-    bplot = ax.violinplot(data_stack, showmeans=True, showextrema=False)
-
-    ax.set_ylabel('Number of matched interactions')
-    ax.set_xticks(list(range(1,len(labels)+1)))
-    ax.set_xticklabels(labels,rotation=0)
-    ax.set_ymargin(.25)
-    #- face colors
-    colors = ['lightpink', 'lightblue', 'lightgreen', 'cyan','grey']
-    for patch, color in zip(bplot['bodies'], colors):
-        patch.set_facecolor(color)
-        patch.set_edgecolor('black')
-        patch.set_alpha(1)
-    #- plot sig        
-    xs = ax.get_xticks()
-    ys = np.max(data_stack, axis=1)
-    for i, sign in enumerate(sig_signs):
-        if sign != '':
-            ax.annotate(sign, xy=(xs[i],ys[i]),
-                ha='center', 
-                va='bottom',
-                )
-
 
 def format_links_string(links, gene_names) -> pd.DataFrame:
     """Converts links to golden links style
@@ -433,18 +375,7 @@ def plot_match_counts_series(match_counts_list, links_names, top_quantile_list, 
         return fig
     except:
         pass
-def create_random_links(links_assembly, n=1000):
-    #- TODO: create matrix (using protname)
-    links_assembly = [normalize_links(links) for links in links_assembly]
-    weights = [links['Weight'].values.tolist() for links in links_assembly]
-    weights = [i for j in weights for i in j] #flatten
-    random_links = links_assembly[0].copy()
-    weightpoolvector = []
-    for i in range(len(links_assembly[0])):
-        weightpoolvector.append(random.sample(weights, n))
-    random_links['WeightPool'] = weightpoolvector
-    random_links['Weight']= np.mean(weightpoolvector, axis=1)
-    return random_links
+
 def normalize_links(links):
     """
         Nornalize the links based on the std
