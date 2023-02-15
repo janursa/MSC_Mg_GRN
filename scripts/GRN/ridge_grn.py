@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
+sys.path.append(os.path.join(os.path.dirname(SCRIPT_DIR), '..'))
+sys.path.append(os.path.join(os.path.dirname(SCRIPT_DIR), '..', '..'))
 
 from scripts.imports import F_DE_data, time_points, GRN_DIR, CALIBRATION_DIR
 from scripts.utils import process_data
@@ -15,7 +17,7 @@ if __name__ == '__main__':
 
     #- params
     method='ridge'
-    param = dict(estimator_t=method)
+    param = dict(estimator_t=method, alpha=100)
     #- network inference
     # - create dir
     if not os.path.isdir(os.path.join(GRN_DIR, method)):
