@@ -325,13 +325,28 @@ def format_links_string(links, gene_names) -> pd.DataFrame:
     Golden link is combination of all genes with 0 or 1 for the true links.
     We assume that any link given in links is 1 disgarding quantity of Weight.
     """
-    regs = np.repeat(gene_names, len(gene_names)-1)
+    n_genes = len(gene_names)
+    regs = np.repeat(gene_names, n_genes-1)
     targs = []
-    for i in range(len(gene_names)):
+    for i in range(n_genes):
         targs.extend(gene_names[:i] + gene_names[i+1:])
     golden_links = pd.DataFrame({'Regulator':regs, 'Target': targs})
     golden_links['Weight'] = (golden_links['Regulator'].isin(links['Regulator']) & golden_links['Target'].isin(links['Target'])).astype(int)
-    # golden_links.to_csv('test.csv')
+    #- control
+    if True:
+        gl = golden_links
+        assert(len(golden_links)==n_genes*(n_genes-1))
+        for i in range(10): # for 10 random selection, golden link should match the links
+            idx = random.randint(0, len(links)-1)
+            reg, targ,_ = links.iloc[idx,:]
+            should_be_one = gl.loc[(gl['Regulator'] == reg) & (gl['Target'] == targ), 'Weight'].iloc[0]
+            assert isinstance(should_be_one, np.int32)
+            assert (should_be_one==1)
+
+
+        print('Golden links creation control successful')
+
+
     return golden_links
 def plot_match_counts_series(match_counts_list, links_names, top_quantile_list, ax=None):
     """

@@ -98,20 +98,19 @@ if __name__ == '__main__':
     n_repeat = 100
     methods = ['RF', 'ridge', 'portia', 'arbitrary']
     methods_ordered = ['arbitrary', 'RF', 'ridge', 'portia'] #the order in plot
-    DE_types = F_DE_data().keys()
+    DE_types = F_DE_data().keys() # different models, early late combined 30 50 -> 6 combination
     study = 'ctr'
 
     #- retreieve the string links
     links_string_dict = {}
     for DE_type in DE_types:
-        links_string = pd.read_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index_col=False)
+        links_string: pd.DataFrame = pd.read_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index_col=False)
         links_string_dict[DE_type] = links_string
 
     #- for plot
     ncols = 2
     nrows = int(len(DE_types) / ncols)
 
-    top_quantile = 0.9
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(4 * ncols, 3 * nrows))
     for idx, DE_type in enumerate(DE_types):
         protnames = F_DE_protiens()[DE_type]
@@ -135,10 +134,11 @@ if __name__ == '__main__':
         for i_method, method in enumerate(methods):
             links = links_stack[i_method]
             if method in ['ridge','RF']:
-                best_scores, best_params = calibration.retrieve_data(study,method, DE_type, CALIBRATION_DIR)
-                protnames_left = np.asarray(protnames)[np.asarray(best_scores>0)]
-                mask = links['Target'].isin(protnames_left)
-                filter_masks.append(mask)
+                # best_scores, best_params = calibration.retrieve_data(study,method, DE_type, CALIBRATION_DIR)
+                # protnames_left = np.asarray(protnames)[np.asarray(best_scores>0)]
+                # mask = links['Target'].isin(protnames_left)
+                # filter_masks.append(mask)
+                filter_masks.append(None)
             else:
                 filter_masks.append(None)
 
@@ -173,8 +173,8 @@ if __name__ == '__main__':
         ax.set_title(make_title_pretty(DE_type))
         plot_recall_dist(ax=ax,data_stack=mc_dist_list, labels=methods_ordered, sig_signs=sig_signs)
 
-    fig.savefig(os.path.join(VS_STRING_DIR, f'match_count_{top_quantile}.png'), dpi=300, transparent=True)
-    fig.savefig(os.path.join(VS_STRING_DIR, f'match_count_{top_quantile}.pdf'))
+    fig.savefig(os.path.join(VS_STRING_DIR, f'evaluation.png'), dpi=300, transparent=True)
+    fig.savefig(os.path.join(VS_STRING_DIR, f'evaluation.pdf'))
 
 
 
