@@ -340,8 +340,8 @@ def format_links_string(links, gene_names) -> pd.DataFrame:
             idx = random.randint(0, len(links)-1)
             reg, targ,_ = links.iloc[idx,:]
             should_be_one = gl.loc[(gl['Regulator'] == reg) & (gl['Target'] == targ), 'Weight'].iloc[0]
-            assert isinstance(should_be_one, np.int32)
-            assert (should_be_one==1)
+            assert np.issubdtype(should_be_one.dtype, np.integer)
+            assert np.all(should_be_one == 1)
 
 
         print('Golden links creation control successful')
