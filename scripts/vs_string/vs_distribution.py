@@ -40,17 +40,8 @@ def determine_sig_signes(datas):
     flags = (pvalues<0.05)*increase_flags
     sig_signs = ['']+[define_sign(flag) for flag in flags]
     return sig_signs
-def compare_network_string_batch(DE_type, links, top_quantile, n_repeat, enrich_output_dir):
-    """
-    Compare the given links to vs_string for each weight set in weightpool
-    """
-    match_counts = []
-    weightpool = np.array(links['WeightPool'].values.tolist()).T
-    for weight in weightpool[0:n_repeat]:
-        links['Weight'] = weight
-        match_count = compare_network_string(DE_type=DE_type,links=links, top_quantile=top_quantile, enrich_output_dir=enrich_output_dir)
-        match_counts.append(match_count)
-    return np.array(match_counts)
+
+
 def plot_match_counts_dist(ax, data_stack, labels, sig_signs):
     matplotlib.rcParams.update({'font.size': 12})
 

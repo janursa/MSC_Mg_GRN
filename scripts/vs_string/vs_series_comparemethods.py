@@ -51,14 +51,14 @@ if __name__ == '__main__':
                                               enrich_output_dir=ENRICH_DIR)
             methods.append('Ridge')
             # - rf
-            links_rf = pd.read_pickle(os.path.join(GRN_DIR, 'RF', DE_type, f'links_pool_{study}.csv'))
+            links_rf = pd.read_pickle(os.path.join(GRN_DIR, 'RF', f'links_pool_{DE_type}_{study}.csv'))
             links_stack.append(links_rf)
-            mc_rf = np.mean(compare_network_string_batch(links=links_rf, DE_type=DE_type, top_quantile=top_quantile,
+            mc_rf = np.mean(compare_network_string_batch(links=links_rf, DE_type=DE_type, top_quantile=top_quantile, n_repeat=n_repeat,
                                                       enrich_output_dir=ENRICH_DIR))
             methods.append('RF')
             # - arbitrary
-            links_arbit = create_random_links(links_stack, n=n_repeat)
-            mc_arbit = np.mean(compare_network_string_batch(links=links_arbit, DE_type=DE_type, top_quantile=top_quantile,
+            links_arbit, links_arbit_pool = create_random_links(links_stack, n=n_repeat)
+            mc_arbit = np.mean(compare_network_string_batch(links=links_arbit_pool, DE_type=DE_type, top_quantile=top_quantile,n_repeat=n_repeat,
                                                          enrich_output_dir=ENRICH_DIR))
             methods.append('Arbitrary')
 

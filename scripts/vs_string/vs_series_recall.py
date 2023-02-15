@@ -19,20 +19,6 @@ from scripts.utils import calibration, serif_font, make_title_pretty
 
 from geneRNI.evaluation import precision_recall_curve,calculate_auc_roc, calculate_PR
 
-def create_random_links(links_assembly, n=1000):
-    #- TODO: create matrix (using protname)
-    links_assembly = [normalize_links(links) for links in links_assembly]
-    weights = [links['Weight'].values.tolist() for links in links_assembly]
-    weights = [i for j in weights for i in j] #flatten
-    sample_links =  links_assembly[0]
-    random_links = pd.DataFrame({key:sample_links[key] for key in ['Regulator', 'Target']})
-    weightpoolvector = []
-    for i in range(len(links_assembly[0])):
-        weightpoolvector.append(random.sample(weights, n))
-    random_links['Weight']= np.mean(weightpoolvector, axis=1)
-    random_links_pool = random_links.copy()
-    random_links_pool['WeightPool'] = weightpoolvector
-    return random_links, random_links_pool
 
 if __name__ == '__main__':
     if not os.path.isdir(VS_STRING_DIR):

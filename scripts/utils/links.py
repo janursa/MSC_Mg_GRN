@@ -319,6 +319,31 @@ def plot_mean_weights(links_s, methods, colors, studies):
         ax.set_title(methods[idx])
     return fig
 
+def create_random_links(links_assembly, n=1000):
+    #- TODO: create matrix (using protname)
+    links_assembly = [normalize_links(links) for links in links_assembly]
+    weights = [links['Weight'].values.tolist() for links in links_assembly]
+    weights = [i for j in weights for i in j] #flatten
+    sample_links =  links_assembly[0]
+    random_links = pd.DataFrame({key:sample_links[key] for key in ['Regulator', 'Target']})
+    weightpoolvector = []
+    for i in range(len(links_assembly[0])):
+        weightpoolvector.append(random.sample(weights, n))
+    random_links['Weight']= np.mean(weightpoolvector, axis=1)
+    random_links_pool = random_links.copy()
+    random_links_pool['WeightPool'] = weightpoolvector
+    return random_links, random_links_pool
+def compare_network_string_batch(DE_type, links, top_quantile, n_repeat, enrich_output_dir):
+    """
+    Compare the given links to vs_string for each weight set in weightpool
+    """
+    match_counts = []
+    weightpool = np.array(links['WeightPool'].values.tolist()).T
+    for weight in weightpool[0:n_repeat]:
+        links['Weight'] = weight
+        match_count = compare_network_string(DE_type=DE_type,links=links, top_quantile=top_quantile, enrich_output_dir=enrich_output_dir)
+        match_counts.append(match_count)
+    return np.array(match_counts)
 def format_links_string(links, gene_names) -> pd.DataFrame:
     """Converts links to golden links style
     Links are given as gene 1 to gene 2 with a weight.
