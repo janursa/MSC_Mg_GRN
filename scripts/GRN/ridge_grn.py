@@ -12,7 +12,7 @@ from scripts.utils.calibration import retrieve_data, plot_scores
 from scripts.utils.links import grn
 
 if __name__ == '__main__':
-
+    verbose = False
     #- params
     method='ridge'
     param = dict(estimator_t=method)
@@ -29,7 +29,8 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values
             # - read the data
             data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
-            print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+            if verbose:
+                print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
             #- read results of calibration
             _, param_unique = retrieve_data(study=study, DE_type=DE_data_type, method=method, output_dir=CALIBRATION_DIR)
             _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=time_points(),

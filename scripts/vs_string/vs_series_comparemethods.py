@@ -13,7 +13,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import ENRICH_DIR, VS_STRING_DIR, F_DE_data, GRN_DIR
-from scripts.utils.links import plot_match_counts_series, compare_network_string, compare_network_string_batch, create_random_links
+from scripts.utils.links import plot_match_counts_series, compare_network_string_batch, create_random_links, compare_network_string
 from scripts.utils import serif_font, make_title_pretty
 
 
@@ -27,6 +27,7 @@ if __name__ == '__main__':
     DE_types = F_DE_data().keys()
     study='ctr'
 
+
     ncols = 2
     nrows = int(len(DE_types) / ncols)
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(4 * ncols, 3 * nrows))
@@ -34,6 +35,8 @@ if __name__ == '__main__':
 
     # - get the links
     for idx, DE_type in enumerate(DE_types):
+        if DE_type not in ['late_50']: #TODO: remove
+            continue
         mc_stack = []
         methods = []
         for top_quantile in top_quantiles:

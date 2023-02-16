@@ -122,19 +122,7 @@ def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verb
     '''
     links_short = choose_top_quantile(links, quantile=top_quantile)
     links_string = pd.read_csv(os.path.join(enrich_output_dir, f'network_{DE_type}.csv'), index_col=False)
-    links_string.rename(columns={'node1':'Regulator','node2':'Target','score':'Weight'}, inplace=True)
-    links_string = links_string.loc[:,['Regulator','Target','Weight']]
-    if verbose:
-        print(f'Number of vs_string links: {len(links_string)}')
-        print(f'Number of extracted links: {len(links_short)}')
-    if len(links_string)>len(links_short):
-        print('Extracted links cannot be lesser than golden links')
-        print('Golden links are shortened')
-        links_string.sort_values('Weight', ascending=False)
-        links_string = links_string.head(len(links_short))
-        # raise ValueError('Extracted links cannot be lesser than golden links')
 
-    #- find vs_string links in the extracted links, label them and add stringweight
     links_short['inString'] = False
     for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
         links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'inString'] = True

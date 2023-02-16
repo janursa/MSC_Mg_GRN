@@ -20,6 +20,12 @@ def extract_DE_data():
     pass
 
 if __name__ == '__main__':
+    #TODO: should go
+    DE_data_late_50 = pd.read_csv(os.path.join(DATA_DIR,'DE_data_late_50.csv'),index_col=False)
+    DE_prots_late_50 = DE_data_late_50['Protein'].to_numpy(str)
+    DE_data_late_31 = pd.read_csv(os.path.join(DATA_DIR, 'DE_data_late_31.csv'), index_col=False)
+    DE_prots_late_31 = DE_data_late_31['Protein'].to_numpy(str)
+
     #- read ranking data
     early_tag = "short.term.prod.rank"
     late_tag = "long.term.prod.rank"
@@ -42,6 +48,9 @@ if __name__ == '__main__':
                'combined_30': F_rank_prots(df_ranklist, 'combined', 30),
                'combined_50': F_rank_prots(df_ranklist, 'combined', 50),
                }
+    #TODO: remove
+    DE_proteins['late_50'] = list(DE_prots_late_50)
+    DE_proteins['late_30'] = list(DE_prots_late_31)
     #- output DE proteins
     with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'w') as f:
         print(DE_proteins, file=f)
@@ -60,6 +69,10 @@ if __name__ == '__main__':
     extract_DE_data = lambda vector: imputed_data.loc[imputed_data['Protein'].isin(vector), :]
 
     DE_data = {ky:extract_DE_data(value) for ky, value in DE_proteins.items()}
+    #TODO: remove
+    DE_data['late_50'] = DE_data_late_50
+    DE_data['late_30'] = DE_data_late_31
+
     # [df.to_csv(os.path.join(DATA_DIR, f'DE_data_{key}.csv'), index=False) for key, df in DE_data.items()]
     DE_data_serialized = {ky: df.to_json() for ky, df in DE_data.items()}
     # [df.to_csv(os.path.join(DATA_DIR, f'DE_data_{key}.csv'), index=False) for key, df in DE_data.items()]

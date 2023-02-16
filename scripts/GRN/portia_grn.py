@@ -27,7 +27,7 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values
             data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
             data = np.asarray(data)
-            print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')
+            # print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')
             # - run
             # decay_coeffs = utils.estimate_decay_rates([data_ctr,data_mg], [time, time])
             #- create portia dataset
