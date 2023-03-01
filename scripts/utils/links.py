@@ -91,14 +91,14 @@ def grn(data, time_points, gene_names, **specs):
 
 def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verbose=False) -> int:
     '''
-        Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
+        Compare extracted links by GRN to those suggested by model_selection. Returns number of match links.
     '''
     links_short = choose_top_quantile(links, quantile=top_quantile)
     links_string = pd.read_csv(os.path.join(enrich_output_dir, f'network_{DE_type}.csv'), index_col=False)
     links_string.rename(columns={'node1':'Regulator','node2':'Target','score':'Weight'}, inplace=True)
     links_string = links_string.loc[:,['Regulator','Target','Weight']]
     if verbose:
-        print(f'Number of vs_string links: {len(links_string)}')
+        print(f'Number of model_selection links: {len(links_string)}')
         print(f'Number of extracted links: {len(links_short)}')
     if len(links_string)>len(links_short):
         print('Extracted links cannot be lesser than golden links')
@@ -107,7 +107,7 @@ def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verb
         links_string = links_string.head(len(links_short))
         # raise ValueError('Extracted links cannot be lesser than golden links')
 
-    #- find vs_string links in the extracted links, label them and add stringweight
+    #- find model_selection links in the extracted links, label them and add stringweight
     links_short['inString'] = False
     for reg, target, weight in zip(links_string['Regulator'].values, links_string['Target'].values, links_string['Weight'].values):
         links_short.loc[(links_short['Regulator']==reg) & (links_short['Target']==target),'inString'] = True
@@ -118,7 +118,7 @@ def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verb
     return n_norm
 def compare_network_string(DE_type, links, top_quantile, enrich_output_dir, verbose=False) -> int:
     '''
-        Compare extracted links by GRN to those suggested by vs_string. Returns number of match links.
+        Compare extracted links by GRN to those suggested by model_selection. Returns number of match links.
     '''
     links_short = choose_top_quantile(links, quantile=top_quantile)
     links_string = pd.read_csv(os.path.join(enrich_output_dir, f'network_{DE_type}.csv'), index_col=False)
@@ -259,7 +259,8 @@ def choose_top_quantile(links: pd.DataFrame, quantile=0.75)->pd.DataFrame:
     ''' 
     # links.reset_index(inplace=True, drop=True)
     # links.sort_values('Weight',ascending=True,inplace=True)
-    cut_off = np.quantile(links['Weight'].values.tolist(),q=quantile)
+    cut_off = np.quantile(links['Weight'].values.tolist(), q=quantile)
+
     links_short = links.loc[links['Weight']>=cut_off,:].reset_index(drop=True)
     return links_short
 def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
@@ -270,26 +271,22 @@ def choose_top_count(links: pd.DataFrame, n=100)->pd.DataFrame:
     links.sort_values('Weight',ascending=False,inplace=True)
     links_short = links.iloc[:n,:].reset_index(drop=True)
     return links_short
-def plot_mean_weights(links_s, methods, colors, studies):
+def plot_mean_weights(ax, links, name, studies):
     serif_font()
-    nrows = 1
-    ncols = 3
-    fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols*2.7, nrows*2.3))
-    for idx in range(len(methods)):
-        ax = axes[idx]
-        for i,study in enumerate(links_s[idx]):
-            ax.hist(study['Weight'], bins=50, alpha=0.6,
-                            histtype='bar', #'bar', 'barstacked', 'step', 'stepfilled'
-                            color=colors[i],
-                            # ec='black',
-                            rwidth=1.5,
-                            # density = True
-                           )
-        handles = []
+    colors = ['lightblue', 'pink']
+    for i,study in enumerate(links):
+        ax.hist(study['Weight'], bins=50, alpha=0.6,
+                        histtype='bar', #'bar', 'barstacked', 'step', 'stepfilled'
+                        color=colors[i],
+                        # ec='black',
+                        rwidth=1.5,
+                        # density = True
+                       )
+    handles = []
 
-        for i, color in enumerate(colors):
-            handles.append(ax.scatter([],[], marker='o', label=studies[i],
-             edgecolor='black', color=color, linewidth=.2))
+    for i, color in enumerate(colors):
+        handles.append(ax.scatter([],[], marker='o', label=studies[i],
+         edgecolor='black', color=color, linewidth=.2))
 
         ax.legend(handles=handles,
             bbox_to_anchor=(1,1), prop={'size': 9}
@@ -297,15 +294,12 @@ def plot_mean_weights(links_s, methods, colors, studies):
             )
         # ax.add_artist(ll)
         ax.set_xlabel('Interaction strength')
-        if idx == 0:
-            ax.set_ylabel('Density')
-        else:
-            ax.set_ylabel('')
+        ax.set_ylabel('Density')
+
         ax.set_ymargin(.2)
 #         ax.set_xmargin(.1)
         # ax.set_xlim([-.5,8])
-        ax.set_title(methods[idx])
-    return fig
+        ax.set_title(name)
 
 def create_random_links(links_assembly, n=1000):
     #- TODO: create matrix (using protname)
@@ -323,7 +317,7 @@ def create_random_links(links_assembly, n=1000):
     return random_links, random_links_pool
 def compare_network_string_batch(DE_type, links, top_quantile, n_repeat, enrich_output_dir):
     """
-    Compare the given links to vs_string for each weight set in weightpool
+    Compare the given links to model_selection for each weight set in weightpool
     """
     match_counts = []
     weightpool = np.array(links['WeightPool'].values.tolist()).T
@@ -361,6 +355,9 @@ def format_links_string(links, gene_names) -> pd.DataFrame:
 
 
     return golden_links
+def remove_mg(links):
+    return links.loc[(links['Regulator']!='mg') & (links['Target']!='mg'),:]
+
 def plot_match_counts_series(match_counts_list, links_names, top_quantile_list, ax=None):
     """
     Plots match counts for different top selected links as a line plot. Each line is for different methods such as RF and Ridge
@@ -412,68 +409,17 @@ def normalize_links(links):
     links_n.loc[:,'Weight'] = links['Weight']/np.std(links['Weight'])
     return links_n
 
-def convert_links_to_nodes_edges(links, protnames, scores):
+def _convert_links_to_nodes_edges(links, protnames):
     '''
         Takes links as pd and seperates nodes and edges
     '''
     edges = links.copy()
     edges.rename(columns={'Regulator':'source', 'Target':'target'}, inplace=True)
-    sum_ws = [sum(links.loc[links['Regulator']==gene,:]['Weight']) for gene in protnames]
-    nodes = pd.DataFrame(data={'Entry':protnames,'SumWeight':sum_ws, 'FitScore': scores})
+    sum_ws = [sum(links.query(f"Regulator == '{gene}'")['Weight']) for gene in protnames]
+    nodes = pd.DataFrame(data={'Protein':protnames,'Weight':sum_ws})
+    print(edges)
+    aa
     return nodes, edges
-
-def visualize_network(nodes, edges, study, protnames, preferred_names=None, OUTPUT_DIR=''):
-    import igraph as ig
-    DIR = os.path.join(OUTPUT_DIR, 'GRN')
-    shapes = ['circle', 'circle','circle', 'rectangle']
-    #- replace the names with indices: index of the genes in the protnames
-    edges_index = copy.deepcopy(edges)
-    edges_index.loc[:,'source'] = [protnames.index(name) for name in list(edges['source'].values)]
-    edges_index.loc[:,'target'] = [protnames.index(name) for name in list(edges['target'].values)]
-    edges_list = edges_index.loc[:,['source','target']].values
-    #- Construct a graph 
-    n_vertices = len(protnames)
-    g = ig.Graph(n_vertices, edges=edges_list, directed=False)
-    g["title"] = "Regulatory network"
-    #- gene names instead of protnames
-    if preferred_names is None:
-        g.vs["name"] =  protnames
-    else:
-        g.vs["name"] = preferred_names
-    #- create the layout
-    coords = []
-    for i in range(len(g.vs)):
-        coords.append([i,i])
-    layout_obj = ig.Layout(coords)
-    #- plot
-    weights = edges['Weight'].values
-    vertex_sizes = nodes['FitScore']
-    grad_colors = ig.GradientPalette("red", "green", len(protnames))
-    fig, ax = plt.subplots(figsize=(10,10))
-    vertex_size_correction = .8/np.max(vertex_sizes)
-    edge_size_correction = 1/np.max(weights)
-    # print(f'mean : {np.mean(weights)}, max: {np.max(weights)}, min: {np.min(weights)}')
-    ig.plot(
-        g,
-        target=ax,
-        layout="kk",
-    #     layout= layout_obj,
-        vertex_size=[x*vertex_size_correction for x in vertex_sizes],
-        vertex_color=[grad_colors.get(i) for i in range(len(protnames))],
-    #     vertex_frame_width=8,
-    #     vertex_frame_color="white",
-        vertex_label=g.vs["name"],
-        vertex_label_size=12,
-        edge_width=[x*edge_size_correction for x in weights],
-        edge_arrow_width = .5,
-        vertex_shape = [shapes[i] for i in nodes['Role'].values]
-        # vertex_shape = ig.drawing.shapes.DiamondDrawer()
-    #     edge_color=["#7142cf" if x>np.mean(g.es['weights']) else "#AAA" for married in g.es["married"]]
-    
-    )
-    plt.show()
-    fig.savefig(os.path.join(DIR,f'GRN_{study}.png'), dpi=300, transparent=True)
-
 
     
 def read_write_nodes_edges(nodes=None, edges=None, study='ctr', mode='read', OUTPUT_DIR=''):

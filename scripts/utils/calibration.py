@@ -82,7 +82,7 @@ def plot_bestparams_pool(data, priors, xticks_labels):
             patch.set_edgecolor('black')
             patch.set_alpha(1)
     return fig
-def plot_scores(data_s, ylabel, xtickslabels, xlabel='', ax=None):
+def plot_scores(data_s, ylabel, xtickslabels, ax=None):
     """plots oob scores as a box plot for ctr and mg side by side"""
     serif_font()
     if ax is None:

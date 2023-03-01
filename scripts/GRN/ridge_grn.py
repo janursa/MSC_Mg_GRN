@@ -22,18 +22,20 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(GRN_DIR, method))
 
     for DE_data_type, DE_data in F_DE_data().items():
-        for study in ['ctr', 'mg', 'all-in']:
+        for study in ['ctr', 'mg']:
             if study == 'all-in':
                 gene_names = DE_data['Protein'].values.tolist() + ['mg']
             else:
                 gene_names = DE_data['Protein'].values
             # - read the data
-            data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
+            data = process_data(DE_data, study=study, standardize=False)
+            n_timepoints = data.shape[0]
+            days = time_points()[0:n_timepoints]
             if verbose:
                 print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
             #- read results of calibration
             _, param_unique = retrieve_data(study=study, DE_type=DE_data_type, method=method, output_dir=CALIBRATION_DIR)
-            _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=time_points(),
+            _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=days,
                                              param=param, param_unique=param_unique)
             #- write to file
             links.to_csv(os.path.join(GRN_DIR, method, f'links_{DE_data_type}_{study}.csv'), index=False)
@@ -42,7 +44,7 @@ if __name__ == '__main__':
             np.savetxt(os.path.join(GRN_DIR, method, f'trainscores_{DE_data_type}_{study}.csv'), trainscores)
 
 
-    #- compare to vs_string
+    #- compare to model_selection
     # def compare(links):
     #     # top_n = 100
     #     # links_short = utils.links.choose_top_count(links_ctr, n=top_n)

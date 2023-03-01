@@ -61,8 +61,7 @@ def plot_weight(links, color, name, dist_key='WeightPool'):
 if __name__ == '__main__':
     method = 'RF'
     colors = ['lightblue', 'pink']
-    # for DE_type, _ in F_DE_protiens().items():
-    for DE_type in ['early_30']:
+    for DE_type, _ in F_DE_protiens().items():
         for idx, study in enumerate(['ctr','mg']):
             links_pool = pd.read_pickle(os.path.join(GRN_DIR, method, f'links_pool_{DE_type}_{study}.csv'))
             fig = plot_weight(links_pool, color=colors[idx], name=study, dist_key='WeightPool')

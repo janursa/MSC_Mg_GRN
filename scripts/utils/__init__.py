@@ -38,29 +38,42 @@ import matplotlib.pyplot as plt
 # from utils import VSA
 #
 
-def MG_noise_F(links, n_relica=100, std=.15) -> typing.Tuple[pd.DataFrame]:
+def MG_noise_F(links, n_relica=100, std=.3) -> typing.Tuple[pd.DataFrame]:
     """ Multiplicitive noise
          Creates n_relica noised links
     """
     noised_link = links.copy()
-    noised_links = [noised_link.assign(Weight= noised_link['Weight']*np.random.normal(loc=1, scale=std, size=len(links)))
+    original_weights = links['Weight'].to_numpy(float)
+    noised_links = [noised_link.assign(Weight= original_weights*np.random.normal(loc=1, scale=std, size=len(links)))
                                        for i in range(n_relica)]
     return noised_links
-def AG_noise_F(links, n_relica=100, std=.1)-> typing.Tuple[pd.DataFrame]:
+def AG_noise_F(links, n_relica=100, rel_std=.1)-> typing.Tuple[pd.DataFrame]:
     """ Additive noise
              Creates n_relica noised links
     """
     noised_link = links.copy()
-    noised_links = [noised_link.assign(Weight= noised_link['Weight']+np.random.normal(loc=1, scale=std, size=len(links)))
+    original_weights = links['Weight'].to_numpy(float)
+    std = rel_std * np.std(original_weights)
+    noised_links = [noised_link.assign(Weight= original_weights+np.random.normal(loc=0, scale=std, size=len(links)))
                                        for i in range(n_relica)]
     return noised_links
 def make_title_pretty(name):
-    parts = name.split('_')
-    parts[0] = parts[0][0:1].upper()+parts[0][1:] + ' phase'# upper case for first letter
-    if 'Combined' in parts[0]:
-        parts[0] = 'Combined'
-    parts[1] = '('+parts[1]+' proteins)'
-    return '\n'.join(parts)
+    # parts = name.split('_')
+    # parts[0] = parts[0][0:1].upper()+parts[0][1:] + ' phase'# upper case for first letter
+    # if 'Combined' in parts[0]:
+    #     parts[0] = 'Combined'
+    # parts[1] = '('+parts[1]+' proteins)'
+    # return '\n'.join(parts)
+    name = name.replace('day1_11', 'Early')
+    name = name.replace('day1_21', 'Late')
+    name = name.replace('portia', 'Portia')
+    name = name.replace('ridge', 'Ridge')
+    name = name.replace('_','-')
+
+    # parts = name.split('-')
+    # parts[-1] = f'({ parts[-1]})'
+    # name = ' '.join(parts)
+    return name
 def comic_font():
     matplotlib.rc('font', family='Comic Sans MS')
     matplotlib.rc('text', usetex='false')
@@ -263,22 +276,26 @@ def create_check_dir(master_dir, name):
     return DIR
 
 
-def process_data(df_target, study, time_points, standardize=False) -> np.array :
+def process_data(df_target, study, standardize=False) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
     '''
     assert(study in ['ctr', 'mg', 'all-in'])
     # extract ctr and mg data
     if study == 'ctr' or study == 'mg':
-        df = df_target.loc[:, [study+'_'+str(day) for day in time_points]].T
-    elif study == 'all-in':
-        df_ctr = df_target.loc[:, ['ctr_'+str(day) for day in time_points]].T
-        df_mg = df_target.loc[:, ['mg_'+str(day) for day in time_points]].T
-        # add mg as a regulatory factor with 0 for ctr and 1 for mg
-        df_ctr['mg'] = np.zeros(len(time_points))
-        df_mg['mg'] = np.ones(len(time_points))
+        # df = df_target.loc[:, [study+'_'+str(day) for day in time_points]].T
+        data = df_target.filter(like=study).values.T
+        return data
 
-        df = pd.concat([df_ctr, df_mg], axis=0)
+    elif study == 'all-in':
+        raise ValueError('not defined')
+        # df_ctr = df_target.loc[:, ['ctr_'+str(day) for day in time_points]].T
+        # df_mg = df_target.loc[:, ['mg_'+str(day) for day in time_points]].T
+        # # add mg as a regulatory factor with 0 for ctr and 1 for mg
+        # df_ctr['mg'] = np.zeros(len(time_points))
+        # df_mg['mg'] = np.ones(len(time_points))
+        #
+        # df = pd.concat([df_ctr, df_mg], axis=0)
 
 
     if standardize:

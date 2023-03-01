@@ -17,11 +17,11 @@ from scripts.enrichment_analysis import _annotaion_map
 def main(DE_protnames: list) -> typing.Tuple[dict,dict,dict,dict]:
     #- mao protname to geneID
     map_protname_geneID = annotaion_map.protname_geneID(DE_protnames)
-    #- map protname to genename according to vs_string: because it is different using the website
+    #- map protname to genename according to model_selection: because it is different using the website
     string_map = pd.read_csv(os.path.join(ENRICH_DIR, 'string_mapping.tsv'), sep='\t',
                              index_col=False)
     map_protname_genename = {key: value for key, value in zip(string_map['queryItem'], string_map['preferredName'])}
-    #- check if vs_string imported all protnames successfully
+    #- check if model_selection imported all protnames successfully
     try:
         assert (len(map_protname_genename) == len(DE_protnames))
     except:

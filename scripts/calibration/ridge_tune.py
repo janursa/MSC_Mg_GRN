@@ -13,13 +13,17 @@ from scripts.imports import F_DE_data, time_points, param_grid_ridge, CALIBRATIO
 from scripts.utils import process_data, calibration
 if __name__ == '__main__':
     method = 'ridge'
-    studies = ['ctr', 'mg', 'all-in']
+    studies = ['ctr', 'mg']
+
     param_grid = param_grid_ridge()
     for DE_type, DE_data in F_DE_data().items():
         for study in studies:
             # - read the data
-            data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
-            print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+            data = process_data(DE_data, study=study, standardize=False)
+
+            n_timepoints = data.shape[0]
+            days = time_points()[0:n_timepoints]
+            # print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
             #- create the dataaset
             if study == 'all-in':
                 gene_names = DE_data['Protein'].values.tolist() + ['mg']
@@ -32,7 +36,7 @@ if __name__ == '__main__':
                 i_end=1,
                 param=param,
                 gene_names=gene_names,
-                time_points=time_points(),
+                time_points=days,
                 loo=True,
                 method=method,
                 param_grid=param_grid,

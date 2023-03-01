@@ -79,17 +79,24 @@ def string_enriched_functions(my_genes):
     return df
 
 
+
 if __name__ == '__main__':
+    if not os.path.isdir(ENRICH_DIR):
+        os.makedirs(ENRICH_DIR)
     with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'r') as f:
         data = eval(f.read())
+    enrich_function = False #biological functions
+    entich_network = True #protein network
     #- functional enrichment
-    # for DE_type, DE_proteins in data.items():
-    #     if DE_type in ['early_30', 'late_30']:
-    #         df_enrich = string_enriched_functions(DE_proteins)
-    #         df_enrich.to_csv(os.path.join(ENRICH_DIR, f'enrichment_all_{DE_type}.csv'), index=False)
+    if enrich_function:
+        for DE_type, DE_proteins in data.items():
+            if DE_type in ['early_30', 'late_30']: #TODO: fix this
+                df_enrich = string_enriched_functions(DE_proteins)
+                df_enrich.to_csv(os.path.join(ENRICH_DIR, f'enrichment_all_{DE_type}.csv'), index=False)
 
     #- network enrichment
-    for DE_type, DE_proteins in data.items():
-        df_enrich = string_enriched_network(DE_proteins)
-        df_enrich.to_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index=False)
+    if entich_network:
+        for DE_type, DE_proteins in data.items():
+            df_enrich = string_enriched_network(DE_proteins)
+            df_enrich.to_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index=False)
 

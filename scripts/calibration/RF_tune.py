@@ -17,15 +17,17 @@ if __name__ == '__main__':
 
     # - define settings and calibration
     param = dict(estimator_t=method)
-    studies = ['ctr', 'mg', 'all-in']
+    studies = ['ctr', 'mg']
     for DE_type, DE_data in F_DE_data().items():
-        # if DE_type in ['early_30', 'early_50', 'late_30']: #completed ones
+        # if DE_type in ['day1_11_MinProb_0.025', 'day1_11_MinProb_0.05']: #completed ones
         #     continue
         param_grid = param_grid_RF(len(DE_data['Protein']))
         for study in studies:
             # - read the data
-            data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
-            print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+            data = process_data(DE_data, study=study, standardize=False)
+            # print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
+            n_timepoints = data.shape[0]
+            days = time_points()[0:n_timepoints]
             #- create the dataaset
             if study == 'all-in':
                 gene_names = DE_data['Protein'].values.tolist()+['mg']
@@ -37,7 +39,7 @@ if __name__ == '__main__':
                 i_end=10,
                 param=param,
                 gene_names=gene_names,
-                time_points=time_points(),
+                time_points=days,
                 method=method,
                 param_grid=param_grid,
                 output_dir=os.path.join(CALIBRATION_DIR, method, DE_type, study),

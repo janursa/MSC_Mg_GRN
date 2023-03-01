@@ -20,25 +20,27 @@ if __name__ == '__main__':
     if not os.path.isdir(os.path.join(GRN_DIR, 'portia')):
         os.makedirs(os.path.join(GRN_DIR, 'portia'))
     for DE_data_type, DE_data in F_DE_data().items():
-        for study in ['ctr', 'mg', 'all-in']:
+        for study in ['ctr', 'mg']:
             if study == 'all-in':
                 gene_names = DE_data['Protein'].values.tolist() + ['mg']
             else:
                 gene_names = DE_data['Protein'].values
-            data = process_data(DE_data, study=study, time_points=time_points(), standardize=False)
+            data = process_data(DE_data, study=study, standardize=False)
+            n_timepoints = data.shape[0]
+            days = time_points()[0:n_timepoints]
             data = np.asarray(data)
             # print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')
             # - run
             # decay_coeffs = utils.estimate_decay_rates([data_ctr,data_mg], [time, time])
             #- create portia dataset
             portia_dataset = pt.GeneExpressionDataset()
-            for exp_id, (data_i, time_i) in enumerate(zip(data, time_points())):
+            for exp_id, (data_i, time_i) in enumerate(zip(data, days)):
                 portia_dataset.add(pt.Experiment(exp_id, data_i))
             #- GRN inference
             M_bar = pt.run(portia_dataset, method='fast')
             links_df = format_links(M_bar, gene_names)
             links_df.to_csv(os.path.join(GRN_DIR, 'portia', f'links_{DE_data_type}_{study}.csv'), index=False)
-            #- compare to vs_string
+            #- compare to model_selection
             # def compare(links):
             #     top_n = 150
             #     # links_short = utils.links.choose_top_count(links_ctr, n=top_n)

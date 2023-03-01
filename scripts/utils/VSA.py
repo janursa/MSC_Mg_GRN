@@ -10,11 +10,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import math
 
+import scipy
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from utils import serif_font, comic_font
+from scripts.utils import serif_font, comic_font
 
-def AS_PS_thresholds(AS, PS) -> typing.Tuple[float,float]:
+def Q_P_thresholds(AS, PS) -> typing.Tuple[float,float]:
     '''
         Calculate the threshold to divide AS and PS into 2
     '''
@@ -40,21 +42,24 @@ def VestersSA(links, protnames) -> pd.DataFrame:
     inputs: links (DataFrame)
     output: VSA (DataFrame) -> protname: AS, PS, Role
     '''
-    AS = [sum(links.loc[links['Regulator']==gene,:]['Weight']) for gene in protnames]
-    PS = [sum(links.loc[links['Target']==gene,:]['Weight']) for gene in protnames]
+    #- active sum and passive sum
+    AS = np.asarray([sum(links.query(f"Regulator == '{gene}'")['Weight']) for gene in protnames])
+    PS = np.asarray([sum(links.query(f"Target == '{gene}'")['Weight']) for gene in protnames])
+    #- Quotient and Product
+    Q, P = AS/PS, PS*PS
+    # Q, P = AS , PS
 
     #- normalize links
-    AS, PS = AS/np.std(AS), PS/np.std(PS)
-    vsa_results = pd.DataFrame(data={'Entry':protnames,'AS':AS, 'PS':PS})
-    #- define the roles: ['Buffering', 'Passive', 'Active', 'Critical'] -> [0, 1, 2, 3] 
-    AS_t, PS_t = AS_PS_thresholds(vsa_results['AS'].values, vsa_results['PS'].values)
+    # AS, PS = AS/np.std(AS), PS/np.std(PS)
 
-    vsa_results.loc[:,'AS'] = vsa_results['AS'] - AS_t 
-    vsa_results.loc[:,'PS'] = vsa_results['PS'] - PS_t 
-    AS_flags = vsa_results['AS'].values>0
-    PS_flags = vsa_results['PS'].values>0
-    roles = [2*AS_flag+PS_flag for AS_flag, PS_flag in zip(AS_flags,PS_flags)]
-    vsa_results.loc[:,'Role'] = roles
+    #- define the roles: ['Buffering', 'Passive', 'Active', 'Critical'] -> [0, 1, 2, 3] 
+    Q_t, P_t = Q_P_thresholds(Q, P)
+    Q = Q - Q_t
+    P = P - P_t
+    Q_flags = Q>0
+    P_flags = P>0
+    roles = [2*Q_flag+P_flag for Q_flag, P_flag in zip(Q_flags,P_flags)]
+    vsa_results = pd.DataFrame(data={'Entry': protnames, 'Q': Q, 'P': P, 'Role':roles })
     return vsa_results
 def role_change(df_ctr, df_sample, target_role:int=3):
     '''
@@ -72,8 +77,8 @@ def role_change(df_ctr, df_sample, target_role:int=3):
 
     df_role_changed = pd.DataFrame()
     df_role_changed['Entry'] = df_ctr_c['Entry']
-    df_role_changed[['AS_1','PS_1','Role_1']]=df_ctr_c[['AS','PS','Role']]
-    df_role_changed[['AS_2','PS_2','Role_2']]=df_sample_c[['AS','PS','Role']]
+    df_role_changed[['Q_1','P_1','Role_1']]=df_ctr_c[['Q','P','Role']]
+    df_role_changed[['Q_2','P_2','Role_2']]=df_sample_c[['Q','P','Role']]
     return df_role_changed
 class VSA_plot:
     """
@@ -81,43 +86,71 @@ class VSA_plot:
     """
     linewidth = 2
     markers = ['o', 'o', 'o', '*']
-    colors = ['lightgreen', 'lightblue', 'yellow', 'r']
+    roles_colors = ['lightgreen', 'lightblue', 'yellow', 'red']
+    ctr_sample_colors = ['cyan', 'purple']
     sizes = [40 * i for i in [1, 1.5, 2, 5]]
     roles = ['Buffering', 'Passive', 'Active', 'Critical']
-    def plot_role_change(df, ax=None, title=''):
+    @staticmethod
+    def create_role_legends(ax):
+        handles = []
+        for i, color in enumerate(VSA_plot.roles_colors):
+            handles.append(ax.scatter([], [], marker='o', label=VSA_plot.roles[i], s=100,
+                                                  edgecolor='black', color=color, linewidth=.5))
+        return handles
+    def plot_role_change(df, ax=None):
         '''
-            Plots AS/PS for role change betwen ctr and sample
+            Plots Q/P for role change betwen ctr and sample
         '''
-        # - define default specs for arrows
-        arrow_specs = {}
-        for prot in df['Entry'].values:
-            arrow_specs[prot] = {'arrow_type': 'arc3', 'rad': .3}
-        # - manual changes to arrow specs
-        # arrow_specs['P46379']['rad'] = -.1
-        # gene names shown on ctr and not mg
+        xlim = ax.get_xlim()[1] - ax.get_xlim()[0]
+        ylim = ax.get_ylim()[1] - ax.get_ylim()[0]
         # an arrow from ctr to mg only for any change from or to critical role
         # names of ctr or mg on the symbols
-        if ax is None:
-            rows = 1
-            cols = 1
-            fig, ax = plt.subplots(rows, cols, tight_layout=True, figsize=(cols * 4, rows * 4))
         # - first ctr
-        VSA_plot.scatter(ax, PS=df['PS_1'], AS=df['AS_1'], roles=df['Role_1'])
-        # - second sample
-        VSA_plot.scatter(ax, PS=df['PS_2'], AS=df['AS_2'], roles=df['Role_2'])
-        # - arrow from ctr to sample
-        fontsize = 8
-        for prot, x0, y0, x1, y1 in zip(df['Entry'].values, df['PS_1'].values, df['AS_1'].values, df['PS_2'].values,
-                                        df['AS_2'].values):
-            x, y = x0 - .15, y0 - .012
-            # if prot == 'Q07954' or prot=='Q14444':
-            #     x, y = x0-.14, y0+.01
-            # if prot == 'P12956':
-            #     x, y = x1-.1, y1-.012
-            if False: # to show the prot names on each point
-                ax.annotate(f'{prot}', xy=(x, y), fontsize=7)
-            arrow_t = arrow_specs[prot]['arrow_type']
-            rad = arrow_specs[prot]['rad']
+        for i in [1,2]:
+            ax.scatter(df[f'P_{i}'], df[f'Q_{i}'],
+                            color=VSA_plot.ctr_sample_colors[i-1],
+                            alpha=1,
+                            linewidths=.2,
+                            edgecolors='black',
+                            s=100
+                            )
+
+        for prot, x0, y0, x1, y1 in zip(df['Entry'].values, df['P_1'].values, df['Q_1'].values, df['P_2'].values,
+                                        df['Q_2'].values):
+            offset_x = .015
+            offset_y = 0.1
+            arrow_t = 'arc3'
+            rad = .3
+            if prot == 'Q07866':
+                offset_x = -.045
+                offset_y = -0.3
+                rad = -.1
+            if prot == 'Q99613':
+                offset_x = -.05
+                offset_y = -0.3
+                # arrow_t = 'rad2'
+            if prot == 'Q02790':
+                # offset_x = -.05
+                offset_y = 0
+                # arrow_t = 'rad2'
+            if prot == 'P00568':
+                offset_x = -6.5
+                offset_y = -.15
+                # arrow_t = 'rad2'
+            if prot == 'Q02218':
+                offset_x = -.2
+                offset_y = .05
+                # arrow_t = 'rad2'
+            if prot == 'P02652':
+                offset_x = -.5
+                offset_y = .05
+                # arrow_t = 'rad2'
+
+
+
+            x, y = x0 + offset_x * xlim, y0 + offset_y * ylim
+            ax.annotate(f'{prot}', xy=(x, y), fontsize=9)
+
             ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
                         arrowprops={'arrowstyle': '->', 'connectionstyle': f'{arrow_t}, rad={rad}'}
                         , horizontalalignment='center')
@@ -125,121 +158,122 @@ class VSA_plot:
         VSA_plot.mark_x(ax, 0)
         VSA_plot.mark_y(ax, 0)
         VSA_plot.plot_roles(ax)
-        VSA_plot.postprocess(ax, title=title)
-        try:
-            return fig
-        except:
-            pass
-    def plot_noise_analysis(oo_prots, study_1='ctr', study_2='sample'):
-        '''
-            Plots AS/PS for ctr and mg conditions, for n different runs of sensitivity analysis, one window for each prot
+        VSA_plot.postprocess(ax, title='Role change')
 
-            oo_prots: AS/PS data for ctr and sample, for each protein
+
+    def plot_noise_analysis(axes, oo_prots, study_1='ctr', study_2='sample', show_title=False):
         '''
-        ncols = 3
-        nrows = math.ceil(len(oo_prots.keys())/3)
+            Plots Q/P for ctr and mg conditions, for n different runs of sensitivity analysis, one window for each prot
+
+            oo_prots: Q/P data for ctr and sample, for each protein
+        '''
         comic_font()
-        matplotlib.rcParams.update({'font.size': 8})
+        # matplotlib.rcParams.update({'font.size': 10})
         arrow_specs = {'arrow_type': 'arc3', 'rad': .2}
 
-        fig, axes = plt.subplots(ncols=ncols, nrows=nrows, layout='tight', figsize=(1.6 * ncols, 1.6 * nrows))
-
-        colors = ['lightgreen', 'purple']
         for idx, (prot, data) in enumerate(oo_prots.items()): #- plot for each prot on a seperate window
-            i = int(idx / (ncols))
-            j = idx % ncols
-            try:
-                ax = axes[i][j]
-            except:
-                ax = axes[j]
+            ax = axes[idx]
+            xlim, ylim = ax.get_xlim(), ax.get_ylim()
+            xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]
 
+            sig_flags = [False, False] # both need to be True to annotate * on the change
+            roles = [] #to check if the role changes; its -1, 0, 1
+            xy = []
             for idxx, study in enumerate(data.keys()):
-                sc = ax.scatter(data[study]['PS'], data[study]['AS'],
-                                color=colors[idxx],
-                                alpha=.7,
+                sc = ax.scatter(data[study]['P'], data[study]['Q'],
+                                color=VSA_plot.ctr_sample_colors[idxx],
+                                alpha=.6,
                                 linewidths=.2,
                                 edgecolors='black',
-                                s=25
-                                # s = [VSA_plot.sizes[i] for i in roles],
+                                s=35
                                 )
-                if np.mean(data[study]['PS']) > 0 and np.mean(data[study]['AS']) > 0:
-                    x = np.mean(data[study]['PS'])
-                    y = np.mean(data[study]['AS']) + .8
 
-                    ax.annotate(r'$*$', xy=(x, y), fontsize=12, color='red')
+                P_vector = data[study]['P']
+                Q_vector = data[study]['Q']
+                xy.append([np.mean(P_vector),np.mean(Q_vector)])
+                if (np.mean(P_vector)>0) & (np.mean(Q_vector)>0):
+                    roles.append(1)
+                else:
+                    roles.append(0)
+                _, p1 = scipy.stats.ttest_1samp(P_vector, 0)
+                _, p2 = scipy.stats.ttest_1samp(Q_vector, 0)
 
-            VSA_plot.postprocess(ax, title=prot, show_axis_names=False)
+                if (p1<0.05) & (p2<0.05):
+                    sig_flags[idxx] = True
+
+            if (roles[0] != roles[1]) & (sig_flags[0] & sig_flags[1]):
+                ind = roles.index(1)
+                x = xy[ind][0]
+                y = xy[ind][1] + .1*ylen
+
+                ax.annotate(r'$*$', xy=(x, y), fontsize=15, color='red', fontweight='bold')
+            title = prot if show_title else ''
+            VSA_plot.postprocess(ax, title=title, show_axis_names=False)
             VSA_plot.mark_x(ax, 0)
             VSA_plot.mark_y(ax, 0)
             VSA_plot.plot_roles(ax)
-            # ax.set_xlim([-3, 3])
-            # ax.set_ylim([-3, 3])
+
             # - arrow
-            fontsize = 8
-            x0, y0, x1, y1 = np.mean(data[study_1]['PS']), np.mean(data[study_1]['AS']), np.mean(data[study_2]['PS']), np.mean(
-                data[study_2]['AS'])
+            x0, y0, x1, y1 = np.mean(data[study_1]['P']), np.mean(data[study_1]['Q']), np.mean(data[study_2]['P']), np.mean(
+                data[study_2]['Q'])
             arrow_t = arrow_specs['arrow_type']
             rad = arrow_specs['rad']
             ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
                         arrowprops={'arrowstyle': '->', 'lw': 1.5, 'connectionstyle': f'{arrow_t}, rad={rad}',
                                     'color': 'black', 'alpha': .7}
                         , horizontalalignment='center')
+            ax.set_xmargin(.4)
+            ax.set_ymargin(.4)
 
-        # tags = ['Ctr','Mg']
-        # handles = []
-        # for i, color in enumerate(colors):
-        #     handles.append(ax.scatter([],[],marker='o', label=tags[i], edgecolor='black', color=color, linewidth=.2))
-        # ll = plt.legend(handles=handles,
-        #     bbox_to_anchor=(1.3,3.4),
-        #     )
-        # fig.savefig(os.path.join(OUTPUT_DIR, f'VSA/{name}.png'), dpi=300, transparent=True, bbox_extra_artists=(ll,), bbox_inches='tight')
-        # fig.savefig(os.path.join(OUTPUT_DIR, f'VSA/{name}.pdf'),bbox_extra_artists=(ll,), bbox_inches='tight')
-        return fig
+        tags = ['ctr','mg']
+        handles = []
+        for i, color in enumerate(VSA_plot.ctr_sample_colors):
+            handles.append(ax.scatter([],[], marker='o', label=tags[i], s=50, edgecolor='black', color=color, linewidth=.2))
+        ax.legend(handles=handles,
+                  loc = 'upper center',
+                  bbox_to_anchor=(1.3,1),
+            )
 
-    def plot_ctr_vs_sample(df_ctr, df_sample, preferred_names):
+
+    def plot_ctr_vs_sample(axes, data_stack, preferred_names, gene_names):
         '''
-            Plots AS/PS for ctr and mg conditions in a 1*2 subplot
+            Plots Q/P for ctr and mg conditions in a 1*2 subplot
         '''
         comic_font()
-        rows = 1
-        cols = 2
-        fig, axes = plt.subplots(rows, cols, tight_layout=True, figsize=(cols * 3.5, rows * 3))
-        dfs = [df_ctr, df_sample]
-        titles = ['ctr', 'mg']
-        for j in range(cols):
-            df = dfs[j]
-            if df is None:
-                continue
+
+        for j, df in enumerate(data_stack):
             ax = axes[j]
-            VSA_plot.scatter(ax, PS=df['PS'], AS=df['AS'], roles=df['Role'])
-            # AS_t, PS_t = VSA_plot.thresholds(df['AS'], df['PS'])
+            VSA_plot.scatter(ax, P=df['P'], Q=df['Q'], roles=df['Role'])
+            # Q_t, P_t = VSA_plot.thresholds(df['Q'], df['P'])
             VSA_plot.mark_x(ax, 0)
             VSA_plot.mark_y(ax, 0)
-            VSA_plot.plot_prot_names(ax=ax, AS=df['AS'], PS=df['PS'], gene_names=preferred_names, roles=df['Role'])
-            VSA_plot.postprocess(ax, title=titles[j])
+            VSA_plot.plot_prot_names(ax=ax, Q=df['Q'], P=df['P'], gene_names=gene_names, roles=df['Role'])
+            VSA_plot.postprocess(ax, title=preferred_names[j])
             VSA_plot.plot_roles(ax)
 
-        handles = []
-        for i, color in enumerate(VSA_plot.colors):
-            handles.append(ax.scatter([], [], marker='o', label=VSA_plot.roles[i],
-                                      edgecolor='black', color=color, linewidth=.2))
-        ll = ax.legend(handles=handles,
-                        bbox_to_anchor=(1.4, 1), prop={'size': 8}
-                        # title='Enriched Term'
-                        )
-        ax.add_artist(ll)
-        return fig
+        # handles = []
+        # for i, color in enumerate(VSA_plot.roles_colors):
+        #     handles.append(plt.scatter([], [], marker='o', label=VSA_plot.roles[i],
+        #                               edgecolor='black', color=color, linewidth=.2))
+        # ll = axes[0].legend(handles=handles,
+        #                 bbox_to_anchor=(1.4, 1), prop={'size': 8}
+        #                 # title='Enriched Term'
+        #                 )
+        # axes[0].add_artist(ll)
 
 
-    def postprocess(ax, title, show_axis_names=True):
+    def postprocess(ax, title='', show_axis_names=True):
+        # serif_font()
         if show_axis_names:
-            ax.set_xlabel('PS (relative to top 25 %)')
-            ax.set_ylabel('AS (relative to top 25 %)')
+            # ax.set_xlabel('P (the line marks top 25 %)')
+            # ax.set_ylabel('Q (the line marks top 25 %)')
+            ax.set_xlabel('Product', fontweight='bold')
+            ax.set_ylabel('Quotient', fontweight='bold')
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]
-        ax.set_title(title)
-        ax.margins(.3)
+        ax.set_title(title, fontweight='bold')
+        ax.margins(.2)
         ax.set_xticks([])
         ax.set_yticks([])
 
@@ -260,16 +294,15 @@ class VSA_plot:
         ax.axvline(x_t, color=line_color, linestyle='--', linewidth=VSA_plot.linewidth)
 
     @staticmethod
-    def scatter(ax, PS, AS, roles):
+    def scatter(ax, P, Q, roles):
 
-        sc = ax.scatter(PS, AS,
-                        color=[VSA_plot.colors[i] for i in roles],
+        sc = ax.scatter(P, Q,
+                        color=[VSA_plot.roles_colors[i] for i in roles],
                         #                    alpha=[1 if flag else .5 for flag in flags]
                         #                    alpha = .7,
                         linewidths=.1,
                         edgecolors='black',
-                        s=50
-                        # s = [VSA_plot.sizes[i] for i in roles],
+                        s=100
                         )
         # markers = [VSA_plot.markers[i] for i in roles]
         # paths = []
@@ -293,7 +326,7 @@ class VSA_plot:
         ax.text(.99, .99, 'Critical', ha='right', va='top', transform=ax.transAxes, fontweight='bold')
 
     @staticmethod
-    def plot_prot_names(ax, AS, PS, gene_names, roles):
+    def plot_prot_names(ax, Q, P, gene_names, roles):
         '''
             Prints names of critical genes on the scatter plot
         '''
@@ -302,37 +335,48 @@ class VSA_plot:
 
         arrow_specs = {'arrow_type': 'arc3', 'rad': .2}
         for i, gene_name in enumerate(gene_names):
-            offset_x = 0.2
-            offset_y = 0.2
+            offset_x = 0.15
+            offset_y = 0.15
             rad = .2
             role = roles[i]
             if role != 3:  # just critical
                 continue
-            x = PS[i]
-            y = AS[i]
-            if gene_name == 'Q02218' or gene_name == 'P26447':
-                offset_y = -.05
-                offset_x = .3
-                rad = .2
-            if gene_name == 'P62854':
-                offset_y = -.25
-                offset_x = .15
-                rad = .2
-            if gene_name == 'Q07065':
-                offset_y = .2
-                offset_x = -.25
+            x = P[i]
+            y = Q[i]
+            if gene_name in ['Q02790']:
+                # offset_y = 0
+                offset_x = 0.05
+                rad = 0
+            if gene_name in ['P13667']:
+                # offset_y = 0
+                offset_x = -0.05
                 rad = -.2
-            if gene_name == 'Q9UJZ1':
-                offset_y = .15
-                offset_x = 0.1
+            if gene_name in ['Q99613']:
+                offset_y = 0.25
+                offset_x = +0.07
                 rad = -.2
-            if gene_name == 'P21281':
-                offset_y = -.05
-                offset_x = 0.22
-                rad = .2
-            # if gene_name == 'P21281', 'P26447', 'P62854','Q02218','Q07065','Q9UJZ1'
+            if gene_name in ['Q07866']:
+                offset_y = 0.15
+                offset_x = +0.1
+                # rad = 0
+            if gene_name in ['P14174']:
+                offset_y = 0.05
+                offset_x = +0.2
+            if gene_name in ['Q02218']:
+                offset_y = 0.2
+                offset_x = +0.1
+            if gene_name in ['P00568']:
+                offset_y = 0.3
+                offset_x = -.15
+                rad = -.3
+            if gene_name in ['P02652']:
+                offset_y = 0.3
+                offset_x = +0.1
+                rad = -.2
 
-            ax.annotate(gene_name, xy=(x, y), xytext=(x + offset_x * xlim, y + offset_y * ylim), fontsize=7,
+
+
+            ax.annotate(gene_name, xy=(x, y), xytext=(x + offset_x * xlim, y + offset_y * ylim), fontsize=9,
                         arrowprops={'arrowstyle': '->', 'lw': 0.9, 'connectionstyle': f'arc3, rad={rad}',
                                     'color': 'black', 'alpha': .7}
                         , horizontalalignment='center')

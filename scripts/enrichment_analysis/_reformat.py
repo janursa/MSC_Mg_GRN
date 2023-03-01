@@ -15,7 +15,7 @@ from imports import *
 
 def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_protname: dict, term_length_cut_threshold: int) -> pd.DataFrame:
     '''
-        Reads vs_string EA data such as enrichment.Function
+        Reads model_selection EA data such as enrichment.Function
     '''
     enrich_data = pd.read_csv(enrich_file, sep='\t', index_col=False)
     # keep the specified enrichment type
@@ -27,7 +27,7 @@ def reireive_string_data_F(enrich_file: str, enrich_type: str, map_genename_prot
     enrich_data.drop('background gene count', axis=1, inplace=True)
     # - redefine column names
     enrich_data.columns = ['ID', 'Description', 'ProteinCount', 'Strength', 'FDR', 'genenames']
-    # replace vs_string gene name with uniprotname
+    # replace model_selection gene name with uniprotname
     print(enrich_data.columns)
     unitprotnames = []
     for row in enrich_data['genenames']:

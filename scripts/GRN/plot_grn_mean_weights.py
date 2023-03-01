@@ -24,7 +24,7 @@ def retreive_grn(method, DE_type, studies):
 if __name__ == '__main__':
     studies = ['ctr', 'mg']
     methods = ['RF', 'Ridge', 'Portia']
-    methods_preferred_names= ['RF', 'Ridge', 'RPME']
+    methods_preferred_names= ['RF', 'Ridge', 'Portia']
 
     for DE_type, _ in F_DE_protiens().items():
         links_combined = []

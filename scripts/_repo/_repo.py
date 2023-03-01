@@ -247,7 +247,7 @@ print(list(df_flags['DE'].values).count(True))
 #---- to format data for r plot 
 def reireive_string_data_F(enrich_type):
     '''
-        Reads vs_string EA data such as enrichment.Function
+        Reads model_selection EA data such as enrichment.Function
     '''
     FILE =  os.path.join(MAIN_DIR, 'results/enrichment_analysis/enrichment.all.tsv')
     data = pd.read_csv(FILE,sep='\t',index_col=False)
