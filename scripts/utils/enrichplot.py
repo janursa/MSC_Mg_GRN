@@ -30,7 +30,7 @@ def mscatter(x,y,ax=None, m=None, **kw):
         sc.set_paths(paths)
     return sc
 def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True,
-        legend_size=True, legend_marker=True, title=''):
+        legend_size=True, legend_marker=True, title='', scale_factor=.1):
     #-----------define prop---------------
     import matplotlib
     # comic_font()
@@ -47,7 +47,7 @@ def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsi
     counts = [len(data['Description'].values) for data in df_stack]
     markers = [marker_types[i] for sub in [np.full(shape=n, fill_value=i, dtype=int) for i,n in enumerate(counts)] for i in sub]
     #-----------scale----------------------
-    adj_sizes = .1 * len(y) * figsize[1] * sizes/np.std(sizes)
+    adj_sizes = scale_factor * len(y) * figsize[1] * sizes/np.std(sizes)
 
     #-----------plot-----------------------
     fig, ax = plt.subplots(1, 1, figsize=figsize)
@@ -65,8 +65,8 @@ def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsi
     #- marker legend
     if legend_marker:
         handles = []
-        for i, marker in enumerate(marker_types):
-            handles.append(ax.scatter([],[],marker=marker, label=tags[i], color='black', s=100))
+        for i, tag in enumerate(tags):
+            handles.append(ax.scatter([],[],marker=marker_types[i], label=tag, color='black', s=100))
         l2 = plt.legend(loc='right', bbox_to_anchor=(-.5,-.3), handles=handles, title='Enriched Term')
         ax.add_artist(l2)
     #- size legend 

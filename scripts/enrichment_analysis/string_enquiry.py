@@ -9,7 +9,7 @@ import pandas as pd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import DATA_DIR, ENRICH_DIR
+from scripts.imports import DATA_DIR, ENRICH_DIR, F_DE_protiens
 import requests
 
 string_api_url = "https://version-11-5.string-db.org/api"
@@ -69,7 +69,9 @@ def string_enriched_functions(my_genes):
     ProteinCount = np.asarray(list(map(int, df['ProteinCount'].values)))
     BackgroundGeneCount = np.asarray(list(map(int, df['BackgroundGeneCount'].values)))
     # df.loc[:,'ProteinRatio'] = ProteinCount/len(my_genes)
-    df.loc[:, 'Strength'] = -1/(np.log10(ProteinCount/BackgroundGeneCount)-0.000001)
+    df.loc[:, 'Strength'] = -1/(np.log10(ProteinCount/(BackgroundGeneCount+1))-0.0001)
+    # df.loc[:, 'Strength'] = ProteinCount / BackgroundGeneCount
+
     #- change category names
     df.replace('RCTM','Reactome Pathways', inplace=True)
     df.replace('Keyword', 'Uniprot Keywords', inplace=True)
@@ -83,20 +85,21 @@ def string_enriched_functions(my_genes):
 if __name__ == '__main__':
     if not os.path.isdir(ENRICH_DIR):
         os.makedirs(ENRICH_DIR)
-    with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'r') as f:
-        data = eval(f.read())
-    enrich_function = False #biological functions
-    entich_network = True #protein network
+
+    enrich_function = True #biological functions
+    entich_network = False #protein network
+
+    selected_models = ['day1_11_KNN', 'day1_21_KNN']
     #- functional enrichment
     if enrich_function:
-        for DE_type, DE_proteins in data.items():
-            if DE_type in ['early_30', 'late_30']: #TODO: fix this
+        for DE_type, DE_proteins in F_DE_protiens().items():
+            if DE_type in selected_models:
                 df_enrich = string_enriched_functions(DE_proteins)
                 df_enrich.to_csv(os.path.join(ENRICH_DIR, f'enrichment_all_{DE_type}.csv'), index=False)
 
     #- network enrichment
     if entich_network:
-        for DE_type, DE_proteins in data.items():
+        for DE_type, DE_proteins in F_DE_protiens().items():
             df_enrich = string_enriched_network(DE_proteins)
             df_enrich.to_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index=False)
 

@@ -1,6 +1,37 @@
 """
     Process the results of GRN using RF by pooling them and adding oob scores to the links.
-    Reads oob and train scores and plot them
+    Reads oob and train scores and plot them.
+    igraph params:
+
+layout: the layout to use for the graph. This can be a precomputed layout, or a string specifying one of several built-in layout algorithms (default is 'auto')
+vertex_color: the color to use for vertices (default is 'white')
+vertex_size: the size of the vertices in pixels (default is 10)
+vertex_shape: the shape of the vertices (default is 'circle')
+vertex_frame_color: the color of the border around each vertex (default is 'black')
+vertex_label: the label to display for each vertex (default is None)
+vertex_label_color: the color of the vertex labels (default is 'black')
+vertex_label_size: the size of the vertex labels in points (default is 12)
+edge_color: the color to use for edges (default is 'black')
+edge_width: the width of the edges in pixels (default is 1)
+edge_arrow_size: the size of the arrowheads on directed edges (default is 1)
+edge_arrow_width: the width of the arrowheads on directed edges (default is 1)
+edge_curved: whether to draw curved edges instead of straight lines (default is False)
+edge_label: the label to display for each edge (default is None)
+edge_label_color: the color of the edge labels (default is 'black')
+edge_label_size: the size of the edge labels in points (default is 12)
+margin: the size of the margin around the plot in pixels (default is 10)
+background: the background color of the plot (default is 'white')
+vertex_label_dist: the distance between the vertex label and the vertex in pixels (default is 0)
+vertex_label_angle: the angle of rotation for the vertex label in degrees (default is 0)
+vertex_label_family: the font family for the vertex label (default is 'sans-serif')
+vertex_label_font: the font style for the vertex label (default is 'normal')
+vertex_label_rect: whether to draw a rectangle behind the vertex label (default is False)
+edge_label_dist: the distance between the edge label and the edge in pixels (default is 0)
+edge_label_angle: the angle of rotation for the edge label in degrees (default is 0)
+edge_label_family: the font family for the edge label (default is 'sans-serif')
+edge_label_font: the font style for the edge label (default is 'normal')
+edge_label_rect: whether to draw a rectangle behind the edge label (default is False)
+bbox: a tuple specifying the size of the plot in pixels (default is None)
 """
 import sys
 import os
@@ -10,6 +41,7 @@ import numpy as np
 from pathlib import Path
 import copy
 import igraph as ig
+import matplotlib
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -69,7 +101,7 @@ def ig_plot(ax, nodes, edges, model_name, study):
         title = 'Regulatory role'
         handles = VSA_plot.create_role_legends(ax)
         l1=ax.legend(handles=handles, loc='upper center', title=title,
-                        bbox_to_anchor=(1.1, 1), prop={'size': 10}, title_fontproperties={'size': 9,'weight':'bold'}, frameon=False
+                        bbox_to_anchor=(.2, -.1), prop={'size': 10}, title_fontproperties={'size': 9,'weight':'bold'}, frameon=False
                         )
         ax.add_artist(l1)
 
@@ -77,14 +109,15 @@ def ig_plot(ax, nodes, edges, model_name, study):
     if True:
         size_title = 'Protein importance'
         n_classes = 4
-        sizes = vertex_sizes/max(vertex_sizes)
+        sizes = (vertex_sizes-min(vertex_sizes))/(max(vertex_sizes)-min(vertex_sizes)) + .1
+        sizes = sizes/max(sizes)
         sizes_classes = np.linspace(min(sizes), max(sizes), n_classes)
         handles = []
         for i, size in enumerate(sizes_classes):
-            adj_size = 20 * size / np.std(sizes)
+            adj_size = 30 * (size) / np.std(sizes)
             handles.append(ax.scatter([], [], marker='o', label=round(size, 1), color='black',
                                       s=adj_size, alpha=1))
-        l2 = ax.legend(loc='upper center', bbox_to_anchor=(1.1, .75), handles=handles, title=size_title, fancybox=False,
+        l2 = ax.legend(loc='upper center', bbox_to_anchor=(.5, -.1), handles=handles, title=size_title, fancybox=False,
                        frameon=False, prop={'size': 10}, title_fontproperties={'size': 9,'weight':'bold'} )
         ax.add_artist(l2)
     # - edge weight legend
@@ -95,11 +128,12 @@ def ig_plot(ax, nodes, edges, model_name, study):
         sizes_classes = np.linspace(min(sizes), max(sizes), n_classes)
         handles = []
         for i, size in enumerate(sizes_classes):
-            adj_size = size / np.std(sizes)
-            handles.append(ax.plot([], [], label=round(size, 1), color='black',
-                                      linewidth=adj_size, alpha=1)[0])
-
-        l3 = ax.legend(loc='upper center', bbox_to_anchor=(1.1, .5), handles=handles, title=size_title, fancybox=False,
+            adj_size = 2*size / np.std(sizes)
+            line, = ax.plot([], [], label=round(size, 1), color='black',
+                                      linewidth=adj_size, alpha=1)
+            line.set_solid_capstyle('round')
+            handles.append(line)
+        l3 = ax.legend(loc='upper center', bbox_to_anchor=(.8, -.1), handles=handles, title=size_title, fancybox=False,
                        frameon=False, prop={'size': 10},title_fontproperties={'size': 9,'weight':'bold'})
 
 

@@ -58,7 +58,7 @@ if __name__ == '__main__':
     methods = ['RF','ridge','portia']
     std_MF = .3 #multiplicative noise std
     rel_std_AF = .3
-    n_relica_noise =100
+    n_relica_noise = 100
 
     selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
 

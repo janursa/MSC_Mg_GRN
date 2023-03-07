@@ -47,7 +47,7 @@ def plot_dist(ax, idx, data_stack, x_labels, sig_signs, title):
     # matplotlib.rcParams.update({'font.size': 12})
     bplot = ax.violinplot(data_stack.T, showmeans=True, showextrema=False)
     if idx %2 == 0:
-        ax.set_ylabel('Early precision ratio')
+        ax.set_ylabel('AOC-EPR (standardize)')
         ax.set_yticks([0,1,2])
         ax.set_yticklabels([0, 1, 2])
     else:
@@ -73,7 +73,7 @@ def plot_dist(ax, idx, data_stack, x_labels, sig_signs, title):
                 va='bottom',
                 )
     ax.set_title(title)
-def plot_line(ax, idx, x_data, data_stack, line_names, title):
+def plot_line(ax, idx, x_data, data_stack, line_names, title, yticks):
     serif_font()
     # matplotlib.rcParams.update({'font.size': 10})
     colors = ['grey', 'lightpink', 'lightblue', 'lightgreen', 'blue', 'orange', 'cyan']
@@ -89,15 +89,26 @@ def plot_line(ax, idx, x_data, data_stack, line_names, title):
                        marker='o')
 
     # ax.legend(frameon=False)
-    if idx %2 == 0:
-        ax.set_ylabel('Early precision ratio')
-        ax.set_yticks([0, 1, 2])
-        ax.set_yticklabels([0, 1, 2])
-    else:
-        ax.set_yticks([0, 1, 2])
-        ax.set_yticks([])
-        ax.set_ylabel('')
+    # if idx %2 == 0:
+    #     ax.set_ylabel('EPR')
+    #     ax.set_yticks(yticks)
+    #     ax.set_yticklabels(yticks)
+    # else:
+    #     ax.set_yticks(yticks)
+    #     ax.set_yticks([])
+    #     ax.set_ylabel('')
+    ax.set_ylabel('Early precision ratio')
+    ax.set_ymargin(.2)
+    # ax.set_yticks(yticks)
+    # ax.set_yticklabels(yticks)
+
     ax.set_xlabel('Top quantile')
+    # if idx in [0,1]:
+    #     ax.set_xlabel('')
+    #     # ax.set_xticks([])
+    #     # ax.set_xticklabels([])
+
+
     ax.set_title(title)
     # ax.set_ymargin(.1)
     # ax.set_xmargin(.1)
@@ -161,8 +172,8 @@ if __name__ == '__main__':
     #- plot specs
     ncols = 2
     nrows = 2
-    fig_series, axes_series = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.8 * ncols, 2.4 * nrows))
-    fig_dist, axes_dist = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.5 * ncols, 2 * nrows))
+    fig_series, axes_series = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(3 * ncols, 2.25 * nrows))
+    fig_dist, axes_dist = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.5 * ncols, 2.25 * nrows))
 
     #- get golden links for each DE_type
     links_string_dict = {}
@@ -245,7 +256,7 @@ if __name__ == '__main__':
         j = idx % ncols
         ax_series = axes_series[i][j]
         epr_scores_list_random_included = np.vstack([[1 for _ in top_quantiles], epr_scores_list])
-        plot_line(ax = ax_series, idx=idx, x_data=top_quantiles, data_stack=epr_scores_list_random_included, line_names=methods_preferred_names, title=make_title_pretty(DE_type))
+        plot_line(ax = ax_series, idx=idx, x_data=top_quantiles, data_stack=epr_scores_list_random_included, line_names=methods_preferred_names, title=make_title_pretty(DE_type), yticks=[0, 1, 2])
         if idx == 1:
             ax_series.legend(loc='upper center', bbox_to_anchor=(1.35, 1), fancybox=False, frameon=False)
 
@@ -265,17 +276,17 @@ if __name__ == '__main__':
     fig_dist.savefig(os.path.join(MODELSELECTION_DIR, f'ep_dist.pdf'))
 
     #-plot the main graph for the selected models
-    model_names_with_scores = [f'{name} ({round(np.mean(score),2)})' for name, score in zip(shortlisted_models_names,shortlisted_models_scores)]
-    model_names_randome_included = [f'Arbitrary (1)']+ model_names_with_scores
+    model_names_with_scores = [f'{name} ({round(np.sum(score),2)})' for name, score in zip(shortlisted_models_names,shortlisted_models_scores)]
+    model_names_randome_included = [f'Arbitrary ({len(top_quantiles)})']+ model_names_with_scores
     scores_random_included = np.vstack([[1 for _ in top_quantiles], shortlisted_models_scores])
 
     fig_main, ax_main = plt.subplots(nrows=1, ncols=1, figsize=(3.5, 2.5))
     plot_line(ax=ax_main, idx=0, x_data=top_quantiles, data_stack=scores_random_included,
-              line_names=model_names_randome_included, title='')
+              line_names=model_names_randome_included, title='', yticks= None)
 
-    ax_main.legend(loc='upper center', bbox_to_anchor=(1.48, 1), fancybox=False, frameon=False)
-    fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'main.png'), bbox_inches="tight", dpi=300, transparent=True)
-    fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'main.pdf'), bbox_inches="tight")
+    ax_main.legend(loc='upper center', bbox_to_anchor=(1.48, 1), fancybox=False, frameon=False, title='Model (AOC)', title_fontproperties={'weight':'bold'} )
+    fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'shortlisted.png'), bbox_inches="tight", dpi=300, transparent=True)
+    fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'shortlisted.pdf'), bbox_inches="tight")
 
     # np.savetxt(os.path.join(MODELSELECTION_DIR, f'shortlisted_models.txt'), shortlisted_models_names, delimiter=",", fmt="%s")
 

@@ -40,15 +40,18 @@ def visualize_scores(method, ylabel, xticks, ylim):
         bplot = ax.boxplot(best_scores_stack, notch=True, patch_artist=True, meanline=True, widths=.5)
         # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
         #     )
-        if idx == 0:
-            ax.set_ylabel(ylabel)
-            ax.set_yticks(xticks)
-            ax.set_yticklabels(xticks)
-
-        else:
-            ax.set_yticks(xticks)
-            ax.set_yticks([])
-            ax.set_ylabel('')
+        ax.set_ylabel(ylabel)
+        ax.set_yticks(xticks)
+        ax.set_yticklabels(xticks)
+        # if idx == 0:
+        #     ax.set_ylabel(ylabel)
+        #     ax.set_yticks(xticks)
+        #     ax.set_yticklabels(xticks)
+        #
+        # else:
+        #     ax.set_yticks(xticks)
+        #     ax.set_yticks([])
+        #     ax.set_ylabel('')
         ax.set_ylim(ylim)
         ax.set_xticks(range(1, len(studies) + 1))
         ax.set_xticklabels(studies, rotation=0)
@@ -66,7 +69,7 @@ def visualize_scores(method, ylabel, xticks, ylim):
 
 
 if __name__ == '__main__':
-    visualize_scores(method='ridge', ylabel='LOO score', xticks=[-2, -1, 0, 1],  ylim= [-2.94, 1.2])
+    visualize_scores(method='ridge', ylabel='LOO score', xticks=[-2, -1, 0, 1],  ylim= [-2.94, 1.3])
     visualize_scores(method='RF', ylabel='OOB score', xticks=[-1, 0, 1], ylim= [-1.2, 1.2])
 
 
