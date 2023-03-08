@@ -5,6 +5,8 @@ import sys
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+import matplotlib.markers as mmarkers
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -14,7 +16,7 @@ from scripts.utils import comic_font, serif_font
 def mscatter(x,y,ax=None, m=None, **kw):
     """ a custom plot built on scatter plot to enable multi marker visualization
     """
-    import matplotlib.markers as mmarkers
+
     if not ax: ax=plt.gca()
     sc = ax.scatter(x,y,**kw)
     if (m is not None) and (len(m)==len(x)):
@@ -32,7 +34,6 @@ def mscatter(x,y,ax=None, m=None, **kw):
 def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsize,legend_color=True,
         legend_size=True, legend_marker=True, title='', scale_factor=.1):
     #-----------define prop---------------
-    import matplotlib
     # comic_font()
     serif_font()
     matplotlib.rcParams.update({'font.size': 14})

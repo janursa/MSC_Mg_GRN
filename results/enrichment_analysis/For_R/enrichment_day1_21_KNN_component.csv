@@ -1,0 +1,11 @@
+category,BackgroundGeneCount,ProteinCount,ProteinNames,FDR,Description,Strength
+GO Cellular Component,2,2,"P12956,P13010",0.0035,Ku70:Ku80 complex,5.675650457120422
+GO Cellular Component,6,2,"Q02218,P36957",0.012,Oxoglutarate dehydrogenase complex,1.837667629296346
+GO Cellular Component,6,2,"Q15233,P23246",0.012,Paraspeckles,1.837667629296346
+GO Cellular Component,9,2,"P12956,P13010",0.0209,Nonhomologous end joining complex,1.4304719038114166
+GO Cellular Component,13,2,"P12956,P13010",0.0359,Nuclear telomere cap complex,1.183154660395488
+GO Cellular Component,32,3,"Q7Z417,P62917,P62854",0.0068,Polysomal ribosome,0.9601603681432276
+GO Cellular Component,65,5,"P49023,Q9UMS6,P06753,Q9UHD8,Q96HC4",0.0002,Stress fiber,0.8923202121102218
+GO Cellular Component,73,3,"Q7Z417,Q14444,Q14011",0.0432,Cytoplasmic stress granule,0.7182822031091927
+GO Cellular Component,227,5,"Q9UMS6,P05976,Q05682,P06753,Q96HC4",0.0192,Myofibril,0.6027491959832106
+GO Cellular Component,405,7,"Q07954,P62917,P49023,Q9UMS6,P61981,O15143,Q8WWI1",0.0061,Focal adhesion,0.5670451524728302

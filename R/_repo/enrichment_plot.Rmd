@@ -1,0 +1,261 @@
+
+
+```{r}
+# help functions and variables
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
+library(readr)
+library(jamba)
+library(multienrichjam)
+library(ggplot2)
+library(rjson)
+MAIN_DIR <- "C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model"
+TO_SAVE <- paste(MAIN_DIR, 'results/enrichment_analysis/For_R', sep='/')
+
+reireive_EA_data_F <- function (file_name){ "Reads enrich data"
+  file <- paste(MAIN_DIR,'results/enrichment_analysis/For_R',file_name,sep="/")
+  data <- read.csv(file)
+  data$X <- NULL
+  return(data)
+}
+
+dataFrame2enrich_F <- function(df){"converts dataframe to enriched object"
+  enrich_df = enrichDF2enrichResult(
+    enrichDF = df,
+    pvalueCutoff = 1,
+    pAdjustMethod = "none",
+    keyColname = c("category"),
+    pathGenes = "pathGenes",
+    geneColname = c("ProteinNames"),
+    geneHits = "geneHits",
+    geneRatioColname = c("ProteinRatio", "Ratio"),
+    geneDelim = "[,/ ]+",
+    pvalueColname = c("P.Value", "Pvalue", "FDR", "adj.P.Val"),
+    descriptionColname = c("Description", "Name", "Pathway", "ID"))
+  return (enrich_df)
+}
+cnet_plot_F <- function(df_s){
+  p <- cnetplot(df_s, layout = "kk", circular = TRUE, colorEdge = TRUE,
+         cex_label_category=.8,cex_label_gene=.7, cex_category=.5, cex_gene=1) 
+
+  return(p)
+}
+dot_plot_F <- function(obj, font_size, label_format, title,showCategory){
+  dotplot(
+    obj, 
+    x = "GeneRatio",
+    color = "p.adjust",
+    size = "Strength",
+    showCategory = showCategory,
+    label_format = label_format,
+    orderBy = 'Strength',
+    font.size = font_size,
+    title = title
+  )
+}
+#- read differntially expressed proteins
+DE_protnames_FILE <- paste(MAIN_DIR,'results/data/DE_protnames_json.json', sep='/')
+DE_protnames <- fromJSON(file=DE_protnames_FILE)
+DE_protnames_F <- function(model){"read DE proteins"
+  return (DE_protnames[[model]])
+}
+# protein association plot
+for (DE_type in list('day1_11_KNN','day1_21_KNN')){
+  for (term in list('process','function','component')){
+    file_name = sprintf('enrichment_%s_%s.csv', DE_type, term)
+    enrich_data = reireive_EA_data_F(file_name)
+    enrich_obj = dataFrame2enrich_F(enrich_data)
+    p <- cnet_plot_F(enrich_obj)
+    cowplot::save_plot(sprintf('%s/dot_%s_%s.png',TO_SAVE, DE_type, term), p1, ncol = 1, base_asp = 1.1, bg='White',base_height=6)
+  }
+ 
+
+} 
+```
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+# cnetplot: combined
+df_process <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_process.csv'))
+df_function <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_function.csv'))
+df_component <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_component.csv'))
+df_keyword <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_keyword.csv'))
+
+p1 <- cnet_plot_F(df_process)
+p2 <- cnet_plot_F(df_function)
+p3 <- cnet_plot_F(df_component)
+p4 <- cnet_plot_F(df_keyword)
+# 
+combined <- cowplot::plot_grid(p1, p2, p3, p4, ncol=2, labels=c('GO: Biological Process','GO: Biological Function','Go: Biological Component', 'UniProt Keyword'), rel_widths=c(1,1) ,label_size = 11, scale=.95, label_x=c(-.1,-.1)
+                   )
+cowplot::save_plot('cnet_combined.png', combined, ncol = 2, base_asp = .9, bg='White', base_height=10)
+```
+
+```{r}
+# cnetplot: individual 
+df_process <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_process.csv'))
+df_function <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_function.csv'))
+df_component <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_component.csv'))
+df_keyword <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_keyword.csv'))
+df_reactome <- dataFrame2enrich_F(reireive_EA_data_F('enrichment_reactome.csv'))
+cnet_plot_F <- function(df_s){
+  p <- cnetplot(df_s, layout = "kk", circular = T, colorEdge = TRUE,
+         cex_label_category=.5, cex_label_gene=.05, cex_category=.8, cex_gene=.7,
+         node_label='category') 
+
+  return(p)
+}
+title_font_size = 12
+p1 <- cnet_plot_F(df_process) + ggtitle("Go: Biological Process") + theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
+ggsave("cnet_process.png", p1, units = "px", width = 2000, height = 1200, scale=1.1)
+
+p2 <- cnet_plot_F(df_function) + ggtitle("Go: Biological Function")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
+ggsave("cnet_function.png", p2, units = "px", width = 800, height = 600,  scale=1.1)
+
+p3 <- cnet_plot_F(df_component) + ggtitle("Go: Biological Component")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
+ggsave("cnet_component.png", p3, units = "px", width = 1919, height = 1250,  scale=1.1)
+
+p4 <- cnet_plot_F(df_keyword) + ggtitle("UniProt Keywords")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
+ggsave("cnet_keyword.png", p4, units = "px", width = 1800, height = 1120,  scale=1.1)
+p5 <- cnet_plot_F(df_reactome) + ggtitle("Reactome Pathways")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
+ggsave("cnet_pathways.png", p5, units = "px", width = 1200, height = 600,  scale=1.1)
+
+```
+
+
+```{r}
+# tree plot
+# p <- tree_plot_F(df_component)
+# TREE_COMBINED_FILE = 'tree_combined.png'
+# cowplot::save_plot(TREE_COMBINED_FILE, p, ncol = 3, base_asp = 1.1, bg='White',base_height=6)
+tree_plot_F <- function(x){
+  
+  
+}
+df_process_p = pairwise_termsim(df_process)
+treeplot(df_process_p, 
+  # showCategory = 30,
+  color = "p.adjust",
+  nWords = 5,
+  offset = rel(25), # offset
+  # nCluster = 5,
+  cex_category = .75, #size of category circles
+  
+  fontsize = 4, # for the averaged categories
+  offset_tiplab = rel(1.5), #offset from the end of lines to the categories
+
+  label_format = 5,
+  # label_format_cladelab = 20,
+  # label_format_tiplab = 50,
+  # hexpand = .2, # expansion in h
+  # hclust_method = "average",
+  
+  )
+
+```
+
+```
+
+```{r}
+# repo
+reireive_EA_data_F <- function (file_name,gene_count){ "Reads enrich data"
+  # file <- paste(MAIN_DIR,'results/enrichment_analysis/string',file_name,sep="/")
+  # data <- read_tsv(file)
+  # # remove some columns
+  # data$`matching proteins in your network (IDs)` <- NULL
+  # data$`background gene count` <- NULL
+  # colnames(data) <- c('ID','Description', 'Count', 'Strength','p.adjust','geneID')
+  # # gene ratio is in the format of x/total
+  # GeneRatio <- c()
+  # for (item in data$Count){
+  #   GeneRatio <- append(GeneRatio,paste(item,gene_count,sep="/"))
+  # }
+  # data$GeneRatio <- GeneRatio
+  # #not useful but required as input to the graph
+  # data$pvalue <- data$p.adjust
+  # data$qvalue <- data$pvalue
+  # data$BgRatio <- data$BgRatio
+  return(data)
+}
+# geneSets <- list()
+# Description <- df$Description
+# geneID <- df$geneID
+# for (i in 1:length(Description)){
+#   geneSets[Description[i]] <- geneID[i]
+# }
+
+
+# primary_df_FILE <- paste(MAIN_DIR, 'data/primary_omics.csv', sep='/')
+# primary_df <- read_csv(primary_df_FILE)
+# universe_vector <- primary_df$Entry # all genes
+
+data(geneList)
+de <- names(geneList)[1:100]
+x <- enrichDO(de)
+
+cnetplot(x, showCategory = 5, foldChange = NULL, layout = "kk")
+x
+
+```
+
+
+
+```{r}
+#- pathways common
+library(paxtoolsr)
+# browseVignettes("paxtoolsr")
+t1 <- graphPc(source=c('O15143', 'O94925', 'P02652', 'P04179', 'P12956', 'P18859', 'P21281', 'P26022', 'P26447', 'P30085', 'P35222', 'P36957', 'P38606', 'P40926', 'P42765', 'P56192', 'P61981', 'P62854', 'P62917', 'Q02218', 'Q02818', 'Q07065', 'Q07866', 'Q07954', 'Q13162', 'Q14011', 'Q15459', 'Q15843', 'Q96L92', 'Q9H0U4', 'Q9UHD8', 'Q9UJZ1', 'Q9UNH7', 'Q9Y3D6'),
+              kind="PATHSBETWEEN",
+              format="SIF",
+              organism = "Human",
+              verbose=TRUE)
+
+extract_F <- function(tag){
+  return (t1[which(t1[,2] == tag),])
+}
+
+tags <- c("controls-expression-of","controls-phosphorylation-of","controls-state-change-of","controls-production-of", "controls-transport-of", "controls transport of chemical")
+extract_F("controls-expression-of")
+```
+
+
+```{r}
+#repo: dot plot: split the window
+df_process <- reireive_EA_data_F('enrichment_process.csv')
+df_process$category = "GO: Biological Process"
+df_function <- reireive_EA_data_F('enrichment_function.csv')
+df_function$category = "GO: Biological Function"
+df_component <- reireive_EA_data_F('enrichment_component.csv')
+df_component$category = "GO: Biological Component"
+df <- rbind(df_process,df_function, df_component)
+df <- dataFrame2enrich_F(df)
+
+dot_plot_F <- function(obj, font_size, label_format, showCategory){
+  dotplot(
+    obj, 
+    x = "GeneRatio",
+    color = "p.adjust",
+    size = "Strength",
+    showCategory = showCategory,
+    label_format = label_format,
+    orderBy = 'category',
+    font.size = font_size,
+    split = "category",
+  )
+}
+dot_plot_F(df, 9, 100, 100) + facet_wrap(.~category,shrink=FALSE,labeller = "label_value")
+
+```
+

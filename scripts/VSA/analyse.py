@@ -56,8 +56,8 @@ if __name__ == '__main__':
         os.makedirs(VSA_NOISE_DIR)
     studies = ['ctr', 'mg']
     methods = ['RF','ridge','portia']
-    std_MF = .3 #multiplicative noise std
-    rel_std_AF = .3
+    std_MF = .05 #multiplicative noise std
+    std_AF = .2
     n_relica_noise = 100
 
     selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
@@ -126,8 +126,8 @@ if __name__ == '__main__':
             rr_sorted_M = filter_and_sort(batch_results_ctr, batch_results_sample, target_genes=target_genes)
             lg.info('multipliciative noise is calculated')
             # - additive noise
-            links_ctr_noised = AG_noise_F(links_ctr_sample[0], n_relica=n_relica_noise, rel_std=rel_std_AF)
-            links_sample_noised = AG_noise_F(links_ctr_sample[1], n_relica=n_relica_noise, rel_std=rel_std_AF)
+            links_ctr_noised = AG_noise_F(links_ctr_sample[0], n_relica=n_relica_noise, rel_std=std_AF)
+            links_sample_noised = AG_noise_F(links_ctr_sample[1], n_relica=n_relica_noise, rel_std=std_AF)
             # run VSA for noised dfs
             batch_results_ctr = batch_VSA(links_ctr_noised, gene_names=DE_proteins, target_genes=target_genes)
             batch_results_sample = batch_VSA(links_sample_noised, gene_names=DE_proteins, target_genes=target_genes)
