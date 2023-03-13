@@ -12,8 +12,9 @@ import numpy as np
 import pandas as pd
 pd.options.mode.chained_assignment = None
 
-import typing
+from typing import Tuple, List
 import copy
+from pathlib import Path
 
 from sklearn import preprocessing
 from sklearn import inspection
@@ -21,8 +22,13 @@ from sklearn import inspection
 import matplotlib
 import matplotlib.pyplot as plt
 
-# MAIN_DIR = os.path.join(pathlib.Path(__file__).parent.resolve(), '../..')
-# sys.path.insert(0, MAIN_DIR)
+
+
+
+
+
+sys.path.insert(0, os.path.join(pathlib.Path(__file__).parent.resolve(), '../..'))
+from scripts.imports import DATA_DIR
 #
 # -- import from geneRNI
 # geneRNI_dir = os.path.join(MAIN_DIR,'..','geneRNI')
@@ -38,25 +44,7 @@ import matplotlib.pyplot as plt
 # from utils import VSA
 #
 
-def MG_noise_F(links, n_relica=100, std=.3) -> typing.Tuple[pd.DataFrame]:
-    """ Multiplicitive noise
-         Creates n_relica noised links
-    """
-    noised_link = links.copy()
-    original_weights = links['Weight'].to_numpy(float)
-    noised_links = [noised_link.assign(Weight= original_weights*np.random.normal(loc=1, scale=std, size=len(links)))
-                                       for i in range(n_relica)]
-    return noised_links
-def AG_noise_F(links, n_relica=100, rel_std=.1)-> typing.Tuple[pd.DataFrame]:
-    """ Additive noise
-             Creates n_relica noised links
-    """
-    noised_link = links.copy()
-    original_weights = links['Weight'].to_numpy(float)
-    std = rel_std * np.std(original_weights)
-    noised_links = [noised_link.assign(Weight= original_weights+np.random.normal(loc=0, scale=std, size=len(links)))
-                                       for i in range(n_relica)]
-    return noised_links
+
 def make_title_pretty(name):
     # parts = name.split('_')
     # parts[0] = parts[0][0:1].upper()+parts[0][1:] + ' phase'# upper case for first letter
@@ -275,8 +263,15 @@ def create_check_dir(master_dir, name):
             print(f'{name} directory is not empty')
     return DIR
 
-
-def process_data(df_target, study, standardize=False) -> np.array :
+def read_write_data(tag, mode, data=None):
+    file_name = Path(DATA_DIR)/f"data_{tag}.csv"
+    assert mode in ['read','write']
+    if mode == 'read':
+        return np.loadtxt(file_name,delimiter=",")
+    else:
+        assert data is not None
+        np.savetxt(file_name, data, delimiter=",")
+def process_data(df_target, study) -> np.array :
     '''
         Extract training data from df and returns it in a from of array
     '''
@@ -298,13 +293,9 @@ def process_data(df_target, study, standardize=False) -> np.array :
         # df = pd.concat([df_ctr, df_mg], axis=0)
 
 
-    if standardize:
-        df.iloc[:, :] = preprocessing.scale(df.iloc[:, :])
-
-    return df.values
 
 
-def estimate_decay_rates(TS_data: typing.Tuple[np.array], time_points:  typing.Tuple[np.array]):
+def estimate_decay_rates(TS_data: Tuple[np.array], time_points:  Tuple[np.array]):
     
     """
     this function is exactly taken from dynGENIE3 code.

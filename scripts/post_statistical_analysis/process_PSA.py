@@ -4,17 +4,19 @@ This outputs DE data for early and late for top p values of 0.05 and 0.025
 """
 import sys
 import os
-import typing
+from typing import Tuple, List
 import pandas as pd
 import json
+from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import STATISTICAL_ANALYSIS_DIR, DATA_DIR
 from edit_data.edit import correct_entry
+from scripts.utils import read_write_data, process_data
 
-def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> typing.Tuple[list,pd.DataFrame]:
+def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> Tuple[list,pd.DataFrame]:
     # load the imputed df
     df_imput = pd.read_csv(IMPUT_FILE)
     df_imput.rename(columns={'Unnamed: 0': 'Protein'}, inplace=True)
@@ -55,6 +57,12 @@ if __name__ == '__main__':
             tag = '_'.join([period, imput])
             DE_proteins[tag] = DE_protnames_single
             DE_data[tag] = DE_data_single
+
+            #- extract data in the format of arrays and store it for each model
+            for study in ['ctr','mg']:
+                data = process_data(DE_data_single, study=study)
+                tag_study = '_'.join([tag,study])
+                read_write_data(mode='write', tag=tag_study, data=data)
 
     with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'w') as f:
         print(DE_proteins, file=f)

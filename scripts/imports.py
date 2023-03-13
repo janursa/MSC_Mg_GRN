@@ -7,6 +7,7 @@ import pathlib
 import json
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 MAIN_DIR = os.path.join(pathlib.Path(__file__).parent.resolve(), '..')
 sys.path.insert(0, MAIN_DIR)

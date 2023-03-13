@@ -7,9 +7,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import F_DE_data, time_points, GRN_DIR, CALIBRATION_DIR
-from scripts.utils import process_data
+from scripts.utils import read_write_data
 from scripts.utils.calibration import retrieve_data, plot_scores
-from scripts.utils.links import grn
+from scripts.utils.links import run_generni
 
 if __name__ == '__main__':
     verbose = False
@@ -28,14 +28,14 @@ if __name__ == '__main__':
             else:
                 gene_names = DE_data['Protein'].values
             # - read the data
-            data = process_data(DE_data, study=study, standardize=False)
+            data = data = read_write_data(mode='read', tag=f'{DE_type}_{study}')
             n_timepoints = data.shape[0]
             days = time_points()[0:n_timepoints]
             if verbose:
                 print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
             #- read results of calibration
             _, param_unique = retrieve_data(study=study, DE_type=DE_data_type, method=method, output_dir=CALIBRATION_DIR)
-            _, trainscores, links, _, testscores = grn(data=data, gene_names=gene_names, time_points=days,
+            _, trainscores, links, _, testscores = run_generni(data=data, gene_names=gene_names, time_points=days,
                                              param=param, param_unique=param_unique)
             #- write to file
             links.to_csv(os.path.join(GRN_DIR, method, f'links_{DE_data_type}_{study}.csv'), index=False)

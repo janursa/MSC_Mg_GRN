@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from scripts.imports import ENRICH_DIR, DATA_DIR
 
 
-def main(DE_protnames: list, phase) -> typing.Tuple[dict,dict,dict,dict]:
+def main(DE_protnames: list, phase) -> Tuple[dict,dict,dict,dict]:
     #- mao protname to geneID
     map_protname_geneID = annotaion_map.protname_geneID(DE_protnames)
     #- map protname to genename according to model_selection: because it is different using the website

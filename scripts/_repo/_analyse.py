@@ -14,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import GRN_DIR, VSA_DIR, F_DE_protiens, MODELSELECTION_DIR
-from scripts.utils.VSA import VestersSA, VSA_plot, role_change
+from scripts.utils.VSA import role_analysis, RolePlot, role_change
 from scripts.utils import make_title_pretty, comic_font
 from scripts.utils.links import choose_top_quantile
 from scripts.utils import MG_noise_F, AG_noise_F
@@ -22,7 +22,7 @@ from scripts.utils import serif_font
 
 
 def batch_VSA(links_batch: List[pd.DataFrame], gene_names: List[str], target_genes: List[str]) -> List[pd.DataFrame]:
-    results_batch = [VestersSA(links, gene_names) for links in links_batch]
+    results_batch = [role_analysis(links, gene_names) for links in links_batch]
     results_batch = [oo.loc[oo['Entry'].isin(target_genes), :] for oo in results_batch]
     return results_batch
 def filter_and_sort(batch_results_1, batch_results_2, target_genes):
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 links = pd.read_csv(links_path, index_col=False)
                 links = choose_top_quantile(links, 0.5)
                 links_stack.append(links)
-            oo_stack = [VestersSA(links, DE_proteins) for links in links_stack]
+            oo_stack = [role_analysis(links, DE_proteins) for links in links_stack]
             df_role_change = role_change(oo_stack[0], oo_stack[1], target_role=3)
             df_role_change.to_csv(os.path.join(VSA_DIR, f'role_change.csv'), index=False)
             # -------- plot --------------
@@ -77,25 +77,25 @@ if __name__ == '__main__':
             serif_font()
             # fig.suptitle(t='(A) Study of protein roles using VSA', x=.5, y=.93, fontweight='bold', fontsize=12)
             axes_ctr_mg = axes[0:2]
-            VSA_plot.plot_ctr_vs_sample(axes_ctr_mg, oo_stack, studies, DE_proteins)
+            RolePlot.plot_ctr_vs_sample(axes_ctr_mg, oo_stack, studies, DE_proteins)
             axes_ctr_mg[1].set_ylabel('')
             # role change from ctr to sample
             ax_role_change = axes[2]
-            VSA_plot.plot_role_change(df_role_change, ax=ax_role_change)
+            RolePlot.plot_role_change(df_role_change, ax=ax_role_change)
             ax_role_change.set_ymargin(.4)
             ax_role_change.set_xmargin(.4)
             ax_role_change.set_ylabel('')
             # legends
             handles = []
-            for i, color in enumerate(VSA_plot.ctr_sample_colors):
+            for i, color in enumerate(RolePlot.ctr_sample_colors):
                 handles.append(
                     ax_role_change.scatter([], [], marker='o', label=studies[i], s=100, edgecolor='black', color=color, linewidth=.2))
             handles.append(ax_role_change.scatter([], [], marker='', label='--', s=1,
                                                   edgecolor='white', color='white',
                                                   linewidth=.5))  # create a blank place
 
-            for i, color in enumerate(VSA_plot.roles_colors):
-                handles.append(ax_role_change.scatter([], [], marker='o', label=VSA_plot.roles[i], s=100,
+            for i, color in enumerate(RolePlot.roles_colors):
+                handles.append(ax_role_change.scatter([], [], marker='o', label=RolePlot.roles[i], s=100,
                                           edgecolor='black', color=color, linewidth=.5))
             ax_role_change.legend(handles=handles, loc='upper center',
                             bbox_to_anchor=(1.3, 1), prop={'size': 10}, frameon=False
@@ -128,9 +128,9 @@ if __name__ == '__main__':
             ncols, nrows = len(target_genes), 2
             fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
             # fig.suptitle(t='(B) Robustness of protein role change to noise', x=.5, y=.95, fontweight='bold', fontsize=11)
-            VSA_plot.plot_noise_analysis(axes[0][:], rr_sorted_M, study_1='ctr', study_2='Mg', show_title=True)
+            RolePlot.plot_noise_analysis(axes[0][:], rr_sorted_M, study_1='ctr', study_2='Mg', show_title=True)
             axes[0][0].set_ylabel('Multiplicative noise', fontweight='bold')
-            VSA_plot.plot_noise_analysis(axes[1][:], rr_sorted_A, study_1='ctr', study_2='Mg', show_title=False)
+            RolePlot.plot_noise_analysis(axes[1][:], rr_sorted_A, study_1='ctr', study_2='Mg', show_title=False)
             axes[1][0].set_ylabel('Additive noise', fontweight='bold')
 
             fig.savefig(os.path.join(VSA_DIR, 'noise', f'noiseAnalysis.pdf'))

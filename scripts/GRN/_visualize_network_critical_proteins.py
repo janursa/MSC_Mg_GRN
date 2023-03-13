@@ -49,12 +49,12 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from scripts.imports import GRN_DIR, F_DE_data, F_DE_protiens, ENRICH_DIR, VSA_DIR
 from scripts.utils import calibration, serif_font, make_title_pretty
 from scripts.utils.links import retrieve_scores, choose_top_quantile, choose_top_count
-from scripts.utils.VSA import VSA_plot
+from scripts.utils.VSA import RolePlot
 
 def ig_plot(ax, nodes, edges, model_name, study):
     node_names = list(nodes['Protein'].to_numpy())
     F_normalize = lambda vector: vector / np.max(vector)
-    vertex_colors = [VSA_plot.roles_colors[role] for role in nodes['Role']]
+    vertex_colors = [RolePlot.roles_colors[role] for role in nodes['Role']]
     edge_weights = F_normalize(edges['Weight'].to_numpy(float))
     vertex_sizes = F_normalize(nodes['Weight'].to_numpy(float))
 
@@ -102,7 +102,7 @@ def ig_plot(ax, nodes, edges, model_name, study):
     # - color legend: roles
     if True:
         title = 'Regulatory role'
-        handles = VSA_plot.create_role_legends(ax)
+        handles = RolePlot.create_role_legends(ax)
         l1=ax.legend(handles=handles, loc='upper center', title=title,
                         bbox_to_anchor=(.2, -.1), prop={'size': 10}, title_fontproperties={'size': 9,'weight':'bold'}, frameon=False
                         )

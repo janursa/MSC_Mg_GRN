@@ -10,7 +10,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import F_DE_data, time_points, param_grid_ridge, CALIBRATION_DIR
-from scripts.utils import process_data, calibration
+from scripts.utils import read_write_data, calibration
 if __name__ == '__main__':
     method = 'ridge'
     studies = ['ctr', 'mg']
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     for DE_type, DE_data in F_DE_data().items():
         for study in studies:
             # - read the data
-            data = process_data(DE_data, study=study, standardize=False)
+            data = data = read_write_data(mode='read', tag=f'{DE_type}_{study}')
 
             n_timepoints = data.shape[0]
             days = time_points()[0:n_timepoints]

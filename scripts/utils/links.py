@@ -12,6 +12,7 @@ import numpy as np
 import random
 import pandas as pd
 import json
+import portia as pt
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,8 +22,9 @@ from scripts.utils import create_check_dir, serif_font
 
 from geneRNI.core import network_inference
 from geneRNI.data import Data
+from geneRNI.links import format_links
 
-def batch_GRN(study, method, DE_type, i_start, i_end, output_dir, **specs):
+def batch_run_generni(study, method, DE_type, i_start, i_end, output_dir, **specs):
     """
         Runs network inference for a number of times
     """
@@ -36,7 +38,7 @@ def batch_GRN(study, method, DE_type, i_start, i_end, output_dir, **specs):
     #- run iteration
     for i in range(i_start, i_end):
         print(f'----GRN for {study} iteration {i}-----')
-        ests, train_scores, links_df, oob_scores, test_scores = grn(**specs)
+        ests, train_scores, links_df, oob_scores, test_scores = run_generni(**specs)
         if method=='RF':
             test_scores = oob_scores
         #- save
@@ -85,7 +87,20 @@ def retrieve_scores(study, method, DE_type, output_dir):
     trainscores = np.genfromtxt(os.path.join(output_dir, method, DE_type, f'trainscores_{study}.csv'))
 
     return trainscores, testscores
-def grn(data, time_points, gene_names, **specs):
+def run_portia(data, gene_names, **kwargs):
+
+    data = np.asarray(data)
+    # - create portia dataset
+    portia_dataset = pt.GeneExpressionDataset()
+    for exp_id, data_i in enumerate(data):
+        portia_dataset.add(pt.Experiment(exp_id, data_i))
+    # - GRN inference
+    M_bar = pt.run(portia_dataset, method='fast', verbose=False)
+    links_df = format_links(M_bar, gene_names)
+    return links_df
+
+
+def run_generni(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)
 

@@ -5,9 +5,9 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import time_points, F_DE_data, GRN_DIR, CALIBRATION_DIR
-from utils import process_data, calibration
-from utils.links import batch_GRN
+from scripts.imports import time_points, F_DE_data, GRN_DIR, CALIBRATION_DIR
+from scripts.utils import read_write_data, calibration
+from scripts.utils.links import batch_run_generni
 
 
 if __name__ == '__main__':
@@ -28,7 +28,7 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values.tolist() + ['mg']
             else:
                 gene_names = DE_data['Protein'].values.tolist()
-            data = process_data(DE_data, study=study, standardize=False)
+            data = read_write_data(mode='read', tag=f'{DE_type}_{study}')
             n_timepoints = data.shape[0]
             days = time_points()[0:n_timepoints]
             specs = dict(
@@ -46,4 +46,4 @@ if __name__ == '__main__':
             data = np.asarray(data)
             print(f'Data shape: (n_samples_time_series, n_genes) = {data.shape}')
             _, param_unique = calibration.retrieve_data(study=study, method=method, DE_type=DE_type, output_dir=CALIBRATION_DIR)
-            batch_GRN(study=study, data=data, DE_type=DE_type, param_unique=param_unique, **specs)
+            batch_run_generni(study=study, data=data, DE_type=DE_type, param_unique=param_unique, **specs)

@@ -11,7 +11,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import F_DE_protiens, VSA_DIR
-from scripts.utils.VSA import VestersSA, VSA_plot
+from scripts.utils.VSA import role_analysis, RolePlot
 from analyse import retreive_links_shortlisted
 from scripts.utils import MG_noise_F, AG_noise_F, make_title_pretty
 def filter_and_sort(batch_results_1, batch_results_2, target_genes):
@@ -43,7 +43,7 @@ def batch_VSA(links_batch, gene_names, target_genes):
     """
     oo_batch = []
     for links in links_batch:
-        rr = VestersSA(links, gene_names)
+        rr = role_analysis(links, gene_names)
         rr_short = rr.loc[rr['Entry'].isin(target_genes), :]
         oo_batch.append(rr_short)
     return oo_batch
@@ -100,9 +100,9 @@ if __name__ == '__main__':
             ncols = len(target_genes)
             nrows = 2
             fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
-            VSA_plot.plot_noise_analysis(axes[0][:], rr_sorted_M, study_1='ctr', study_2='Mg', show_title=True)
+            RolePlot.plot_noise_analysis(axes[0][:], rr_sorted_M, study_1='ctr', study_2='Mg', show_title=True)
             axes[0][0].set_ylabel('Multiplicative noise', fontweight='bold')
-            VSA_plot.plot_noise_analysis(axes[1][:], rr_sorted_A, study_1='ctr', study_2='Mg', show_title=False)
+            RolePlot.plot_noise_analysis(axes[1][:], rr_sorted_A, study_1='ctr', study_2='Mg', show_title=False)
             axes[1][0].set_ylabel('Additive noise', fontweight='bold')
 
 

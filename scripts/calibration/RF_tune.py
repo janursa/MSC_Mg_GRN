@@ -10,7 +10,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.imports import F_DE_data, time_points, param_grid_RF, F_DE_protiens, CALIBRATION_DIR
-from scripts.utils import process_data, calibration
+from scripts.utils import read_write_data, calibration
 
 if __name__ == '__main__':
     method = 'RF'
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         param_grid = param_grid_RF(len(DE_data['Protein']))
         for study in studies:
             # - read the data
-            data = process_data(DE_data, study=study, standardize=False)
+            data = read_write_data(mode='read', tag=f'{DE_type}_{study}')
             # print('Data shape:', np.array(data).shape, '(n_samples_time_series*n_genes)')
             n_timepoints = data.shape[0]
             days = time_points()[0:n_timepoints]
