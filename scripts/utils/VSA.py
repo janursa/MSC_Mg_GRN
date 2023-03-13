@@ -358,7 +358,9 @@ class RolePlot:
 
 
 class NoiseAnalysis:
-    def __init__(self, data_ctr, data_sample, target_genes, run_grn_func, kwargs_grn_func, kwargs_role_analysis):
+    def __init__(self, data_ctr, data_sample, target_genes, run_grn_func,
+                 n_rep, std_mpnoise, std_adnoise,
+                 kwargs_grn_func, kwargs_role_analysis):
         self.data_ctr = data_ctr
         self.data_sample = data_sample
         self.target_genes = target_genes
@@ -366,37 +368,32 @@ class NoiseAnalysis:
         self.kwargs_grn_func = kwargs_grn_func
         self.kwargs_role_analysis = kwargs_role_analysis
         self.studies = ['ctr','sample']
-        self.results_mp = None
-        self.results_ad = None
-        self.std_mpnoise = None
-        self.std_adnoise = None
-    def analyse_mp_noise(self,  n_rep=100, sigma_noise=1, std_noise = .05):
+        self.n_rep = n_rep
+        self.std_mpnoise = std_mpnoise
+        self.std_adnoise = std_adnoise
+    def analyse_mp_noise(self):
         # - multiplicative noise
-        self.std_mpnoise = std_noise
-        self.results_mp = self._analyse_noise(n_rep=n_rep, sigma_noise=sigma_noise, std_noise = std_noise, noise_type='mp')
-        return self.results_mp
-    def analyse_ad_noise(self,  n_rep=100, sigma_noise=1, std_noise = .05):
+        return self._analyse_noise(noise_type='mp')
+    def analyse_ad_noise(self):
         # - additive noise
-        self.std_adnoise = std_noise
-        self.results_ad = self._analyse_noise(n_rep=n_rep, sigma_noise=sigma_noise, std_noise = std_noise, noise_type='ad')
-        return self.results_ad
-    def _analyse_noise(self,  n_rep=100, sigma_noise=1, std_noise = .05, noise_type='mp'):
+        return self._analyse_noise(noise_type='ad')
+    def _analyse_noise(self, noise_type='mp'):
         assert noise_type in ['mp','ad']
         vsa_results_stack_studies = []
         for i_data, data in enumerate([self.data_ctr, self.data_sample]):
             if noise_type == 'mp':
-                noisy_data_stack = self._add_mpnoise(data, n_rep=n_rep, sigma=sigma_noise, std=std_noise)
+                noisy_data_stack = self._add_mpnoise(data, n_rep=self.n_rep, std=self.std_mpnoise)
             else:
-                noisy_data_stack = self._add_adnoise(data, n_rep=n_rep, sigma=sigma_noise, std=std_noise)
+                noisy_data_stack = self._add_adnoise(data, n_rep=self.n_rep, std=self.std_adnoise)
             noisy_links_stack = []
-            with tqdm(total=n_rep, desc='Run GRN for noisy data') as pbar:
+            with tqdm(total=self.n_rep, desc='Run GRN for noisy data') as pbar:
                 for data in noisy_data_stack:
                     noisy_links_stack.append(self.run_grn_func(data=data, i_data=i_data, **self.kwargs_grn_func))
                     pbar.update(1)
             vsa_results_stack = [role_analysis(links, **self.kwargs_role_analysis) for links in noisy_links_stack]
             vsa_results_stack_filtered = [oo.loc[oo['Entry'].isin(self.target_genes), :] for oo in vsa_results_stack]
             vsa_results_stack_studies.append(vsa_results_stack_filtered)
-        results = self._organized(vsa_results_stack_studies[0], vsa_results_stack_studies[1])
+        results = self._organized(vsa_results_stack_studies[0],vsa_results_stack_studies[1])
         return results
     def _plot(self, axes, data, genenames, preferred_titles=None):
         '''
@@ -456,14 +453,14 @@ class NoiseAnalysis:
     def _test_significance(self, results):
         assert len(results) == len(self.target_genes)
         def do_it(ctr, sample):
-            ctr_x = [point[0] for point in ctr]
-            ctr_y = [point[1] for point in ctr]
-            sample_x = [point[0] for point in sample]
-            sample_y = [point[1] for point in sample]
+            Qs_ctr = [point[0] for point in ctr]
+            Ps_ctr = [point[1] for point in ctr]
+            Qs_sample = [point[0] for point in sample]
+            Ps_sample = [point[1] for point in sample]
 
             # Conduct two-sample t-tests for x and y coordinates
-            _, p1 = ttest_ind(ctr_x, sample_x, equal_var=False)
-            _, p2 = ttest_ind(ctr_y, sample_y, equal_var=False)
+            _, p1 = ttest_ind(Qs_ctr, Qs_sample, equal_var=False)
+            _, p2 = ttest_ind(Ps_ctr, Ps_sample, equal_var=False)
             if (p1<0.05) | (p2<0.05):
                 return True
             else:
@@ -478,24 +475,24 @@ class NoiseAnalysis:
             # p_values.append(p_value)
         return sig_flags
 
-    def plot_results(self):
+    def plot_results(self, results_mp, results_ad):
         ncols, nrows = len(self.target_genes), 2
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
 
-        if self.results_mp is not None:
-            p_values = self._test_significance(self.results_mp)
+        if results_mp is not None:
+            p_values = self._test_significance(results_mp)
             signs = ['*' if (p ) else '' for p in p_values]
             # signs = ['*' if (p<0.05) else '' for p in p_values]
             preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, signs)]
-            self._plot(axes[0], self.results_mp, self.target_genes, preferred_titles=preferred_titles)
+            self._plot(axes[0], results_mp, self.target_genes, preferred_titles=preferred_titles)
         axes[0][0].set_ylabel(f'Multiplicative noise ({int(100*self.std_mpnoise)} %)', fontweight='bold')
-        if self.results_ad is not None:
-            p_values = self._test_significance(self.results_ad)
+        if results_ad is not None:
+            p_values = self._test_significance(results_ad)
             signs = ['*' if (p) else '' for p in p_values]
             # signs = ['*' if (p < 0.05) else '' for p in p_values]
             preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, signs)]
-            self._plot(axes[1], self.results_ad, self.target_genes, preferred_titles=preferred_titles)
-        # axes[1][0].set_ylabel(f'Additive noise ({int(100*self.std_adnoise)} %)', fontweight='bold')
+            self._plot(axes[1], results_ad, self.target_genes, preferred_titles=preferred_titles)
+        axes[1][0].set_ylabel(f'Additive noise ({int(100*self.std_adnoise)} %)', fontweight='bold')
         return fig
     def __add_mpnoise(self, data, n_rep=100, sigma=1, std=.3) -> Tuple[np.array]: # deprecated
         """ Multiplicitive noise
@@ -511,7 +508,7 @@ class NoiseAnalysis:
 
         return noisy_data_stack
 
-    def _add_mpnoise(self, data, n_rep=100, sigma=1, std=.3) -> Tuple[np.array]:
+    def _add_mpnoise(self, data, n_rep=100, std=.3) -> Tuple[np.array]:
         """ Multiplicative noise
              Creates n_replica noised data
         """
@@ -522,13 +519,13 @@ class NoiseAnalysis:
             # frac_noise = .05
             frac_noise =  np.random.rand()
             noise_mask = np.random.choice([0, 1], size=data.shape, p=[1 - frac_noise, frac_noise])
-            rand_values = np.random.normal(loc=sigma, scale=applied_std, size=data.shape)
+            rand_values = np.random.normal(loc=1, scale=applied_std, size=data.shape)
             noisy_data = data * (1 + (rand_values-1) * noise_mask)
             noisy_data_stack.append(noisy_data)
 
         return noisy_data_stack
 
-    def _add_adnoise(self, data, n_rep=100, sigma=1, std=.05) -> Tuple[pd.DataFrame]:
+    def _add_adnoise(self, data, n_rep=100, std=.05) -> Tuple[pd.DataFrame]:
         """ Additive noise
                  Creates n_relica noised links
         """
@@ -536,7 +533,7 @@ class NoiseAnalysis:
         applied_std = data_std * std
         noisy_data_stack = []
         for i in range(n_rep):
-            rand_values = np.random.normal(loc=sigma, scale=applied_std, size=data.shape)
+            rand_values = np.random.normal(loc=1, scale=applied_std, size=data.shape)
             noisy_data = rand_values + data
             noisy_data_stack.append(noisy_data)
 

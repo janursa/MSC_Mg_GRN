@@ -77,11 +77,6 @@ if __name__ == '__main__':
 
     selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
 
-    
-    def run_grn_func(**kwargs):
-        return grn_functions[method](**kwargs)
-
-
     model_i = 0
     for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
         for method in methods:
@@ -89,57 +84,26 @@ if __name__ == '__main__':
             if model_name not in selected_models: #only selected models
                 continue
 
-            if run_role_analysis:
-                # -------- analyse --------------
-                vsa_results_studies = []
-                for study in studies:
-                    links = read_from_file(Path(GRN_DIR) / method / f'links_{DE_type}_{study}.csv')
-                    vsa_results = role_analysis(links, DE_proteins)
-                    vsa_results_studies.append(vsa_results)
-                    # if study == 'mg':
-                    #     print(vsa_results.iloc[0:10,:])
-                    # role change
-                top_role_change = determine_top_role_change(vsa_results_studies[0], vsa_results_studies[1],
-                                                               top_quantile=.9)
-                critical_role_change = determine_critical_role_change(vsa_results_studies[0], vsa_results_studies[1],
-                                                                             target_role=3)
 
-                write_to_file(top_role_change, Path(VSA_DIR)/f'top_role_change_{model_name}.csv')
-                write_to_file(critical_role_change, Path(VSA_DIR) / f'critical_role_change_{model_name}.csv')
+            # -------- analyse --------------
+            vsa_results_studies = []
+            for study in studies:
+                links = read_from_file(Path(GRN_DIR) / method / f'links_{DE_type}_{study}.csv')
+                vsa_results = role_analysis(links, DE_proteins)
+                vsa_results_studies.append(vsa_results)
+                # if study == 'mg':
+                #     print(vsa_results.iloc[0:10,:])
+                # role change
+            top_role_change = determine_top_role_change(vsa_results_studies[0], vsa_results_studies[1],
+                                                           top_quantile=.9)
+            critical_role_change = determine_critical_role_change(vsa_results_studies[0], vsa_results_studies[1],
+                                                                         target_role=3)
 
-                # -------- plot --------------
-                fig= plot_roles(vsa_results_studies[0], vsa_results_studies[1], top_role_change, critical_role_change)
-                fig.savefig(os.path.join(VSA_DIR, f'role_changes_{model_name}.png'), dpi=300, transparent=True)
-                fig.savefig(os.path.join(VSA_DIR, f'role_changes_{model_name}.pdf'))
+            write_to_file(top_role_change, Path(VSA_DIR)/f'top_role_change_{model_name}.csv')
+            write_to_file(critical_role_change, Path(VSA_DIR) / f'critical_role_change_{model_name}.csv')
 
-            if run_noise_analysis:
-                n_rep = 5
-                std_mnoise = 0.000001 #multiplicative noise std
-                std_anoise = 0.1
-
-                top_role_change = read_from_file(Path(VSA_DIR) / f'top_role_change_{model_name}.csv')
-                critical_role_change = read_from_file(Path(VSA_DIR) / f'critical_role_change_{model_name}.csv')
-
-                # ------------------- noise analysis--------------------------
-
-                target_genes = np.concatenate((top_role_change['Entry'].to_numpy(), critical_role_change['Entry'].to_numpy()))
-                data_studies = []
-                for study in studies:
-                    data_org = read_write_data(mode='read', tag=f'{DE_type}_{study}')
-                    data_studies.append(data_org)
-                noise_analysis_obj = NoiseAnalysis(data_ctr=data_studies[0], data_sample=data_studies[1], target_genes=target_genes,
-                                                   run_grn_func=run_grn_func, kwargs_grn_func = dict(method = method, DE_type=DE_type, gene_names=DE_proteins),
-                                                   kwargs_role_analysis={'gene_names':DE_proteins})
-                results_mp = noise_analysis_obj.analyse_mp_noise(n_rep=n_rep, std_noise=std_mnoise)
-                # results_ad = noise_analysis_obj.analyse_ad_noise(n_rep=n_rep, std_noise=std_anoise)
-                #- save files
-                with open(f'{VSA_NOISE_DIR}/results_mp_{model_name}_{std_mnoise}.json', "w") as outfile:
-                    json.dump(results_mp, outfile)
-                # with open(f'{VSA_NOISE_DIR}/results_ad_{model_name}_{std_anoise}.json', "w") as outfile:
-                #     json.dump(results_ad, outfile)
-                #- plot
-                fig = noise_analysis_obj.plot_results()
-
-                fig.savefig(os.path.join(VSA_NOISE_DIR, f'noiseAnalysis_{model_name}.pdf'))
-                fig.savefig(os.path.join(VSA_NOISE_DIR, f'noiseAnalysis_{model_name}.png'), dpi=300, transparent=True)
+            # -------- plot --------------
+            fig= plot_roles(vsa_results_studies[0], vsa_results_studies[1], top_role_change, critical_role_change)
+            fig.savefig(os.path.join(VSA_DIR, f'role_changes_{model_name}.png'), dpi=300, transparent=True)
+            fig.savefig(os.path.join(VSA_DIR, f'role_changes_{model_name}.pdf'))
 
