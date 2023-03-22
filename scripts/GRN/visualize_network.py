@@ -91,13 +91,13 @@ def ig_plot(ax, nodes, edges, model_name, study):
         vertex_label = node_names,
         vertex_label_size = 9,
         edge_width = edge_weights,
-        edge_arrow_size=.01  ,
+        edge_arrow_size=.005  ,
         arrow_shape = arrow_shapes[3],
         edge_curved=True
     )
 
     # - color legend: roles
-    if True:
+    if False:
         title = 'Regulatory role'
         handles = RolePlot.create_role_legends(ax)
         l1=ax.legend(handles=handles, loc='upper center', title=title,
@@ -106,7 +106,7 @@ def ig_plot(ax, nodes, edges, model_name, study):
         ax.add_artist(l1)
 
     # - vertex size legend
-    if True:
+    if False:
         size_title = 'Protein importance'
         n_classes = 4
         sizes = (vertex_sizes-min(vertex_sizes))/(max(vertex_sizes)-min(vertex_sizes)) + .1
@@ -121,7 +121,7 @@ def ig_plot(ax, nodes, edges, model_name, study):
                        frameon=False, prop={'size': 10}, title_fontproperties={'size': 9,'weight':'bold'} )
         ax.add_artist(l2)
     # - edge weight legend
-    if True:
+    if False:
         size_title = 'Regulatory effect'
         n_classes = 4
         sizes = edge_weights / max(edge_weights)
@@ -160,77 +160,117 @@ def compare_to_golden_links(links_top, golden_links):
 def manual_filter(links, model_name, study):
     if model_name == 'day1_21_KNN_portia':
         if study == 'ctr':
-            to_go = [['Q14767','Q7Z417']]
+            to_go = [
+                ['Q7Z417', 'P40926'],
+                ['Q7Z417', 'Q14011'],
+                ['P53621', 'Q7Z417'],
+                ['Q7Z417', 'P53621'],
+                ['Q7Z417','P13010'],
+                ['Q7Z417','P62328'],
+                ['Q7Z417','Q9H0U4'],
+                ['Q7Z417','Q15233'],
+                ['P40926', 'Q7Z417'],
+                ['P62328','Q7Z417'],
+                ['Q15843', 'Q7Z417'],
+                ['Q7Z417','Q15843'],
+                ['Q14011', 'Q7Z417'],
+                ['Q15233','Q7Z417'],
+                ['P13010','Q7Z417']
+
+
+
+            ]
         if study == 'mg':
             to_go = []
     if model_name == 'day1_11_KNN_RF':
         if study == 'ctr':
-            to_go = [['Q14011', 'P31949'],['Q14011','P14174'],['P31949','P67936'], ['Q8IVL6','P14174'],['P62328','P31949']]
+            to_go = [
+                    ['O00629', 'Q07866'],
+                    #  ['P67936','Q14011'],
+                     # ['P67936', 'Q9UKY7'],
+                #      ['P67936', 'O00629'],
+                #     ['P67936','Q96C90'],
+                # ['P67936','P67809'],
+                # ['P67936','Q9UN86']
+
+                     ]
         if study == 'mg':
-            to_go = []
+            to_go = [['Q3SX28','P67936']]
     for item in to_go:
-        links.loc[(links['Regulator']==item[0]) & (links['Target']==item[1]), 'Weight'] = 0
-        links.loc[(links['Target'] == item[0]) & (links['Regulator'] == item[1]), 'Weight'] = 0
+        links = links.drop(links[(links['Regulator']==item[0]) & (links['Target']==item[1])].index)
+
+        # links.loc[(links['Target'] == item[0]) & (links['Regulator'] == item[1]), 'Weight'] = 0
+    return links
+def read_from_file(file_name):
+    with open(file_name, 'r') as f:
+        data = pd.read_csv(f, index_col=False)
+    return data
+def determine_target_genes(model_name):
+    if model_name == 'day1_11_KNN_RF':
+        target_genes = ['P67936', 'Q07866', 'Q9UKY7', 'Q07866']
+    if model_name == 'day1_21_KNN_portia':
+        target_genes = ['P56192', 'Q13263', 'Q7Z417']
+    return target_genes
+def filter_target_genes(links, target_genes):
+    return links.loc[(links['Target'].isin(target_genes)) | (links['Regulator'].isin(target_genes)), :]
+def create_nodes(edges, model_name, study):
+    #- extract gene names
+    gene_names = edges.loc[:, ['Regulator', 'Target']].to_numpy(str)
+    temp_ = []
+    [temp_.extend(names) for names in gene_names]
+    gene_names = list(set(temp_))
+    #- calculate active sum
+    nodes_active_sum = [sum(links.query(f"Regulator == '{gene}'")['Weight']) for gene in gene_names]
+    # - read vsa results and add it to nodes
+    vsa_roles = pd.read_csv(Path(VSA_DIR) / f'vsa_{model_name}_{study}.csv', index_col=False)
+    vsa_roles_short = vsa_roles[vsa_roles['Entry'].isin(gene_names)]
+    gene_roles = [vsa_roles_short.query(f"Entry == '{prot}'")['Role'].iloc[0] for prot in gene_names]
+    # - save nodes and edges to file
+    nodes = pd.DataFrame({'Protein': gene_names, 'Weight': nodes_active_sum, 'Role': gene_roles})
+    # edges.to_csv(Path(GRN_VISUALIZE_DIR) / f'edges_{model_name}_{study}.csv', index=False)
+    # nodes.to_csv(Path(GRN_VISUALIZE_DIR) / f'nodes_{model_name}_{study}.csv', index=False)
+    return nodes
+
+
 if __name__ == '__main__':
     #- dir
     GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
     if not os.path.isdir(GRN_VISUALIZE_DIR):
         os.makedirs(GRN_VISUALIZE_DIR)
     #- settings
-    top_n_links = 20
-    figsize = (7,7)
-    studies = ['mg']
+    top_n_links = 10
+    figsize = (6,6)
+    studies = ['ctr','mg']
     methods = ['RF', 'ridge', 'portia']
-    # selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
-    selected_models = ['day1_11_KNN_RF']
+    selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
+    # selected_models = ['day1_11_KNN_RF']
+
     model_i = 0
     for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
-        # protnames = F_DE_protiens()[DE_type]
         for method in methods:
             model_name = '_'.join([DE_type,method])
             if model_name not in selected_models: #only selected models
                 continue
-
-            # fig, axes = plt.subplots(1,2, figsize=figsize, tight_layout=True)
-
-            # extra_artists_stack = []
-            for i_study, study in enumerate(['ctr', 'mg']):
-
-                #- retireve links and shortlist it
+            target_genes = determine_target_genes(model_name)
+            #- plot for each study seperately
+            for i_study, study in enumerate(studies):
+                #- retireve links
                 links = pd.read_csv(Path(GRN_DIR)/method/f'links_{DE_type}_{study}.csv', index_col=False)
-                manual_filter(links, model_name, study)
-                edges = choose_top_count(links, top_n_links)
-                #- shotlisted node names and AS
-                nodes_names = edges.loc[:,['Regulator', 'Target']].to_numpy(str)
-                temp_ = []
-                [temp_.extend(names) for names in nodes_names]
-                nodes_names = list(set(temp_))
-                nodes_active_sum= [sum(links.query(f"Regulator == '{gene}'")['Weight']) for gene in nodes_names]
-                #- read vsa results and add it to nodes
-                vsa_roles = pd.read_csv(Path(VSA_DIR) / f'vsa_{model_name}_{study}.csv', index_col=False)
-                vsa_roles_short = vsa_roles[vsa_roles['Entry'].isin(nodes_names)]
-                nodes_roles = [vsa_roles_short.query(f"Entry == '{prot}'")['Role'].iloc[0] for prot in nodes_names]
-                #- save nodes and edges to file
-                nodes = pd.DataFrame({'Protein': nodes_names, 'Weight': nodes_active_sum, 'Role': nodes_roles})
-                edges.to_csv(Path(GRN_VISUALIZE_DIR) / f'edges_{model_name}_{study}.csv', index=False)
-                nodes.to_csv(Path(GRN_VISUALIZE_DIR) / f'nodes_{model_name}_{study}.csv', index=False)
+                #- filter it
+                links = filter_target_genes(links, target_genes) #- choose only those connected with target genes
+                links = manual_filter(links, model_name, study) #- remove to make plot look better
+                links = choose_top_count(links, top_n_links) #- choose top n links
+
+
                 #- plot
-                # ax = axes[i_study]
-                # ax.set_title(study)
+                edges = links
+                nodes = create_nodes(edges, model_name, study)
                 fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
                 ig_plot(ax, nodes, edges, model_name, study)
                 fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
                 fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
 
-                # extra_artists_stack.extend(extra_artists)
-
-            # if model_i==0:
-            #     plt.show()
-            # plt.tight_layout(pad=2, w_pad=5, h_pad=3)
-            # fig.savefig(Path(GRN_VISUALIZE_DIR)/ f'GRN_{model_name}.pdf',bbox_extra_artists=(ll,), bbox_inches='tight')
-
             model_i+=1
 
-    # golden_links = pd.read_csv(Path(ENRICH_DIR)/f'network_{DE_type}.csv', index_col=False)
 
 

@@ -30,7 +30,7 @@ different network graphs, one for each mg and ctr (maybe combined)
 ##Design:
 ### tune -> best params and oob score for each node and their plots
 	- train on the whole dataset and use score OOB to choose tops
-		-- start with 100 runs 
+		-- start with 100 runs
 	- (*) extract best params and oob scores for each node (for each run) 
 	- (*) plot best oobs scores distribution entire nodes (top 10 nodes in a box plot showing the quartiles)
 	- (*) plot best params for chosen nodes (based on oob scores)

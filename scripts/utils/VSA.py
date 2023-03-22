@@ -144,7 +144,7 @@ class RolePlot:
             handles.append(ax.scatter([], [], marker='o', label=RolePlot.roles[i], s=100,
                                                   edgecolor='black', color=color, linewidth=.5))
         return handles
-    def plot_role_change(df, ax=None):
+    def plot_role_change(df, ax, custom_annotation=None):
         '''
             Plots Q/P for role change betwen ctr and sample
         '''
@@ -164,36 +164,14 @@ class RolePlot:
 
         for prot, x0, y0, x1, y1 in zip(df['Entry'].values, df['P1'].values, df['Q1'].values, df['P2'].values,
                                         df['Q2'].values):
-            offset_x = .015
-            offset_y = 0.1
-            arrow_t = 'arc3'
-            rad = .3
-            if prot == 'Q07866':
-                offset_x = -.045
-                offset_y = -0.3
-                rad = -.1
-            if prot == 'Q99613':
-                offset_x = -.05
-                offset_y = -0.3
-                # arrow_t = 'rad2'
-            if prot == 'Q02790':
-                # offset_x = -.05
-                offset_y = 0
-                # arrow_t = 'rad2'
-            if prot == 'P00568':
-                offset_x = -6.5
-                offset_y = -.15
-                # arrow_t = 'rad2'
-            if prot == 'Q02218':
-                offset_x = -.2
-                offset_y = .05
-                # arrow_t = 'rad2'
-            if prot == 'P02652':
-                offset_x = -.5
-                offset_y = .05
-                # arrow_t = 'rad2'
 
+            if custom_annotation is not None:
+                offset_x, offset_y, arrow_t, rad = custom_annotation(prot)
 
+            offset_x = offset_x if (offset_x is not None) else .015
+            offset_y = offset_y if (offset_y is not None) else 0.1
+            arrow_t = arrow_t if (arrow_t is not None) else 'arc3'
+            rad = rad if (rad is not None) else .3
 
             x, y = x0 + offset_x * xlim, y0 + offset_y * ylim
             ax.annotate(f'{prot}', xy=(x, y), fontsize=9)
@@ -207,7 +185,7 @@ class RolePlot:
         RolePlot.plot_roles(ax)
         RolePlot.postprocess(ax, title='Role change')
 
-    def plot_ctr_vs_sample(ax, data, gene_names):
+    def plot_ctr_vs_sample(ax, data, gene_names, custom_annotation):
         '''
             Plots Q/P for ctr and mg conditions in a 1*2 subplot
         '''
@@ -218,9 +196,35 @@ class RolePlot:
         # Q_t, P_t = RolePlot.thresholds(df['Q'], df['P'])
         RolePlot.mark_x(ax, 0)
         RolePlot.mark_y(ax, 0)
-        RolePlot.plot_prot_names(ax=ax, Q=data['Q'], P=data['P'], gene_names=gene_names, roles=data['Role'])
         RolePlot.postprocess(ax)
         RolePlot.plot_roles(ax)
+
+        xlim = ax.get_xlim()[1] - ax.get_xlim()[0]
+        ylim = ax.get_ylim()[1] - ax.get_ylim()[0]
+
+        #- annotate target proteins names on the graph
+        Q = data['Q']
+        P = data['P']
+        roles = data['Role']
+        for i, gene_name in enumerate(gene_names):
+            if custom_annotation is not None:
+                offset_x, offset_y, arrow_t, rad = custom_annotation(gene_name)
+
+            offset_x = offset_x if (offset_x is not None) else .015
+            offset_y = offset_y if (offset_y is not None) else 0.1
+            arrow_t = arrow_t if (arrow_t is not None) else 'arc3'
+            rad = rad if (rad is not None) else .3
+
+            if roles[i] != 3:  # just critical
+                continue
+
+            x = P[i]
+            y = Q[i]
+            ax.annotate(gene_name, xy=(x, y), xytext=(x + offset_x * xlim, y + offset_y * ylim), fontsize=9,
+                        arrowprops={'arrowstyle': '->', 'lw': 0.9, 'connectionstyle': f'arc3, rad={rad}',
+                                    'color': 'black', 'alpha': .7}
+                        , horizontalalignment='center')
+            # ax.annotate(gene_name, (x+offset_x,y+offset_y), fontsize=fontsize)
 
         # handles = []
         # for i, color in enumerate(RolePlot.roles_colors):
@@ -298,69 +302,14 @@ class RolePlot:
         ax.text(.99, .01, 'Passive', ha='right', va='bottom', transform=ax.transAxes, fontweight='bold')
         ax.text(.99, .99, 'Critical', ha='right', va='top', transform=ax.transAxes, fontweight='bold')
 
-    @staticmethod
-    def plot_prot_names(ax, Q, P, gene_names, roles):
-        '''
-            Prints names of critical genes on the scatter plot
-        '''
-        xlim = ax.get_xlim()[1] - ax.get_xlim()[0]
-        ylim = ax.get_ylim()[1] - ax.get_ylim()[0]
-
-        arrow_specs = {'arrow_type': 'arc3', 'rad': .2}
-        for i, gene_name in enumerate(gene_names):
-            offset_x = 0.15
-            offset_y = 0.15
-            rad = .2
-            role = roles[i]
-            if role != 3:  # just critical
-                continue
-            x = P[i]
-            y = Q[i]
-            if gene_name in ['Q02790']:
-                # offset_y = 0
-                offset_x = 0.05
-                rad = 0
-            if gene_name in ['P13667']:
-                # offset_y = 0
-                offset_x = -0.05
-                rad = -.2
-            if gene_name in ['Q99613']:
-                offset_y = 0.25
-                offset_x = +0.07
-                rad = -.2
-            if gene_name in ['Q07866']:
-                offset_y = 0.15
-                offset_x = +0.1
-                # rad = 0
-            if gene_name in ['P14174']:
-                offset_y = 0.05
-                offset_x = +0.2
-            if gene_name in ['Q02218']:
-                offset_y = 0.2
-                offset_x = +0.1
-            if gene_name in ['P00568']:
-                offset_y = 0.3
-                offset_x = -.15
-                rad = -.3
-            if gene_name in ['P02652']:
-                offset_y = 0.3
-                offset_x = +0.1
-                rad = -.2
-
-
-
-            ax.annotate(gene_name, xy=(x, y), xytext=(x + offset_x * xlim, y + offset_y * ylim), fontsize=9,
-                        arrowprops={'arrowstyle': '->', 'lw': 0.9, 'connectionstyle': f'arc3, rad={rad}',
-                                    'color': 'black', 'alpha': .7}
-                        , horizontalalignment='center')
-            # ax.annotate(gene_name, (x+offset_x,y+offset_y), fontsize=fontsize)
 
 
 
 class NoiseAnalysis:
     def __init__(self, data_ctr, data_sample, target_genes, run_grn_func,
-                 n_rep, std_mpnoise, std_adnoise,
+                 n_rep, std_noise, noise_type,
                  kwargs_grn_func, kwargs_role_analysis):
+        assert noise_type in ['mp', 'ad']
         self.data_ctr = data_ctr
         self.data_sample = data_sample
         self.target_genes = target_genes
@@ -369,24 +318,17 @@ class NoiseAnalysis:
         self.kwargs_role_analysis = kwargs_role_analysis
         self.studies = ['ctr','sample']
         self.n_rep = n_rep
-        self.std_mpnoise = std_mpnoise
-        self.std_adnoise = std_adnoise
-    def analyse_mp_noise(self):
-        # - multiplicative noise
-        return self._analyse_noise(noise_type='mp')
-    def analyse_ad_noise(self):
-        # - additive noise
-        return self._analyse_noise(noise_type='ad')
-    def _analyse_noise(self, noise_type='mp'):
-        assert noise_type in ['mp','ad']
+        self.std_noise = std_noise
+        self.noise_type = noise_type
+    def analyse_noise(self):
         vsa_results_stack_studies = []
         for i_data, data in enumerate([self.data_ctr, self.data_sample]):
-            if noise_type == 'mp':
-                noisy_data_stack = self._add_mpnoise(data, n_rep=self.n_rep, std=self.std_mpnoise)
+            if self.noise_type == 'mp':
+                noisy_data_stack = self._add_mpnoise(data, n_rep=self.n_rep, std=self.std_noise)
             else:
-                noisy_data_stack = self._add_adnoise(data, n_rep=self.n_rep, std=self.std_adnoise)
+                noisy_data_stack = self._add_adnoise(data, n_rep=self.n_rep, std=self.std_noise)
             noisy_links_stack = []
-            with tqdm(total=self.n_rep, desc='Run GRN for noisy data') as pbar:
+            with tqdm(total=self.n_rep, desc=f'Run GRN for noisy data: {self.noise_type} : {self.std_noise}') as pbar:
                 for data in noisy_data_stack:
                     noisy_links_stack.append(self.run_grn_func(data=data, i_data=i_data, **self.kwargs_grn_func))
                     pbar.update(1)
@@ -424,75 +366,119 @@ class NoiseAnalysis:
             RolePlot.plot_roles(ax)
 
             #- arrow
-            data_ctr = data['ctr']
-            data_sample = data['sample']
-            Ps_ctr = [item[1] for item in data_ctr]
-            Qs_ctr = [item[0] for item in data_ctr]
+            if False:
+                data_ctr = data['ctr']
+                data_sample = data['sample']
+                Ps_ctr = [item[1] for item in data_ctr]
+                Qs_ctr = [item[0] for item in data_ctr]
 
-            Ps_sample = [item[1] for item in data_sample]
-            Qs_sample = [item[0] for item in data_sample]
-            x0, y0, x1, y1 = np.mean(Ps_ctr), np.mean(Qs_ctr), np.mean(Ps_sample), np.mean(
-                Qs_sample)
-            arrow_t = arrow_specs['arrow_type']
-            rad = arrow_specs['rad']
-            ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
-                        arrowprops={'arrowstyle': '->', 'lw': 1.5, 'connectionstyle': f'{arrow_t}, rad={rad}',
-                                    'color': 'black', 'alpha': .7}
-                        , horizontalalignment='center')
+                Ps_sample = [item[1] for item in data_sample]
+                Qs_sample = [item[0] for item in data_sample]
+                x0, y0, x1, y1 = np.mean(Ps_ctr), np.mean(Qs_ctr), np.mean(Ps_sample), np.mean(
+                    Qs_sample)
+                arrow_t = arrow_specs['arrow_type']
+                rad = arrow_specs['rad']
+                ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
+                            arrowprops={'arrowstyle': '->', 'lw': 1.5, 'connectionstyle': f'{arrow_t}, rad={rad}',
+                                        'color': 'black', 'alpha': .7}
+                            , horizontalalignment='center')
             ax.set_xmargin(.4)
             ax.set_ymargin(.4)
+        if False:
+            tags = ['ctr','mg']
+            handles = []
+            for i, color in enumerate(RolePlot.ctr_sample_colors):
+                handles.append(ax.scatter([],[], marker='o', label=tags[i], s=50, edgecolor='black', color=color, linewidth=.2))
+            ax.legend(handles=handles,
+                      loc = 'upper center',
+                      bbox_to_anchor=(1.3,1),
+                )
 
-        tags = ['ctr','mg']
-        handles = []
-        for i, color in enumerate(RolePlot.ctr_sample_colors):
-            handles.append(ax.scatter([],[], marker='o', label=tags[i], s=50, edgecolor='black', color=color, linewidth=.2))
-        ax.legend(handles=handles,
-                  loc = 'upper center',
-                  bbox_to_anchor=(1.3,1),
-            )
+    def _ttest(self, ctr, sample):
+        Qs_ctr = [point[0] for point in ctr]
+        Ps_ctr = [point[1] for point in ctr]
+        Qs_sample = [point[0] for point in sample]
+        Ps_sample = [point[1] for point in sample]
+
+        # Conduct two-sample t-tests for x and y coordinates
+        _, p1 = ttest_ind(Qs_ctr, Qs_sample, equal_var=False)
+        _, p2 = ttest_ind(Ps_ctr, Ps_sample, equal_var=False)
+        if (p1 < 0.05) | (p2 < 0.05):
+            return True
+        else:
+            False
+    def _role_change_test(self, ctr, sample):
+        Qs_ctr = [point[0] for point in ctr]
+        Ps_ctr = [point[1] for point in ctr]
+        Qs_sample = [point[0] for point in sample]
+        Ps_sample = [point[1] for point in sample]
+
+        # if (np.mean(Qs_ctr)*np.mean(Qs_sample)<0) | (np.mean(Ps_ctr) * np.mean(Ps_sample) < 0) :
+        #
+        #     _, p1 = scipy.stats.ttest_ind(Qs_ctr, Ps_ctr, equal_var=False)
+        #     _, p2 = scipy.stats.ttest_ind(Qs_sample, Ps_sample,  equal_var=False)
+        #     if (p1<0.05) | (p2<0.05):
+        #         return True
+        abs_diff_Qs = np.abs(np.mean(Qs_ctr) - np.mean(Qs_sample))
+        abs_diff_Ps = np.abs(np.mean(Ps_ctr) - np.mean(Ps_sample))
+        Q_std = np.std(Qs_ctr)
+        P_std = np.std(Ps_ctr)
+
+        if False:
+            print(f'Q: abs: {abs_diff_Qs} t: {Q_std}')
+            print(f'P: abs: {abs_diff_Ps} t: {P_std}')
+        if (abs_diff_Qs > Q_std) | (abs_diff_Ps > P_std):
+            if (abs_diff_Qs > 2*Q_std) | (abs_diff_Ps > 2*P_std):
+                if (abs_diff_Qs > 3 * Q_std) | (abs_diff_Ps > 3 * P_std):
+                    return '***'
+                else:
+                    return '**'
+            else:
+                return '*'
+        else:
+            return ''
+        #
+
+
     def _test_significance(self, results):
         assert len(results) == len(self.target_genes)
-        def do_it(ctr, sample):
-            Qs_ctr = [point[0] for point in ctr]
-            Ps_ctr = [point[1] for point in ctr]
-            Qs_sample = [point[0] for point in sample]
-            Ps_sample = [point[1] for point in sample]
-
-            # Conduct two-sample t-tests for x and y coordinates
-            _, p1 = ttest_ind(Qs_ctr, Qs_sample, equal_var=False)
-            _, p2 = ttest_ind(Ps_ctr, Ps_sample, equal_var=False)
-            if (p1<0.05) | (p2<0.05):
-                return True
-            else:
-                False
-        sig_flags = []
-        for gene_i,_ in enumerate(self.target_genes):
+        sig_signs = []
+        for gene_i,gene in enumerate(self.target_genes):
             ctr = results[gene_i]['ctr']
             sample = results[gene_i]['sample']
+            # print(gene)
+            sig_signs.append(self._role_change_test(ctr,sample))
+        return sig_signs
 
-            sig_flags.append(do_it(ctr,sample))
-            # t_statistic, p_value = ttest_ind(r2_ctr, r2_sample)
-            # p_values.append(p_value)
-        return sig_flags
+    def plot_results(self, results):
+        sig_flags = self._test_significance(results)
+        preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, sig_flags)]
 
-    def plot_results(self, results_mp, results_ad):
-        ncols, nrows = len(self.target_genes), 2
+        ncols, nrows = len(self.target_genes), 1
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
 
-        if results_mp is not None:
-            p_values = self._test_significance(results_mp)
-            signs = ['*' if (p ) else '' for p in p_values]
-            # signs = ['*' if (p<0.05) else '' for p in p_values]
-            preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, signs)]
-            self._plot(axes[0], results_mp, self.target_genes, preferred_titles=preferred_titles)
-        axes[0][0].set_ylabel(f'Multiplicative noise ({int(100*self.std_mpnoise)} %)', fontweight='bold')
-        if results_ad is not None:
-            p_values = self._test_significance(results_ad)
-            signs = ['*' if (p) else '' for p in p_values]
-            # signs = ['*' if (p < 0.05) else '' for p in p_values]
-            preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, signs)]
-            self._plot(axes[1], results_ad, self.target_genes, preferred_titles=preferred_titles)
-        axes[1][0].set_ylabel(f'Additive noise ({int(100*self.std_adnoise)} %)', fontweight='bold')
+        ax = axes
+        self._plot(ax, results, self.target_genes, preferred_titles=preferred_titles)
+        if self.noise_type == 'mp':
+            ax[0].set_ylabel(f'Multiplicative noise ({int(100*self.std_noise)} %)', fontweight='bold')
+        if self.noise_type == 'ad':
+            ax[0].set_ylabel(f'Additive noise ({int(100*self.std_noise)} %)', fontweight='bold')
+        return fig
+    def plot_results_significant(self, results):
+
+        sig_flags = self._test_significance(results)
+        true_indices = [i for i in range(len(sig_flags)) if (sig_flags[i]!='')]
+        preferred_titles = [f'{self.target_genes[i]} {sig_flags[i]}' for i in true_indices]
+        ncols, nrows = len(true_indices), 1
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.2 * ncols, 2.2 * nrows))
+        ax = axes
+        results_shortlisted = np.asarray(results)[true_indices]
+        target_genes_shortlisted = self.target_genes[true_indices]
+        self._plot(ax, results_shortlisted, target_genes_shortlisted, preferred_titles=preferred_titles)
+        if self.noise_type == 'mp':
+            ax[0].set_ylabel(f'Multiplicative noise ({int(100*self.std_noise)} %)', fontweight='bold')
+        if self.noise_type == 'ad':
+            ax[0].set_ylabel(f'Additive noise ({int(100*self.std_noise)} %)', fontweight='bold')
         return fig
     def __add_mpnoise(self, data, n_rep=100, sigma=1, std=.3) -> Tuple[np.array]: # deprecated
         """ Multiplicitive noise

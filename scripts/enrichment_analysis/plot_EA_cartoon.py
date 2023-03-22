@@ -12,12 +12,12 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from scripts.utils import enrichplot
-from imports import *
+from scripts.imports import *
 
 
 if __name__ == '__main__':
     #- retrieve the enriched terms
-    read_EA = lambda term: pd.read_csv(os.path.join(OUTPUT_DIR, 'enrichment_analysis', f'enrichment_{term}.csv'), index_col=False)
+    read_EA = lambda term: pd.read_csv(os.path.join(OUTPUT_DIR, 'enrichment_analysis/For_R', f'enrichment_{term}.csv'), index_col=False)
     data_function = read_EA('function')
     data_function = data_function.iloc[0:5, :]
     data_uniprot = read_EA('uniprot')
