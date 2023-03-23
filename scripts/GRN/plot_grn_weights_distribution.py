@@ -12,7 +12,7 @@ import pandas as pd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, F_DE_protiens
+from scripts.imports import GRN_DIR, F_DE_proteins
 from scripts.utils import  serif_font
 
 def plot_weight(links, color, name, dist_key='WeightPool'):
@@ -61,7 +61,7 @@ def plot_weight(links, color, name, dist_key='WeightPool'):
 if __name__ == '__main__':
     method = 'RF'
     colors = ['lightblue', 'pink']
-    for DE_type, _ in F_DE_protiens().items():
+    for DE_type, _ in F_DE_proteins().items():
         for idx, study in enumerate(['ctr','mg']):
             links_pool = pd.read_pickle(os.path.join(GRN_DIR, method, f'links_pool_{DE_type}_{study}.csv'))
             fig = plot_weight(links_pool, color=colors[idx], name=study, dist_key='WeightPool')

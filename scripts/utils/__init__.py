@@ -23,12 +23,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
-
-
-
-
 sys.path.insert(0, os.path.join(pathlib.Path(__file__).parent.resolve(), '../..'))
-from scripts.imports import DATA_DIR
+from imports import DATA_DIR
 
 
 
@@ -55,44 +51,6 @@ def listwise_deletion(df):
         df_copy = df_copy.drop(drop_line)
     df_copy.reset_index(inplace=True,drop=True)
     return df_copy
-def rename_missing_symbols(df,p_name='Entry', OUTPUT_DIR=''):
-    """ Name the missing symbols in protein names """
-    df_c = copy.deepcopy(df)
-    nulls = df_c[p_name].isnull()
-    unique_names = ['p_{}'.format(ii) for ii in range(sum(nulls))]
-    map_ = {i:name for i,name in zip([i for i, x in enumerate(nulls) if x],unique_names)}
-    df_c.loc[nulls, p_name] = unique_names
-    print('Remaining missing names: ',[x for x in df_c[p_name] if not isinstance(x,str)])
-    with open(os.path.join(OUTPUT_DIR,'missing_names.txt'),'w') as f:
-        for key,value in map_.items():
-            f.write('original index: '+str(key)+' -> '+value+'\n')
-    return df_c
-
-def tailor_names(o_df, time, p_name, c_func, s_func, o_c_func, o_s_func, **kywrds):
-    """ changes names from the original df to make the reading easier """
-    df = pd.DataFrame()
-    df[p_name] = o_df[p_name]
-    df['Gene'] = o_df['Gene names  (primary)']
-    missing_names = df['Gene'].isnull()
-    df['Gene'].loc[missing_names] = df[p_name].loc[missing_names].values
-    # Rename the data columns for ctr and sample 
-    for i in time: 
-        df[c_func(i)] = o_df[o_c_func(i)]
-    for i in time:
-        df[s_func(i)] = o_df[o_s_func(i)]
-    print('Data size, original: {}'.format(len(df)))
-    return df
-    
-
-def remove_zeros(df,c_tag, s_tag, time, **kywrds):
-    """ Drop those rows with all zeros """
-    df.replace(0,np.nan,inplace=True) 
-    cols = [c_tag + str(i) for i in time] + [s_tag + str(i) for i in time]
-    df = df.loc[~(df[cols].isnull()).all(axis=1)] 
-    df.reset_index(inplace = True)
-    df.drop(['index'],axis=1,inplace = True)
-    print('Data size, rows with all zeros were removed: {}'.format(len(df)))
-    return df
 
 def feature_importance(reg, X_test, y_test,feature_names, params):
     result = inspection.permutation_importance(
@@ -138,7 +96,7 @@ def read_write_data(tag, mode, data=None):
     file_name = Path(DATA_DIR)/f"data_{tag}.csv"
     assert mode in ['read','write']
     if mode == 'read':
-        return np.loadtxt(file_name,delimiter=",")
+        return np.loadtxt(file_name, delimiter=",")
     else:
         assert data is not None
         np.savetxt(file_name, data, delimiter=",")

@@ -1,26 +1,29 @@
 import sys
 import os
 import numpy as np
+import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import time_points, F_DE_data, GRN_DIR, CALIBRATION_DIR
-from scripts.utils import read_write_data, calibration
-from scripts.utils.links import batch_run_generni
+from imports import time_points, F_DE_data, GRN_DIR, CALIBRATION_DIR
+from utils import read_write_data, calibration
+from utils.links import batch_run_generni
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    args, remaining_args = parser.parse_known_args()
+
+    studies = args.studies
+
     method = 'RF'
     param = dict(estimator_t=method)
     if not os.path.isdir(os.path.join(GRN_DIR, method)):
         os.makedirs(os.path.join(GRN_DIR, method))
 
-    studies = [ 'ctr', 'mg']
-    studies = ['mg']
     for DE_type, DE_data in F_DE_data().items():
-        if 'day1_11_KNN' not in DE_type: #TODO: remove this
-            continue
         DE_data = F_DE_data()[DE_type]
         for study in studies:
             print(f'----------------------{DE_type}, {study} ---------------')
@@ -33,7 +36,7 @@ if __name__ == '__main__':
             days = time_points()[0:n_timepoints]
             specs = dict(
                 i_start=100,
-                i_end=500,
+                i_end=100,
                 param=param,
                 gene_names=gene_names,
                 time_points=days,

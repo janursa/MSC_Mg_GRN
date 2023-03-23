@@ -14,13 +14,13 @@ import json
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-# from scripts.imports import VSA_DIR, F_DE_protiens,CALIBRATION_DIR, time_points
+# from scripts.imports import VSA_DIR, F_DE_proteins,CALIBRATION_DIR, time_points
 # from scripts.utils.VSA import NoiseAnalysis
 # from scripts.utils.links import run_generni, run_portia
 # from scripts.utils import read_write_data
 # from scripts.utils.calibration import retrieve_data
 
-from imports import VSA_DIR, F_DE_protiens,CALIBRATION_DIR, time_points
+from imports import VSA_DIR, F_DE_proteins,CALIBRATION_DIR, time_points
 from utils.VSA import NoiseAnalysis
 from utils.links import run_generni, run_portia
 from utils import read_write_data
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     warm_start = True # to use the previous run's results
 
     model_i = 0
-    for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
+    for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
         for method in methods:
             model_name = '_'.join([DE_type,method])
             if model_name not in selected_models: #only selected models

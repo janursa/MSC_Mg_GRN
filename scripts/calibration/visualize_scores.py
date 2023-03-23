@@ -9,8 +9,8 @@ import matplotlib
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import CALIBRATION_DIR, F_DE_data
-from scripts.utils import calibration, serif_font, make_title_pretty
+from imports import CALIBRATION_DIR, F_DE_data
+from utils import calibration, serif_font, make_title_pretty
 
 def visualize_scores(method, ylabel, xticks, ylim):
     serif_font()
@@ -30,16 +30,10 @@ def visualize_scores(method, ylabel, xticks, ylim):
                 study, method=method, DE_type=DE_type, output_dir=CALIBRATION_DIR)
             best_scores_stack.append(best_scores)
         # - plot
-        # i = int(idx / ncols)
-        # j = idx % ncols
-        # ax = axes[i][j]
         ax = axes[idx]
 
         ax.set_title(make_title_pretty(DE_type))
-        # calibration.plot_scores(best_scores_stack, xtickslabels=studies, ylabel=ylabel, ax=ax)
         bplot = ax.boxplot(best_scores_stack, notch=True, patch_artist=True, meanline=True, widths=.5)
-        # bplot = ax.violinplot(data_s, showmeans=True, showextrema=True, bootstrap=True
-        #     )
         ax.set_ylabel(ylabel)
         ax.set_yticks(xticks)
         ax.set_yticklabels(xticks)

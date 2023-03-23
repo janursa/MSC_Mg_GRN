@@ -5,22 +5,26 @@ Tune hyper params and decay coeffs using geneRNI
 import sys
 import os
 import numpy as np
+import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import F_DE_data, time_points, param_grid_RF, F_DE_protiens, CALIBRATION_DIR
-from scripts.utils import read_write_data, calibration
+from imports import F_DE_data, time_points, param_grid_RF, F_DE_proteins, CALIBRATION_DIR
+from utils import read_write_data, calibration
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    args, remaining_args = parser.parse_known_args()
+
+    studies = args.studies
+
     method = 'RF'
 
     # - define settings and calibration
     param = dict(estimator_t=method)
-    studies = ['ctr', 'mg']
     for DE_type, DE_data in F_DE_data().items():
-        # if DE_type in ['day1_11_MinProb_0.025', 'day1_11_MinProb_0.05']: #completed ones
-        #     continue
         param_grid = param_grid_RF(len(DE_data['Protein']))
         for study in studies:
             # - read the data
@@ -35,7 +39,7 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values.tolist()
             #- define settings and calibration
             specs = dict(
-                i_start=0,
+                i_start=10,
                 i_end=10,
                 param=param,
                 gene_names=gene_names,

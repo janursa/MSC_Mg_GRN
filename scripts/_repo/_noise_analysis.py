@@ -10,7 +10,7 @@ import pandas as pd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import F_DE_protiens, VSA_DIR
+from scripts.imports import F_DE_proteins, VSA_DIR
 from scripts.utils.VSA import role_analysis, RolePlot
 from analyse import retreive_links_shortlisted
 from scripts.utils import MG_noise_F, AG_noise_F, make_title_pretty
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     if not os.path.isdir(DIR_NOISE):
         os.makedirs(DIR_NOISE)
 
-    for DE_type, DE_proteins in F_DE_protiens().items():
+    for DE_type, DE_proteins in F_DE_proteins().items():
         for method in methods:
             model_name = '_'.join([DE_type, method])
             if model_name not in selected_models:  # only selected models

@@ -13,7 +13,7 @@ from pathlib import Path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, VSA_DIR, F_DE_protiens, MODELSELECTION_DIR
+from scripts.imports import GRN_DIR, VSA_DIR, F_DE_proteins, MODELSELECTION_DIR
 from scripts.utils.VSA import role_analysis, RolePlot, role_change
 from scripts.utils import make_title_pretty, comic_font
 from scripts.utils.links import choose_top_quantile
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     n_relica_noise =100
 
     model_i = 0
-    for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
+    for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
         for method in methods:
             links_stack = []
             for study in studies:

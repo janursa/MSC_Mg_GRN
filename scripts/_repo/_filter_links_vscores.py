@@ -12,15 +12,15 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, F_DE_protiens, CALIBRATION_DIR
+from scripts.imports import GRN_DIR, F_DE_proteins, CALIBRATION_DIR
 from scripts.utils import calibration
 
 if __name__ == '__main__':
     studies = ['ctr', 'mg']
     methods = ['RF', 'Ridge']
 
-    for DE_type, _ in F_DE_protiens().items():
-        protnames = F_DE_protiens()[DE_type]
+    for DE_type, _ in F_DE_proteins().items():
+        protnames = F_DE_proteins()[DE_type]
         for method in methods:
             dir_method_filtered = os.path.join(GRN_DIR, f'{method}_filtered')
             if not os.path.isdir(dir_method_filtered):

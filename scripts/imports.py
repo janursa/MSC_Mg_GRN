@@ -36,7 +36,7 @@ def F_DE_data():
         data = json.load(f)
     data = {ky: pd.read_json(df_string) for ky, df_string in data.items()}
     return data
-def F_DE_protiens():
+def F_DE_proteins():
     """
     returns DE_proteins that is a dict of list
     """

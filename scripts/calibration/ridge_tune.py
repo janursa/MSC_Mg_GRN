@@ -5,15 +5,21 @@ Tune hyper params and decay coeffs using geneRNI
 import sys
 import os
 import numpy as np
+import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import F_DE_data, time_points, param_grid_ridge, CALIBRATION_DIR
-from scripts.utils import read_write_data, calibration
+from imports import F_DE_data, time_points, param_grid_ridge, CALIBRATION_DIR
+from utils import read_write_data, calibration
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    args, remaining_args = parser.parse_known_args()
+
+    studies = args.studies
+
     method = 'ridge'
-    studies = ['ctr', 'mg']
 
     param_grid = param_grid_ridge()
     for DE_type, DE_data in F_DE_data().items():

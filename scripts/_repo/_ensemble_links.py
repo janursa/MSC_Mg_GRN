@@ -12,7 +12,7 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, F_DE_protiens
+from scripts.imports import GRN_DIR, F_DE_proteins
 from scripts.utils.links import normalize_links
 
 def retreive_grn(DE_type, study, methods):
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     for study in studies:
         links_stack = [] # different models
-        for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
+        for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
             for method in methods:
                 model_name = '_'.join([DE_type, method])
                 if model_name not in selected_models:  # only selected models

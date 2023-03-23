@@ -14,8 +14,8 @@ from typing import List
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.utils import enrichplot
-from scripts.imports import ENRICH_DIR, F_DE_protiens
+from utils import enrich_analysis
+from imports import ENRICH_DIR, F_DE_proteins
 
 def load_enrichment_data(de_type: str) -> pd.DataFrame:
     """Load enrichment data for the given DE type from a CSV file."""
@@ -64,7 +64,7 @@ def plot_enrichment_data(df_targets: list, terms: list):
         title = '(B) Late phase'
         figsize = (3.5, 8)
         scale_factor = 1.8
-    fig = enrichplot.plot_enrich(df_targets, terms, size_tag, color_tag, xlabel, markers, figsize=figsize,
+    fig = enrich_analysis.plot_enrich(df_targets, terms, size_tag, color_tag, xlabel, markers, figsize=figsize,
                                  legend_color=legend_color, legend_size=legend_size, legend_marker=legend_marker,
                                  title=title, scale_factor=scale_factor)
     fig.savefig(os.path.join(ENRICH_DIR, f'{title}.png'), dpi=300, transparent=True, bbox_inches='tight')
@@ -83,7 +83,7 @@ def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], terms: List
 
 if __name__ == '__main__':
     selected_models = ['day1_11_KNN', 'day1_21_KNN']
-    for DE_type, DE_proteins in F_DE_protiens().items():
+    for DE_type, DE_proteins in F_DE_proteins().items():
         if DE_type not in selected_models:
             continue
         #- retrieve the enriched terms and reformat them

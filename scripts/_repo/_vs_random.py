@@ -21,7 +21,7 @@ from typing import Dict, List
 
 import tqdm
 
-from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_protiens, CALIBRATION_DIR
+from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_proteins, CALIBRATION_DIR
 from scripts.utils.links import choose_top_quantile, normalize_links
 from scripts.utils import calibration, serif_font, make_title_pretty
 
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     #- main
     for idx, DE_type in enumerate(DE_types):
         golden_links = links_string_dict[DE_type]
-        protnames = F_DE_protiens()[DE_type]
+        protnames = F_DE_proteins()[DE_type]
         # - retreive the links and create the random links
         links_stack = {}
         protnames_fs = [] #left protein names after filter based on score

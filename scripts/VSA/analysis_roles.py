@@ -14,7 +14,7 @@ import json
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, VSA_DIR, F_DE_protiens
+from scripts.imports import GRN_DIR, VSA_DIR, F_DE_proteins
 from scripts.utils.VSA import role_analysis, RolePlot, determine_top_role_change, determine_critical_role_change
 from scripts.utils import serif_font
 
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     selected_models = ['day1_21_KNN_portia']
 
     model_i = 0
-    for idx, (DE_type, DE_proteins) in enumerate(F_DE_protiens().items()):
+    for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
         for method in methods:
             model_name = '_'.join([DE_type,method])
             if model_name not in selected_models: #only selected models
