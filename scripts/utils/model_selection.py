@@ -1,11 +1,12 @@
 """
-    Sets of functions useful for hyperparameter tuning
+    Sets of functions useful for model selection
 """
+
 import sys
 import os
-import matplotlib.pylab as plt
 import numpy as np
 import random
+import scipy
 from typing import List, Dict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +14,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import serif_font
 from utils.links import choose_top_quantile, normalize_links, flatten
+
 def violinplot(ax, idx, data_stack, x_labels, sig_signs, title):
     serif_font()
     # matplotlib.rcParams.update({'font.size': 12})
@@ -44,9 +46,11 @@ def violinplot(ax, idx, data_stack, x_labels, sig_signs, title):
                 va='bottom',
                 )
     ax.set_title(title)
-def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
+def lineplot(ax, idx, x_data, data_stack, line_names, title):
+    """ Line plot for the epr scores versus top quantiles
+
+    """
     serif_font()
-    # matplotlib.rcParams.update({'font.size': 10})
     colors = ['grey', 'lightpink', 'lightblue', 'lightgreen', 'blue', 'orange', 'cyan']
     linestyles = np.repeat(['-', '--', '-.', ':'], 2)
     for i, line_name in enumerate(line_names):
@@ -58,31 +62,10 @@ def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
                        linewidth=2,
                        linestyle=linestyles[i],
                        marker='o')
-
-    # ax.legend(frameon=False)
-    # if idx %2 == 0:
-    #     ax.set_ylabel('EPR')
-    #     ax.set_yticks(yticks)
-    #     ax.set_yticklabels(yticks)
-    # else:
-    #     ax.set_yticks(yticks)
-    #     ax.set_yticks([])
-    #     ax.set_ylabel('')
     ax.set_ylabel('Early precision ratio')
     ax.set_ymargin(.2)
-    # ax.set_yticks(yticks)
-    # ax.set_yticklabels(yticks)
-
     ax.set_xlabel('Top quantile')
-    # if idx in [0,1]:
-    #     ax.set_xlabel('')
-    #     # ax.set_xticks([])
-    #     # ax.set_xticklabels([])
-
-
     ax.set_title(title)
-    # ax.set_ymargin(.1)
-    # ax.set_xmargin(.1)
 
 def create_random_links(links_stack, n):
     """

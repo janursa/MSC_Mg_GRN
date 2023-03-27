@@ -5,18 +5,14 @@ import sys
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import logging as lg
-import numpy as np
-from typing import List
 from pathlib import Path
-import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, VSA_DIR, F_DE_proteins
-from scripts.utils.VSA import role_analysis, RolePlot, determine_top_role_change, determine_critical_role_change
-from scripts.utils import serif_font
+from imports import GRN_DIR, VSA_DIR, F_DE_proteins
+from utils.VSA import role_analysis, RolePlot, determine_top_role_change, determine_critical_role_change
+from utils import serif_font
 
 
 
@@ -82,13 +78,6 @@ def custom_annotation_role_change(prot):
     elif prot == 'Q07954':
         offset_x = .1
         offset_y = 0
-
-
-
-
-
-
-
     return offset_x, offset_y, arrow_t, rad
 
 def custom_annotation_ctr_vs_sample(gene_name):
@@ -115,11 +104,6 @@ def custom_annotation_ctr_vs_sample(gene_name):
         offset_y = 0.2
         offset_x = -0.2
         rad = -.2
-
-
-
-
-
 
     return offset_x, offset_y, arrow_t, rad
 
