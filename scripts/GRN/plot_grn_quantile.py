@@ -12,7 +12,7 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, MODELSELECTION_DIR, F_DE_proteins
+from scripts.imports import GRN_DIR, MODELSELECTION_DIR, F_DE_protnames
 from scripts.utils.links import plot_mean_weights
 from scripts.utils import make_title_pretty
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     fig, axes = plt.subplots(nrows, ncols, tight_layout=True, figsize=(ncols * 3.2, nrows * 2.5))
     model_i = 0
     #- plot selected models
-    for DE_type, _ in F_DE_proteins().items():
+    for DE_type, _ in F_DE_protnames().items():
         for method in methods:
             model_name = '_'.join([DE_type, method])
             if model_name not in selected_models:  # only selected models

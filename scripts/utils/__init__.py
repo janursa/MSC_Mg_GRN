@@ -81,7 +81,17 @@ def plot_hist(xs, names, **specs):
     fig, axs = plt.subplots(1 , len(names) ,tight_layout = True, figsize = (5*len(names),5))
     for (x, name, ax) in zip(xs, names, axs):
         plot_host_single(ax, x, name, **specs)
-
+def flatten(lst):
+    """
+    Flattens a list that may contain nested lists.
+    """
+    flattened = []
+    for item in lst:
+        if isinstance(item, list):
+            flattened.extend(flatten(item))
+        else:
+            flattened.append(item)
+    return flattened
 
 def create_check_dir(master_dir, name):
     DIR = os.path.join(master_dir, name)

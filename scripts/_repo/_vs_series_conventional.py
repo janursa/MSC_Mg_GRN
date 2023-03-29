@@ -12,7 +12,7 @@ import typing
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_proteins
+from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_protnames
 from scripts.utils.links import plot_match_counts_series, compare_network_string, compare_network_string_batch, create_random_links, format_links_string
 from scripts.utils import serif_font, make_title_pretty
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         for i, DE_type in enumerate(DE_types):
             links = pd.read_csv(os.path.join(GRN_DIR, method, f'links_{DE_type}_{study}.csv'), index_col=False)
 
-            golden_links = format_links_string(links_string_dict[DE_type], F_DE_proteins()[DE_type])
+            golden_links = format_links_string(links_string_dict[DE_type], F_DE_protnames()[DE_type])
             precision, recall, thresholds = precision_recall_curve(links, golden_links)
             fpr, tpr, _ = roc_curve(links, golden_links)
             # F1_score = np.sum(2 * (precision * recall) / (precision + recall))

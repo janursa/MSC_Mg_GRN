@@ -46,7 +46,7 @@ import matplotlib
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, F_DE_data, F_DE_proteins, ENRICH_DIR, VSA_DIR
+from scripts.imports import GRN_DIR, F_DE_data, F_DE_protnames, ENRICH_DIR, VSA_DIR
 from scripts.utils import calibration, serif_font, make_title_pretty
 from scripts.utils.links import retrieve_scores, choose_top_quantile, choose_top_count
 from scripts.utils.VSA import RolePlot
@@ -192,8 +192,8 @@ if __name__ == '__main__':
     target_proteins = [['Q02790', 'Q07866', 'Q99613', 'P14174'], ['P02652','P00568','Q02218']]
 
     model_i = 0
-    for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
-        # protnames = F_DE_proteins()[DE_type]
+    for idx, (DE_type, DE_proteins) in enumerate(F_DE_protnames().items()):
+        # protnames = F_DE_protnames()[DE_type]
         for method in methods:
             model_name = '_'.join([DE_type,method])
             if model_name not in selected_models: #only selected models

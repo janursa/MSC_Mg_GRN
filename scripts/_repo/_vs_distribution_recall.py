@@ -14,7 +14,7 @@ import random
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import MODELSELECTION_DIR, GRN_DIR, ENRICH_DIR, F_DE_data, F_DE_proteins, CALIBRATION_DIR
+from scripts.imports import MODELSELECTION_DIR, GRN_DIR, ENRICH_DIR, F_DE_data, F_DE_protnames, CALIBRATION_DIR
 from scripts.utils import make_title_pretty
 from scripts.utils.links import compare_network_string, format_links_string, normalize_links
 from scripts.utils import  calibration
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(4 * ncols, 3 * nrows))
     for idx, DE_type in enumerate(DE_types):
-        protnames = F_DE_proteins()[DE_type]
+        protnames = F_DE_protnames()[DE_type]
         #- retreive or create the links
         links_stack = []
         for method in methods:

@@ -1,37 +1,7 @@
 """
     Process the results of GRN using RF by pooling them and adding oob scores to the links.
     Reads oob and train scores and plot them.
-    igraph params:
 
-layout: the layout to use for the graph. This can be a precomputed layout, or a string specifying one of several built-in layout algorithms (default is 'auto')
-vertex_color: the color to use for vertices (default is 'white')
-vertex_size: the size of the vertices in pixels (default is 10)
-vertex_shape: the shape of the vertices (default is 'circle')
-vertex_frame_color: the color of the border around each vertex (default is 'black')
-vertex_label: the label to display for each vertex (default is None)
-vertex_label_color: the color of the vertex labels (default is 'black')
-vertex_label_size: the size of the vertex labels in points (default is 12)
-edge_color: the color to use for edges (default is 'black')
-edge_width: the width of the edges in pixels (default is 1)
-edge_arrow_size: the size of the arrowheads on directed edges (default is 1)
-edge_arrow_width: the width of the arrowheads on directed edges (default is 1)
-edge_curved: whether to draw curved edges instead of straight lines (default is False)
-edge_label: the label to display for each edge (default is None)
-edge_label_color: the color of the edge labels (default is 'black')
-edge_label_size: the size of the edge labels in points (default is 12)
-margin: the size of the margin around the plot in pixels (default is 10)
-background: the background color of the plot (default is 'white')
-vertex_label_dist: the distance between the vertex label and the vertex in pixels (default is 0)
-vertex_label_angle: the angle of rotation for the vertex label in degrees (default is 0)
-vertex_label_family: the font family for the vertex label (default is 'sans-serif')
-vertex_label_font: the font style for the vertex label (default is 'normal')
-vertex_label_rect: whether to draw a rectangle behind the vertex label (default is False)
-edge_label_dist: the distance between the edge label and the edge in pixels (default is 0)
-edge_label_angle: the angle of rotation for the edge label in degrees (default is 0)
-edge_label_family: the font family for the edge label (default is 'sans-serif')
-edge_label_font: the font style for the edge label (default is 'normal')
-edge_label_rect: whether to draw a rectangle behind the edge label (default is False)
-bbox: a tuple specifying the size of the plot in pixels (default is None)
 """
 import sys
 import os
@@ -39,17 +9,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from pathlib import Path
-import copy
+import argparse
 import igraph as ig
 import matplotlib
+from typing import List, Dict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import GRN_DIR, F_DE_data, F_DE_proteins, ENRICH_DIR, VSA_DIR
-from scripts.utils import calibration, serif_font, make_title_pretty
-from scripts.utils.links import retrieve_scores, choose_top_quantile, choose_top_count
-from scripts.utils.VSA import RolePlot
+from imports import GRN_VISUALIZE_DIR, VSA_DIR, MODELSELECTION_DIR, F_protnames_to_genenames, F_DE_genenames
+from utils.links import  choose_top_count
+from utils.VSA import RolePlot
+from VSA.analyse_roles import retreive_links_with_genenames
 
 def ig_plot(ax, nodes, edges, model_name, study):
     node_names = list(nodes['Protein'].to_numpy())
@@ -137,13 +108,6 @@ def ig_plot(ax, nodes, edges, model_name, study):
                        frameon=False, prop={'size': 10},title_fontproperties={'size': 9,'weight':'bold'})
 
 
-    # grad_colors = ig.GradientPalette("red", "green", len(protnames))
-    # - create the layout
-    # coords = []
-    # for i in range(len(g.vs)):
-    #     coords.append([i,i])
-    # layout_obj = ig.Layout(coords)
-
 def compare_to_golden_links(links_top, golden_links):
     l_regs = links_top['Regulator'].to_numpy(str)
     l_targs = links_top['Target'].to_numpy(str)
@@ -158,6 +122,7 @@ def compare_to_golden_links(links_top, golden_links):
 
     return n
 def manual_filter(links, model_name, study):
+    to_go = []
     if model_name == 'day1_21_KNN_portia':
         if study == 'ctr':
             to_go = [
@@ -233,44 +198,79 @@ def create_nodes(edges, model_name, study):
 
 
 if __name__ == '__main__':
+    # - parse the arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    parser.add_argument('--top_n_links', type=int, default=10, help='Number of top links to be visualized')
+    args, remaining_args = parser.parse_known_args()
+
+    studies = args.studies
+    top_n_links = args.top_n_links
     #- dir
-    GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
     if not os.path.isdir(GRN_VISUALIZE_DIR):
         os.makedirs(GRN_VISUALIZE_DIR)
     #- settings
-    top_n_links = 10
     figsize = (6,6)
-    studies = ['ctr','mg']
-    methods = ['RF', 'ridge', 'portia']
-    selected_models = ['day1_11_KNN_RF', 'day1_21_KNN_portia']
-    # selected_models = ['day1_11_KNN_RF']
 
-    model_i = 0
-    for idx, (DE_type, DE_proteins) in enumerate(F_DE_proteins().items()):
-        for method in methods:
-            model_name = '_'.join([DE_type,method])
-            if model_name not in selected_models: #only selected models
-                continue
-            target_genes = determine_target_genes(model_name)
-            #- plot for each study seperately
-            for i_study, study in enumerate(studies):
-                #- retireve links
-                links = pd.read_csv(Path(GRN_DIR)/method/f'links_{DE_type}_{study}.csv', index_col=False)
-                #- filter it
-                links = filter_target_genes(links, target_genes) #- choose only those connected with target genes
-                links = manual_filter(links, model_name, study) #- remove to make plot look better
-                links = choose_top_count(links, top_n_links) #- choose top n links
+    # - load names of selected models
+    selected_models = np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
+    # - read the links and store it for selected models
+    links_all: Dict[str, List[pd.DataFrame]] = retreive_links_with_genenames(selected_models,
+                                                                             F_protnames_to_genenames(), studies)
+    #- for each selected model, draw the network
+    for model_name in selected_models:
+        DE_type = '_'.join(model_name.split('_')[0:2])
+        target_genes= F_DE_genenames()[DE_type]
+        #- plot for each study seperately
+        for i_study, study in enumerate(studies):
+            #- retireve links
+            links = links_all[model_name][i_study]
+            #- filter it
+            links = filter_target_genes(links, target_genes) #- choose only those connected with target genes
+            links = manual_filter(links, model_name, study) #- remove to make plot look better
+            links = choose_top_count(links, top_n_links) #- choose top n links
 
-
-                #- plot
-                edges = links
-                nodes = create_nodes(edges, model_name, study)
-                fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
-                ig_plot(ax, nodes, edges, model_name, study)
-                fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
-                fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
-
-            model_i+=1
+            #- plot
+            edges = links
+            nodes = create_nodes(edges, model_name, study)
+            fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
+            ig_plot(ax, nodes, edges, model_name, study)
+            fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
+            fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
 
 
 
+
+"""
+igraph params:
+
+layout: the layout to use for the graph. This can be a precomputed layout, or a string specifying one of several built-in layout algorithms (default is 'auto')
+vertex_color: the color to use for vertices (default is 'white')
+vertex_size: the size of the vertices in pixels (default is 10)
+vertex_shape: the shape of the vertices (default is 'circle')
+vertex_frame_color: the color of the border around each vertex (default is 'black')
+vertex_label: the label to display for each vertex (default is None)
+vertex_label_color: the color of the vertex labels (default is 'black')
+vertex_label_size: the size of the vertex labels in points (default is 12)
+edge_color: the color to use for edges (default is 'black')
+edge_width: the width of the edges in pixels (default is 1)
+edge_arrow_size: the size of the arrowheads on directed edges (default is 1)
+edge_arrow_width: the width of the arrowheads on directed edges (default is 1)
+edge_curved: whether to draw curved edges instead of straight lines (default is False)
+edge_label: the label to display for each edge (default is None)
+edge_label_color: the color of the edge labels (default is 'black')
+edge_label_size: the size of the edge labels in points (default is 12)
+margin: the size of the margin around the plot in pixels (default is 10)
+background: the background color of the plot (default is 'white')
+vertex_label_dist: the distance between the vertex label and the vertex in pixels (default is 0)
+vertex_label_angle: the angle of rotation for the vertex label in degrees (default is 0)
+vertex_label_family: the font family for the vertex label (default is 'sans-serif')
+vertex_label_font: the font style for the vertex label (default is 'normal')
+vertex_label_rect: whether to draw a rectangle behind the vertex label (default is False)
+edge_label_dist: the distance between the edge label and the edge in pixels (default is 0)
+edge_label_angle: the angle of rotation for the edge label in degrees (default is 0)
+edge_label_family: the font family for the edge label (default is 'sans-serif')
+edge_label_font: the font style for the edge label (default is 'normal')
+edge_label_rect: whether to draw a rectangle behind the edge label (default is False)
+bbox: a tuple specifying the size of the plot in pixels (default is None)
+"""

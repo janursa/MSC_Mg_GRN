@@ -15,7 +15,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import enrich_analysis
-from imports import ENRICH_DIR, F_DE_proteins
+from imports import ENRICH_DIR, F_DE_protnames
 
 def load_enrichment_data(de_type: str) -> pd.DataFrame:
     """Load enrichment data for the given DE type from a CSV file."""
@@ -83,7 +83,7 @@ def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], terms: List
 
 if __name__ == '__main__':
     selected_models = ['day1_11_KNN', 'day1_21_KNN']
-    for DE_type, DE_proteins in F_DE_proteins().items():
+    for DE_type, DE_proteins in F_DE_protnames().items():
         if DE_type not in selected_models:
             continue
         #- retrieve the enriched terms and reformat them

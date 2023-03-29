@@ -20,13 +20,17 @@ DATA_DIR = os.path.join(OUTPUT_DIR, 'data')
 VSA_DIR = os.path.join(OUTPUT_DIR, 'VSA')
 ENRICH_DIR = os.path.join(OUTPUT_DIR, 'enrichment_analysis')
 MODELSELECTION_DIR = os.path.join(OUTPUT_DIR, 'model_selection')
+VSA_NOISE_DIR = Path(VSA_DIR)/'noise'
+GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
 
 geneRNI_dir = os.path.join(MAIN_DIR,'..','geneRNI')
 sys.path.insert(0, geneRNI_dir)
 
 from geneRNI.models import get_estimator_wrapper
 
-#- import training data
+#- load protnames to genenames map
+
+    
 def F_DE_data():
     """
     returns DE_data that is a dict of df
@@ -36,17 +40,27 @@ def F_DE_data():
         data = json.load(f)
     data = {ky: pd.read_json(df_string) for ky, df_string in data.items()}
     return data
-def F_DE_proteins():
+def F_DE_protnames():
     """
-    returns DE_proteins that is a dict of list
+    returns DE_proteins that is a dict of list. It contains protnames
     """
     with open(os.path.join(DATA_DIR,'DE_protnames.txt')) as f:
         data = eval(f.read())
     return data
-#- DE protnames
-# def protnames():
-#     return list(df_target()['Protein'].values)
-
+def F_protnames_to_genenames():
+    with open(Path(DATA_DIR)/ 'protnames_to_genenames.json', 'r') as ff:
+        map_protnames_genenames = json.loads(ff.read())
+    return map_protnames_genenames
+def F_DE_genenames():
+    """
+        returns DE_proteins that is a dict of list. It contains genenames
+    """
+    map_protnames_genenames = F_protnames_to_genenames()
+    DE_genenames = {}
+    for DE_name, protnames in F_DE_protnames().items():
+        genenames = [map_protnames_genenames[protname] for protname in protnames]
+        DE_genenames[DE_name] = genenames
+    return DE_genenames
 
 def param_grid_RF(n_proteins):
     return dict(

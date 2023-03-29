@@ -13,7 +13,7 @@ import random
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_proteins, CALIBRATION_DIR
+from scripts.imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, F_DE_protnames, CALIBRATION_DIR
 from scripts.utils.links import plot_match_counts_series, normalize_links, format_links_string
 from scripts.utils import calibration, serif_font, make_title_pretty
 
@@ -69,8 +69,8 @@ if __name__ == '__main__':
                 links_stack.append(links_pool)
         assert (len(links_stack)==2)
         #-- compare to golden links
-        golden_links = format_links_string(links_string_dict[DE_type], F_DE_proteins()[DE_type])
-        protnames = F_DE_proteins()[DE_type]
+        golden_links = format_links_string(links_string_dict[DE_type], F_DE_protnames()[DE_type])
+        protnames = F_DE_protnames()[DE_type]
         #- remove mg from links
         def remove_mg(links):
             return links.loc[(links['Regulator']!='mg') & (links['Target']!='mg'),:]

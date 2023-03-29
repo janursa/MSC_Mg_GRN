@@ -77,17 +77,6 @@ def batch_run_generni(study, method, DE_type, i_start, i_end, output_dir, **spec
 
     np.savetxt(os.path.join(DIR_DE_type, f'testscores_{study}.csv'), testscores)
     np.savetxt(os.path.join(DIR_DE_type, f'trainscores_{study}.csv'), trainscores)
-def flatten(lst):
-    """
-    Flattens a list that may contain nested lists.
-    """
-    flattened = []
-    for item in lst:
-        if isinstance(item, list):
-            flattened.extend(flatten(item))
-        else:
-            flattened.append(item)
-    return flattened
 def retrieve_scores(study, method, DE_type, output_dir):
     """
         Retreiev train and test scores

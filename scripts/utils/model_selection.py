@@ -12,15 +12,15 @@ from typing import List, Dict
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import serif_font
-from utils.links import choose_top_quantile, normalize_links, flatten
+from utils import serif_font, flatten
+from utils.links import choose_top_quantile, normalize_links
 
 def violinplot(ax, idx, data_stack, x_labels, sig_signs, title):
     serif_font()
     # matplotlib.rcParams.update({'font.size': 12})
     bplot = ax.violinplot(data_stack.T, showmeans=True, showextrema=False)
     if idx %2 == 0:
-        ax.set_ylabel('AOC-EPR (standardize)')
+        ax.set_ylabel('AUC-EPR (standardize)')
         ax.set_yticks([0,1,2])
         ax.set_yticklabels([0, 1, 2])
     else:
@@ -46,7 +46,7 @@ def violinplot(ax, idx, data_stack, x_labels, sig_signs, title):
                 va='bottom',
                 )
     ax.set_title(title)
-def lineplot(ax, idx, x_data, data_stack, line_names, title):
+def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
     """ Line plot for the epr scores versus top quantiles
 
     """
@@ -66,6 +66,8 @@ def lineplot(ax, idx, x_data, data_stack, line_names, title):
     ax.set_ymargin(.2)
     ax.set_xlabel('Top quantile')
     ax.set_title(title)
+    if yticks is not None:
+        ax.set_yticks(yticks)
 
 def create_random_links(links_stack, n):
     """

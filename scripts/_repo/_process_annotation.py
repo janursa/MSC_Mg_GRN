@@ -12,7 +12,7 @@ import pandas as pd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from scripts.imports import ENRICH_DIR, DATA_DIR
+from imports import ENRICH_DIR, DATA_DIR
 
 
 def main(DE_protnames: list, phase) -> Tuple[dict,dict,dict,dict]:

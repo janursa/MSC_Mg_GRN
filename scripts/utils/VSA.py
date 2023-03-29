@@ -242,8 +242,8 @@ class RolePlot:
         if show_axis_names:
             # ax.set_xlabel('P (the line marks top 25 %)')
             # ax.set_ylabel('Q (the line marks top 25 %)')
-            ax.set_xlabel('Product', fontweight='bold')
-            ax.set_ylabel('Quotient', fontweight='bold')
+            ax.set_xlabel('Product (AS.PS)', fontweight='bold')
+            ax.set_ylabel('Quotient (AS/PS)', fontweight='bold')
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]
@@ -306,8 +306,14 @@ class RolePlot:
 
 
 class NoiseAnalysis:
+    """
+    This class handles the functions for the robusness analysis of VSA results for role change from ctr to
+    sample. It introduces differnt types and levels of noise to input datasets and runs the GRN methods to infer
+    noise outputs. Then, it using VSA to determine the roles for the noisy datasets. Finally, it plots the noisy
+    roles to examine if the roles are statistically different from ctr to sample.
+    """
     def __init__(self, data_ctr, data_sample, target_genes, run_grn_func,
-                 n_rep, std_noise, noise_type,
+                 n_noisy_datasets, std_noise, noise_type,
                  kwargs_grn_func, kwargs_role_analysis):
         assert noise_type in ['mp', 'ad']
         self.data_ctr = data_ctr
@@ -317,18 +323,18 @@ class NoiseAnalysis:
         self.kwargs_grn_func = kwargs_grn_func
         self.kwargs_role_analysis = kwargs_role_analysis
         self.studies = ['ctr','sample']
-        self.n_rep = n_rep
+        self.n_noisy_datasets = n_noisy_datasets
         self.std_noise = std_noise
         self.noise_type = noise_type
     def analyse_noise(self):
         vsa_results_stack_studies = []
         for i_data, data in enumerate([self.data_ctr, self.data_sample]):
             if self.noise_type == 'mp':
-                noisy_data_stack = self._add_mpnoise(data, n_rep=self.n_rep, std=self.std_noise)
+                noisy_data_stack = NoiseAnalysis._add_mpnoise(data, n_noisy_datasets=self.n_noisy_datasets, std=self.std_noise)
             else:
-                noisy_data_stack = self._add_adnoise(data, n_rep=self.n_rep, std=self.std_noise)
+                noisy_data_stack = NoiseAnalysis._add_adnoise(data, n_noisy_datasets=self.n_noisy_datasets, std=self.std_noise)
             noisy_links_stack = []
-            with tqdm(total=self.n_rep, desc=f'Run GRN for noisy data: {self.noise_type} : {self.std_noise}') as pbar:
+            with tqdm(total=self.n_noisy_datasets, desc=f'Run GRN for noisy data: {self.noise_type} {self.std_noise} study {i_data}') as pbar:
                 for data in noisy_data_stack:
                     noisy_links_stack.append(self.run_grn_func(data=data, i_data=i_data, **self.kwargs_grn_func))
                     pbar.update(1)
@@ -337,7 +343,8 @@ class NoiseAnalysis:
             vsa_results_stack_studies.append(vsa_results_stack_filtered)
         results = self._organized(vsa_results_stack_studies[0],vsa_results_stack_studies[1])
         return results
-    def _plot(self, axes, data, genenames, preferred_titles=None):
+    @staticmethod
+    def _plot(axes, data, genenames, preferred_titles=None):
         '''
             Plots Q/P for ctr and mg conditions, for n different runs of sensitivity analysis, one window for each prot
 
@@ -407,26 +414,18 @@ class NoiseAnalysis:
             return True
         else:
             False
-    def _role_change_test(self, ctr, sample):
+    @staticmethod
+    def _role_change_test(ctr, sample):
         Qs_ctr = [point[0] for point in ctr]
         Ps_ctr = [point[1] for point in ctr]
         Qs_sample = [point[0] for point in sample]
         Ps_sample = [point[1] for point in sample]
 
-        # if (np.mean(Qs_ctr)*np.mean(Qs_sample)<0) | (np.mean(Ps_ctr) * np.mean(Ps_sample) < 0) :
-        #
-        #     _, p1 = scipy.stats.ttest_ind(Qs_ctr, Ps_ctr, equal_var=False)
-        #     _, p2 = scipy.stats.ttest_ind(Qs_sample, Ps_sample,  equal_var=False)
-        #     if (p1<0.05) | (p2<0.05):
-        #         return True
         abs_diff_Qs = np.abs(np.mean(Qs_ctr) - np.mean(Qs_sample))
         abs_diff_Ps = np.abs(np.mean(Ps_ctr) - np.mean(Ps_sample))
         Q_std = np.std(Qs_ctr)
         P_std = np.std(Ps_ctr)
 
-        if False:
-            print(f'Q: abs: {abs_diff_Qs} t: {Q_std}')
-            print(f'P: abs: {abs_diff_Ps} t: {P_std}')
         if (abs_diff_Qs > Q_std) | (abs_diff_Ps > P_std):
             if (abs_diff_Qs > 2*Q_std) | (abs_diff_Ps > 2*P_std):
                 if (abs_diff_Qs > 3 * Q_std) | (abs_diff_Ps > 3 * P_std):
@@ -437,71 +436,60 @@ class NoiseAnalysis:
                 return '*'
         else:
             return ''
-        #
-
-
-    def _test_significance(self, results):
-        assert len(results) == len(self.target_genes)
+    @staticmethod
+    def determine_sig_change_in_role(results, target_genes):
+        """Determines the degree of sig change from ctr to sample by assigning
+        one of *, **, ***
+        """
+        assert len(results) == len(target_genes)
         sig_signs = []
-        for gene_i,gene in enumerate(self.target_genes):
+        for gene_i,gene in enumerate(target_genes):
             ctr = results[gene_i]['ctr']
             sample = results[gene_i]['sample']
-            # print(gene)
-            sig_signs.append(self._role_change_test(ctr,sample))
+            sig_signs.append(NoiseAnalysis._role_change_test(ctr,sample))
         return sig_signs
+    @staticmethod
+    def plot_results(results, target_genes, noise_type, std_noise, sig_flags):
+        """ Plot role change from control to sample for n noisy results
+        Scatter plots where each node shows the results of one noisy analysis.
+        The nodes for ctr and sample are plotted together with different colors.
+        Sig changes are marked with *, **, ***
+        """
+        preferred_titles = [f'{gene} {sign}' for gene, sign in zip(target_genes, sig_flags)]
 
-    def plot_results(self, results):
-        sig_flags = self._test_significance(results)
-        preferred_titles = [f'{gene} {sign}' for gene, sign in zip(self.target_genes, sig_flags)]
-
-        ncols, nrows = len(self.target_genes), 1
+        ncols, nrows = len(target_genes), 1
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
 
         ax = axes
-        self._plot(ax, results, self.target_genes, preferred_titles=preferred_titles)
-        if self.noise_type == 'mp':
-            ax[0].set_ylabel(f'Multiplicative noise ({int(100*self.std_noise)} %)', fontweight='bold')
-        if self.noise_type == 'ad':
-            ax[0].set_ylabel(f'Additive noise ({int(100*self.std_noise)} %)', fontweight='bold')
+        NoiseAnalysis._plot(ax, results, target_genes, preferred_titles=preferred_titles)
+        if noise_type == 'mp':
+            ax[0].set_ylabel(f'Multiplicative noise ({int(100*std_noise)} %)', fontweight='bold')
+        if noise_type == 'ad':
+            ax[0].set_ylabel(f'Additive noise ({int(100*std_noise)} %)', fontweight='bold')
         return fig
-    def plot_results_significant(self, results):
-
-        sig_flags = self._test_significance(results)
-        true_indices = [i for i in range(len(sig_flags)) if (sig_flags[i]!='')]
-        preferred_titles = [f'{self.target_genes[i]} {sig_flags[i]}' for i in true_indices]
-        ncols, nrows = len(true_indices), 1
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.2 * ncols, 2.2 * nrows))
-        ax = axes
-        results_shortlisted = np.asarray(results)[true_indices]
-        target_genes_shortlisted = self.target_genes[true_indices]
-        self._plot(ax, results_shortlisted, target_genes_shortlisted, preferred_titles=preferred_titles)
-        if self.noise_type == 'mp':
-            ax[0].set_ylabel(f'Multiplicative noise ({int(100*self.std_noise)} %)', fontweight='bold')
-        if self.noise_type == 'ad':
-            ax[0].set_ylabel(f'Additive noise ({int(100*self.std_noise)} %)', fontweight='bold')
-        return fig
-    def __add_mpnoise(self, data, n_rep=100, sigma=1, std=.3) -> Tuple[np.array]: # deprecated
+    @staticmethod
+    def __add_mpnoise(data, n_noisy_datasets=100, sigma=1, std=.3) -> Tuple[np.array]: # deprecated
         """ Multiplicitive noise
              Creates n_relica noised data
         """
         data_std = np.std(data)
         applied_std = std*data_std
         noisy_data_stack = []
-        for i in range(n_rep):
+        for i in range(n_noisy_datasets):
             rand_values = np.random.normal(loc=sigma, scale=applied_std, size=data.shape)
             noisy_data = rand_values*data
             noisy_data_stack.append(noisy_data)
 
         return noisy_data_stack
-
-    def _add_mpnoise(self, data, n_rep=100, std=.3) -> Tuple[np.array]:
+    @staticmethod
+    def _add_mpnoise(data, n_noisy_datasets=100, std=.3) -> Tuple[np.array]:
         """ Multiplicative noise
-             Creates n_replica noised data
+             Creates n_noisy_datasetslica noised data
         """
         data_std = np.std(data)
         applied_std = std * data_std
         noisy_data_stack = []
-        for i in range(n_rep):
+        for i in range(n_noisy_datasets):
             # frac_noise = .05
             frac_noise =  np.random.rand()
             noise_mask = np.random.choice([0, 1], size=data.shape, p=[1 - frac_noise, frac_noise])
@@ -510,15 +498,15 @@ class NoiseAnalysis:
             noisy_data_stack.append(noisy_data)
 
         return noisy_data_stack
-
-    def _add_adnoise(self, data, n_rep=100, std=.05) -> Tuple[pd.DataFrame]:
+    @staticmethod
+    def _add_adnoise(data, n_noisy_datasets=100, std=.05) -> Tuple[pd.DataFrame]:
         """ Additive noise
                  Creates n_relica noised links
         """
         data_std = np.std(data)
         applied_std = data_std * std
         noisy_data_stack = []
-        for i in range(n_rep):
+        for i in range(n_noisy_datasets):
             rand_values = np.random.normal(loc=1, scale=applied_std, size=data.shape)
             noisy_data = rand_values + data
             noisy_data_stack.append(noisy_data)
