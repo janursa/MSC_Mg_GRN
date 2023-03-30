@@ -18,11 +18,33 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import GRN_VISUALIZE_DIR, VSA_DIR, VSA_NOISE_DIR, F_protnames_to_genenames, F_DE_genenames, F_model_name_2_method_and_DE_type, F_selected_models
-from utils.links import  choose_top_count
+from utils.links import  choose_top_count, normalize_links
 from utils.VSA import RolePlot
 from VSA.analyse_roles import retreive_links_with_genenames
 
-def ig_plot(ax, nodes, edges, model_name, study, target_genes):
+def manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights):
+    #- adjust vertex size (node size)
+    if model_name == 'early_MinProb_portia':
+        if study == 'ctr':
+            scale, base = .4, .4
+        if study == 'mg':
+            scale, base = .3, .3
+    if model_name == 'late_KNN_portia':
+        if study == 'ctr':
+            scale, base = .3, .3
+        if study == 'mg':
+            scale, base = .3, .3
+    def standardize(vector, scale, base):
+        vector = vector - min(vector)
+        vector = vector/max(vector)
+        return scale*vector + base
+
+    vertex_sizes = standardize(vertex_sizes, scale, base)
+    #- adjust edge weight
+    base_edge_weight = 1
+    edge_weights = 4 * (edge_weights - min(edge_weights)) + base_edge_weight
+    return vertex_sizes, edge_weights
+def ig_plot(ax, nodes, edges, model_name, study, target_genes, vertex_shapes):
     """Plot protein connections using igplot"""
     node_names = list(nodes['Protein'].to_numpy())
     F_normalize = lambda vector: vector / np.max(vector)
@@ -30,20 +52,9 @@ def ig_plot(ax, nodes, edges, model_name, study, target_genes):
     node_colors = [RolePlot.roles_colors[role] if (gene in target_genes) else 'white' for gene, role in zip(nodes['Protein'], nodes['Role'])]
     edge_weights = F_normalize(edges['Weight'].to_numpy(float))
     vertex_sizes = F_normalize(nodes['Weight'].to_numpy(float))
-
-    base_vertex_size = 0.3
-    base_edge_weight = 1
-    if model_name == 'day1_21_KNN_portia':
-        if study == 'ctr':
-            base_vertex_size = .15
-        if study == 'mg':
-            base_vertex_size = .2
-
-    vertex_sizes = vertex_sizes/2 + base_vertex_size
-
-    edge_weights =  4*(edge_weights - min(edge_weights))+  base_edge_weight
-
-
+    #- manual adjustement to the sizes
+    vertex_sizes, edge_weights = manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights)
+    #- convert gene-gene weight into edges numbers
     edges_list = [[node_names.index(reg), node_names.index(targ)] for reg, targ in edges.loc[:,['Regulator','Target']].to_numpy(str)]
     # - Construct a graph
     g = ig.Graph(n=len(node_names), edges=edges_list, directed=True)
@@ -55,8 +66,9 @@ def ig_plot(ax, nodes, edges, model_name, study, target_genes):
         layout = layouts[0],
         vertex_size = vertex_sizes,
         vertex_color = node_colors,
-        vertex_frame_width = .2,
-        # vertex_frame_color = vertex_colors,
+        vertex_frame_width = 1,
+        vertex_frame_color = 'grey',
+        vertex_shape = 'triangle',
         vertex_label = node_names,
         vertex_label_size = 9,
         edge_width = edge_weights,
@@ -104,78 +116,24 @@ def ig_plot(ax, nodes, edges, model_name, study, target_genes):
             handles.append(line)
         l3 = ax.legend(loc='upper center', bbox_to_anchor=(.8, -.1), handles=handles, title=size_title, fancybox=False,
                        frameon=False, prop={'size': 10},title_fontproperties={'size': 9,'weight':'bold'})
-
-
-def compare_to_golden_links(links_top, golden_links):
-    l_regs = links_top['Regulator'].to_numpy(str)
-    l_targs = links_top['Target'].to_numpy(str)
-
-    s_regs = golden_links['Regulator'].to_numpy(str)
-    s_targs = golden_links['Target'].to_numpy(str)
-
-    n = 0
-    for reg, target in zip(s_regs, s_targs):
-        if ((l_regs == reg) & (l_targs == target)).any():
-            n += 1
-
-    return n
 def manual_filter(links, model_name, study):
     to_go = []
-    if model_name == 'day1_21_KNN_portia':
-        if study == 'ctr':
-            to_go = [
-                ['Q7Z417', 'P40926'],
-                ['Q7Z417', 'Q14011'],
-                ['P53621', 'Q7Z417'],
-                ['Q7Z417', 'P53621'],
-                ['Q7Z417','P13010'],
-                ['Q7Z417','P62328'],
-                ['Q7Z417','Q9H0U4'],
-                ['Q7Z417','Q15233'],
-                ['P40926', 'Q7Z417'],
-                ['P62328','Q7Z417'],
-                ['Q15843', 'Q7Z417'],
-                ['Q7Z417','Q15843'],
-                ['Q14011', 'Q7Z417'],
-                ['Q15233','Q7Z417'],
-                ['P13010','Q7Z417']
-
-
-
-            ]
-        if study == 'mg':
-            to_go = []
-    if model_name == 'day1_11_KNN_RF':
-        if study == 'ctr':
-            to_go = [
-                    ['O00629', 'Q07866'],
-                    #  ['P67936','Q14011'],
-                     # ['P67936', 'Q9UKY7'],
-                #      ['P67936', 'O00629'],
-                #     ['P67936','Q96C90'],
-                # ['P67936','P67809'],
-                # ['P67936','Q9UN86']
-
-                     ]
-        if study == 'mg':
-            to_go = [['Q3SX28','P67936']]
     for item in to_go:
         links = links.drop(links[(links['Regulator']==item[0]) & (links['Target']==item[1])].index)
-
-        # links.loc[(links['Target'] == item[0]) & (links['Regulator'] == item[1]), 'Weight'] = 0
     return links
 def read_from_file(file_name):
     with open(file_name, 'r') as f:
         data = pd.read_csv(f, index_col=False)
     return data
-def determine_target_genes(model_name):
-    if model_name == 'day1_11_KNN_RF':
-        target_genes = ['P67936', 'Q07866', 'Q9UKY7', 'Q07866']
-    if model_name == 'day1_21_KNN_portia':
-        target_genes = ['P56192', 'Q13263', 'Q7Z417']
-    return target_genes
-def filter_target_genes(links, target_genes):
+def filter_links_for_target_genes(links, target_genes):
     return links.loc[(links['Target'].isin(target_genes)) | (links['Regulator'].isin(target_genes)), :]
+def choose_top_n_links_connected_2_target_genes(links, target_genes, top_n):
+    links_target_gene_shortlisted_all = []
+    for target_gene in target_genes:
+        links_target_gene = links.loc[(links['Target']==target_gene) | (links['Regulator']==target_gene), :]
+        links_target_gene_shortlisted = choose_top_count(links_target_gene, top_n)
+        links_target_gene_shortlisted_all.append(links_target_gene_shortlisted)
+    return pd.concat(links_target_gene_shortlisted_all, axis=0, ignore_index=True)
 def create_nodes(edges, model_name, study):
     #- extract gene names
     gene_names = edges.loc[:, ['Regulator', 'Target']].to_numpy(str)
@@ -199,7 +157,7 @@ if __name__ == '__main__':
     # - parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
-    parser.add_argument('--top_n_links', type=int, default=10, help='Number of top links to be visualized')
+    parser.add_argument('--top_n_links', type=int, default=2, help='Number of links connected to each target proteins to be visualized')
     args, remaining_args = parser.parse_known_args()
 
     studies = args.studies
@@ -216,6 +174,9 @@ if __name__ == '__main__':
     # - read the links and store it for selected models
     links_all: Dict[str, List[pd.DataFrame]] = retreive_links_with_genenames(selected_models,
                                                                              F_protnames_to_genenames(), studies)
+    #- standardize links
+    links_all = {key: [normalize_links(links) for links in links_stack] for key, links_stack in links_all.items()}
+    node_shapes = ['rectangle']
     #- for each selected model, draw the network
     for model_name in selected_models:
         target_genes= target_genes_all[model_name]
@@ -224,15 +185,16 @@ if __name__ == '__main__':
             #- retireve links
             links = links_all[model_name][i_study]
             #- filter it
-            links = filter_target_genes(links, target_genes) #- choose only those connected with target genes
-            links = manual_filter(links, model_name, study) #- remove to make plot look better
-            links = choose_top_count(links, top_n_links) #- choose top n links
+            # links = filter_links_for_target_genes(links, target_genes) #- choose only those connected with target genes
+            # links = manual_filter(links, model_name, study) #- remove to make plot look better
+            # links = choose_top_count(links, top_n_links) #- choose top n links
+            links = choose_top_n_links_connected_2_target_genes(links, target_genes, top_n_links)
 
             #- plot
             edges = links
             nodes = create_nodes(edges, model_name, study)
             fig, ax = plt.subplots(1, 1, figsize=(6,6), tight_layout=True)
-            ig_plot(ax, nodes, edges, model_name, study, target_genes)
+            ig_plot(ax, nodes, edges, model_name, study, target_genes, node_shapes)
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
 
