@@ -10,12 +10,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import List
+import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import enrich_analysis
-from imports import ENRICH_DIR, F_DE_protnames
+from imports import ENRICH_DIR, F_selected_models, F_model_name_2_method_and_DE_type
 
 def load_enrichment_data(de_type: str) -> pd.DataFrame:
     """Load enrichment data for the given DE type from a CSV file."""
@@ -38,65 +39,74 @@ def shorten_term_names(df: pd.DataFrame, threshold: int = 50) -> pd.DataFrame:
     return df
 
 
-def select_top_enriched_terms(df: pd.DataFrame, term: str, top_n: int = 10, filter_tag: str = 'Strength') -> pd.DataFrame:
+def select_top_enriched_terms(df: pd.DataFrame, category: str, top_n: int = 10, length_limit:int = 30, filter_tag: str = 'Strength') -> pd.DataFrame:
     """Select the top n enriched terms for the given category, sorted by the given filter tag."""
-    df = df.loc[df['category'] == term, :]
+    df = df.loc[df['category'] == category, :]
+    descriptions = df['Description']
+    descriptions = [name[0:length_limit] for name in descriptions]
+    df['Description'] = descriptions
     df = df.sort_values(filter_tag, ascending=False).head(top_n)
     return df
 
 
-def plot_enrichment_data(df_targets: list, terms: list):
+def plot_enrichment_data(df_targets: list, categories: list, DE_type: str):
     """Plot the enrichment data for the given terms using the specified parameters."""
     # - assignments
     size_tag, color_tag, xlabel = 'Strength', 'FDR', 'ProteinCount'
     markers = ['o', '>', '*', 's', 'p']
-    if 'day1_11' in DE_type:
+    if 'early' in DE_type:
         legend_marker = False
         legend_size = False
         legend_color = False
-        title = '(A) Early phase'
+        title = '(A) Short term'
         figsize = (3, 8)
         scale_factor = .4
     else:
         legend_marker = True
         legend_size = True
         legend_color = True
-        title = '(B) Late phase'
+        title = '(B) Long term'
         figsize = (3.5, 8)
         scale_factor = 1.8
-    fig = enrich_analysis.plot_enrich(df_targets, terms, size_tag, color_tag, xlabel, markers, figsize=figsize,
+    fig = enrich_analysis.plot_enrich(df_targets, categories, size_tag, color_tag, xlabel, markers, figsize=figsize,
                                  legend_color=legend_color, legend_size=legend_size, legend_marker=legend_marker,
                                  title=title, scale_factor=scale_factor)
     fig.savefig(os.path.join(ENRICH_DIR, f'{title}.png'), dpi=300, transparent=True, bbox_inches='tight')
     fig.savefig(os.path.join(ENRICH_DIR, f'{title}.pdf'), bbox_inches='tight')
 
-def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], terms: List[str], DE_type: str) -> None:
+def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], categories: List[str], DE_type: str) -> None:
     """Writes enrichment data to files for each tag (for R plots)."""
     FOLDER = Path(ENRICH_DIR)/'For_R'
     if not os.path.isdir(FOLDER):
         os.makedirs(FOLDER)
-    for term, df_term in zip(terms, df_stack):
+    for term, df_term in zip(categories, df_stack):
         tag = term.split(" ")[-1].lower()
         file_name = Path(FOLDER) / f'enrichment_{DE_type}_{tag}.csv'
         with open(file_name, 'w') as f:
             df_term.to_csv(file_name, index=False)
 
 if __name__ == '__main__':
-    selected_models = ['day1_11_KNN', 'day1_21_KNN']
-    for DE_type, DE_proteins in F_DE_protnames().items():
-        if DE_type not in selected_models:
-            continue
+    # - parse the arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--top_n', type=int, default=10, help='Top number of enriched terms to show for each category')
+    parser.add_argument('--length_limit', type=int, default=40, help='Limits term length to be fit into the graph')
+    args, remaining_args = parser.parse_known_args()
+    top_n = args.top_n
+    length_limit = args.length_limit
+    #- EA for each model
+    for model_name in F_selected_models():
+        method, DE_type = F_model_name_2_method_and_DE_type(model_name)
         #- retrieve the enriched terms and reformat them
         df = load_enrichment_data(DE_type)
         # - shorten term names for visualization purposes
         df = shorten_term_names(df)
         # - divide df based on each term and keep only top n enriched items
-        terms = ['GO Biological Process', 'GO Biological Function', 'GO Cellular Component']
+        categories = ['GO Biological Process', 'GO Biological Function', 'GO Cellular Component']
         df_targets = []
-        for term in terms:
-            df_targets.append(select_top_enriched_terms(df, term, top_n= 10, filter_tag= 'Strength'))
+        for category in categories:
+            df_targets.append(select_top_enriched_terms(df, category, top_n=top_n, length_limit=length_limit, filter_tag= 'Strength'))
         #- output each term's df (for R plot)
-        write_term_enrichment_data_to_file(df_targets, terms, DE_type)
+        write_term_enrichment_data_to_file(df_targets, categories, DE_type)
         #- plot
-        plot_enrichment_data(df_targets, terms)
+        plot_enrichment_data(df_targets, categories, DE_type)
 

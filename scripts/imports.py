@@ -30,7 +30,14 @@ from geneRNI.models import get_estimator_wrapper
 
 #- load protnames to genenames map
 
-    
+def F_selected_models():
+    return np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
+
+def F_model_name_2_method_and_DE_type(model_name):
+    model_name_parts = model_name.split('_')
+    method = model_name_parts[-1]
+    DE_type = '_'.join(model_name_parts[0:2])
+    return method, DE_type
 def F_DE_data():
     """
     returns DE_data that is a dict of df

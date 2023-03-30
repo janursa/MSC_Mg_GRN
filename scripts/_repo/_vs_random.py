@@ -170,7 +170,7 @@ if __name__ == '__main__':
             links_stack[method] = links
             protnames_fs.append(protnames_f)
 
-        #- calculate early precision scores
+        #- calculate EP scores
         scores_series_stack: List[float] = [] #contains scores for line plot
         scores_dist_stack: List[float] = [] #contains scores for dist plot. The average score of each line
         for method_i, method in enumerate(methods):

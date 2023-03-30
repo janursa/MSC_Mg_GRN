@@ -248,7 +248,7 @@ class RolePlot:
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]
         ax.set_title(title, fontweight='bold')
-        ax.margins(.2)
+        # ax.margins(.2)
         ax.set_xlim([-1.1, 1.1])
         ax.set_ylim([-1.1, 1.1])
         ax.set_xticks([])

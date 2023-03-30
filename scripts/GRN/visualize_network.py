@@ -11,21 +11,23 @@ import numpy as np
 from pathlib import Path
 import argparse
 import igraph as ig
-import matplotlib
+import json
 from typing import List, Dict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import GRN_VISUALIZE_DIR, VSA_DIR, MODELSELECTION_DIR, F_protnames_to_genenames, F_DE_genenames
+from imports import GRN_VISUALIZE_DIR, VSA_DIR, VSA_NOISE_DIR, F_protnames_to_genenames, F_DE_genenames, F_model_name_2_method_and_DE_type, F_selected_models
 from utils.links import  choose_top_count
 from utils.VSA import RolePlot
 from VSA.analyse_roles import retreive_links_with_genenames
 
-def ig_plot(ax, nodes, edges, model_name, study):
+def ig_plot(ax, nodes, edges, model_name, study, target_genes):
+    """Plot protein connections using igplot"""
     node_names = list(nodes['Protein'].to_numpy())
     F_normalize = lambda vector: vector / np.max(vector)
-    vertex_colors = [RolePlot.roles_colors[role] for role in nodes['Role']]
+    #- node colors are only for target proteins
+    node_colors = [RolePlot.roles_colors[role] if (gene in target_genes) else 'white' for gene, role in zip(nodes['Protein'], nodes['Role'])]
     edge_weights = F_normalize(edges['Weight'].to_numpy(float))
     vertex_sizes = F_normalize(nodes['Weight'].to_numpy(float))
 
@@ -36,11 +38,7 @@ def ig_plot(ax, nodes, edges, model_name, study):
             base_vertex_size = .15
         if study == 'mg':
             base_vertex_size = .2
-    if model_name == 'day1_11_KNN_RF':
-        if study == 'ctr':
-            base_vertex_size = .15
-        if study == 'mg':
-            base_vertex_size = .3
+
     vertex_sizes = vertex_sizes/2 + base_vertex_size
 
     edge_weights =  4*(edge_weights - min(edge_weights))+  base_edge_weight
@@ -56,9 +54,9 @@ def ig_plot(ax, nodes, edges, model_name, study):
         target=ax,
         layout = layouts[0],
         vertex_size = vertex_sizes,
-        vertex_color = vertex_colors,
+        vertex_color = node_colors,
         vertex_frame_width = .2,
-        vertex_frame_color = vertex_colors,
+        # vertex_frame_color = vertex_colors,
         vertex_label = node_names,
         vertex_label_size = 9,
         edge_width = edge_weights,
@@ -209,18 +207,18 @@ if __name__ == '__main__':
     #- dir
     if not os.path.isdir(GRN_VISUALIZE_DIR):
         os.makedirs(GRN_VISUALIZE_DIR)
-    #- settings
-    figsize = (6,6)
+    #- load target genes
+    with open(Path(VSA_NOISE_DIR)/ "target_genes.json", 'r') as file:
+        target_genes_all = json.load(file)
 
     # - load names of selected models
-    selected_models = np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
+    selected_models = F_selected_models()
     # - read the links and store it for selected models
     links_all: Dict[str, List[pd.DataFrame]] = retreive_links_with_genenames(selected_models,
                                                                              F_protnames_to_genenames(), studies)
     #- for each selected model, draw the network
     for model_name in selected_models:
-        DE_type = '_'.join(model_name.split('_')[0:2])
-        target_genes= F_DE_genenames()[DE_type]
+        target_genes= target_genes_all[model_name]
         #- plot for each study seperately
         for i_study, study in enumerate(studies):
             #- retireve links
@@ -233,8 +231,8 @@ if __name__ == '__main__':
             #- plot
             edges = links
             nodes = create_nodes(edges, model_name, study)
-            fig, ax = plt.subplots(1, 1, figsize=figsize, tight_layout=True)
-            ig_plot(ax, nodes, edges, model_name, study)
+            fig, ax = plt.subplots(1, 1, figsize=(6,6), tight_layout=True)
+            ig_plot(ax, nodes, edges, model_name, study, target_genes)
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
 

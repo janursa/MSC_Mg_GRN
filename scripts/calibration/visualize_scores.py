@@ -31,8 +31,10 @@ def visualize_scores(method, ylabel, xticks, ylim):
             best_scores_stack.append(best_scores)
         # - plot
         ax = axes[idx]
-
-        ax.set_title(make_title_pretty(DE_type))
+        title = DE_type
+        title_parts = title.split('_')
+        title = '_'.join([title_parts[0]+'\n',title_parts[1]])
+        ax.set_title(make_title_pretty(title))
         bplot = ax.boxplot(best_scores_stack, notch=True, patch_artist=True, meanline=True, widths=.5)
         ax.set_ylabel(ylabel)
         ax.set_yticks(xticks)

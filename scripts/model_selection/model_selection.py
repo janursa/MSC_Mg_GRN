@@ -63,10 +63,10 @@ def extract_tag_based_data_from_modeldata(data: Dict[str, pd.DataFrame], tag: st
 def calculate_early_precision_ratio_random(golden_links: pd.DataFrame, links_random: List[pd.DataFrame],
                                             name: str, top_quantiles: List[float]) -> Tuple[List[float], List[List[float]]]:
     """
-    Calculates early precision ratio for randomly generated links.
+    Calculates EP ratio for randomly generated links.
 
     Outputs:
-        ep_scores_random_series: early precision scores calculated for each random links for each top quantile value
+        ep_scores_random_series: EP scores calculated for each random links for each top quantile value
         AUC_scores_random: AUC calculated for each random links, summing on epr scores across all top quantiles
     """
     AUC_scores_random: List[float] = []
@@ -86,7 +86,7 @@ def calculate_scores(DE_types: List[str], methods: List[str], studies: List[str]
     """ The main function to calculate scores for model selection.
     Outputs:
         test_scores: test scores for regression models
-        epr_scores_series: early precision ratio for each GRN method, for each top quantile
+        epr_scores_series: EP ratio for each GRN method, for each top quantile
         sig_AUC_vs_random: whether AUC values for GRN methods are significantly larger than AUC values obtained for random links
         AUC_scores_n:  AUC scores for GRN methods normalized with mean random AUC
         AUC_scores_random_n:  AUC scores for random links normalzied with mean random AUC
@@ -146,7 +146,7 @@ def calculate_scores(DE_types: List[str], methods: List[str], studies: List[str]
 def violinplot_all_models(AUC_scores, AUC_scores_random, sig_flags, methods_names):
     ncols = 2
     nrows = 2
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.5 * ncols, 2.25 * nrows))
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.3 * ncols, 2.1 * nrows))
 
     for idx, DE_type in enumerate(DE_types):
         random_values = AUC_scores_random[DE_type]
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
     parser.add_argument('--GRN_methods', nargs='+', default=['RF', 'ridge', 'portia'])
-    parser.add_argument('--n_random_links', default=100, type=int, help='Number of randomly generated noisy links')
+    parser.add_argument('--n_random_links', default=1000, type=int, help='Number of randomly generated noisy links')
     args, remaining_args = parser.parse_known_args()
 
     studies = args.studies
@@ -226,15 +226,15 @@ if __name__ == '__main__':
     shortlisted_scores = [epr_scores_series[name] for name in shortlisted_model_names]
     shortlisted_scores_random_included = np.vstack([[1 for _ in top_quantiles], shortlisted_scores])
 
-    line_names = [f'{name} ({round(np.sum(AUC_scores[name]), 2)})' for name in
+    line_names = [f'{make_title_pretty(name)} ({round(np.sum(AUC_scores[name]), 2)})' for name in
                                       shortlisted_model_names]
     line_names_random_included = [f'Arbitrary (1)'] + line_names
 
     fig_main, ax_main = plt.subplots(nrows=1, ncols=1, figsize=(3.5, 2.5))
     lineplot(ax=ax_main, idx=0, x_data=top_quantiles, data_stack=shortlisted_scores_random_included,
               line_names=line_names_random_included, title='', yticks= None)
+    ax_main.legend(loc='upper center', bbox_to_anchor=(1.54, 1), fancybox=False, frameon=False, title='Model (AUC)', title_fontproperties={'weight':'bold'} )
 
-    ax_main.legend(loc='upper center', bbox_to_anchor=(1.48, 1), fancybox=False, frameon=False, title='Model (AUC)', title_fontproperties={'weight':'bold'} )
     fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'lineplots_shortlisted_models.png'), bbox_inches="tight", dpi=300, transparent=True)
     fig_main.savefig(os.path.join(MODELSELECTION_DIR, f'lineplots_shortlisted_models.pdf'), bbox_inches="tight")
 

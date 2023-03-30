@@ -98,6 +98,8 @@ def run_portia(data, gene_names, **kwargs):
     return links_df
 
 
+
+
 def run_generni(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)

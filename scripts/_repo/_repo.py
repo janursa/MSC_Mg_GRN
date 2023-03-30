@@ -356,19 +356,18 @@ def plot_scores_indivitualprots(data_ctr, data_sample, preferred_names_ctr,prefe
         # axes[i].set_xticks(range(1, len(tags) + 1))
         axes[i].set_xticklabels(preferred_names_s[i],rotation=45)
     return fig
-#- show all installed fonts
-import matplotlib.font_manager
-from IPython.core.display import HTML
 
-def make_html(fontname):
-    return "<p>{font}: <span style='font-family:{font}; font-size: 24px;'>{font}</p>".format(font=fontname)
-
-code = "\n".join([make_html(font) for font in sorted(set([f.name for f in matplotlib.font_manager.fontManager.ttflist]))])
-
-# HTML("<div style='column-count: 2;'>{}</div>".format(code))
-
-# def add_score_to_links(links, scores, protnames):
-#     links['FitScore'] = None
-#     for target, score in zip(protnames, scores):
-#         links.loc[links['Target'] == target, 'FitScore'] = score
-#     return links
+def run_RF(data, i_data, DE_type, gene_names):
+    """ Runs random forest GRN inference
+    Receives proteomics data and rund GRN inference using geneRNI
+    """
+    param = dict(estimator_t = 'RF')
+    method = 'RF'
+    study = ['ctr','mg'][i_data]
+    n_timepoints = data.shape[0]
+    days = time_points()[0:n_timepoints]
+    _, param_unique = retrieve_data(study=study, DE_type=DE_type, method=method,
+                                    output_dir=CALIBRATION_DIR)
+    ests, train_scores, links_df, oob_scores, test_scores = run_generni(
+        data=data, time_points=days, gene_names=gene_names, param=param, param_unique=param_unique)
+    return links_df

@@ -87,7 +87,7 @@ def create_random_links(links_stack, n):
     return random_links
 
 def calculate_early_precision(links, golden_links, top_quantiles) -> List[float]:
-    '''  calculate normalized early precision scores for the top_quantiles
+    '''  calculate normalized EP scores for the top_quantiles
         Compare extracted links by GRN to those suggested by model_selection.
         Normalized with length of golden link to make it comparible between cases with different lengths.
     '''

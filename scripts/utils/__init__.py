@@ -29,8 +29,8 @@ from imports import DATA_DIR
 
 
 def make_title_pretty(name):
-    name = name.replace('day1_11', 'Early')
-    name = name.replace('day1_21', 'Late')
+    name = name.replace('early', 'ShortTerm')
+    name = name.replace('late', 'LongTerm')
     name = name.replace('portia', 'Portia')
     name = name.replace('ridge', 'Ridge')
     name = name.replace('_','-')
