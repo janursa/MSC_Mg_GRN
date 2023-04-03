@@ -16,7 +16,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import enrich_analysis
-from imports import ENRICH_DIR, F_selected_models, F_model_name_2_method_and_DE_type
+from imports import ENRICH_DIR, F_selected_models, F_model_name_2_method_and_DE_type, F_protnames_to_genenames
 
 def load_enrichment_data(de_type: str) -> pd.DataFrame:
     """Load enrichment data for the given DE type from a CSV file."""
@@ -71,8 +71,11 @@ def plot_enrichment_data(df_targets: list, categories: list, DE_type: str):
     fig = enrich_analysis.plot_enrich(df_targets, categories, size_tag, color_tag, xlabel, markers, figsize=figsize,
                                  legend_color=legend_color, legend_size=legend_size, legend_marker=legend_marker,
                                  title=title, scale_factor=scale_factor)
-    fig.savefig(os.path.join(ENRICH_DIR, f'{title}.png'), dpi=300, transparent=True, bbox_inches='tight')
-    fig.savefig(os.path.join(ENRICH_DIR, f'{title}.pdf'), bbox_inches='tight')
+    ENRICH_PLOTS_DIR = Path(ENRICH_DIR)/'plots'
+    if not os.path.isdir(ENRICH_PLOTS_DIR):
+        os.makedirs(ENRICH_PLOTS_DIR)
+    fig.savefig(ENRICH_PLOTS_DIR/ f'{DE_type}.png', dpi=300, transparent=True, bbox_inches='tight')
+    fig.savefig(ENRICH_PLOTS_DIR/ f'{DE_type}.pdf', bbox_inches='tight')
 
 def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], categories: List[str], DE_type: str) -> None:
     """Writes enrichment data to files for each tag (for R plots)."""
@@ -84,6 +87,15 @@ def write_term_enrichment_data_to_file(df_stack: List[pd.DataFrame], categories:
         file_name = Path(FOLDER) / f'enrichment_{DE_type}_{tag}.csv'
         with open(file_name, 'w') as f:
             df_term.to_csv(file_name, index=False)
+def change_protnames_2_genenames(df):
+    protnames_stack = df['ProteinNames']
+    genenames_stack = []
+    for protnames in protnames_stack:
+        for protname, genename in F_protnames_to_genenames().items():
+            protnames = protnames.replace(protname, genename)
+        genenames_stack.append(protnames)
+    df['ProteinNames'] = genenames_stack
+    return df
 
 if __name__ == '__main__':
     # - parse the arguments
@@ -95,7 +107,7 @@ if __name__ == '__main__':
     length_limit = args.length_limit
     #- EA for each model
     for model_name in F_selected_models():
-        method, DE_type = F_model_name_2_method_and_DE_type(model_name)
+        _, DE_type = F_model_name_2_method_and_DE_type(model_name)
         #- retrieve the enriched terms and reformat them
         df = load_enrichment_data(DE_type)
         # - shorten term names for visualization purposes
@@ -104,7 +116,9 @@ if __name__ == '__main__':
         categories = ['GO Biological Process', 'GO Biological Function', 'GO Cellular Component']
         df_targets = []
         for category in categories:
-            df_targets.append(select_top_enriched_terms(df, category, top_n=top_n, length_limit=length_limit, filter_tag= 'Strength'))
+            df_target = select_top_enriched_terms(df, category, top_n=top_n, length_limit=length_limit, filter_tag= 'Strength')
+            df_target = change_protnames_2_genenames(df_target)
+            df_targets.append(df_target)
         #- output each term's df (for R plot)
         write_term_enrichment_data_to_file(df_targets, categories, DE_type)
         #- plot

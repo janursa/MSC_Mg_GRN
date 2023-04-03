@@ -66,7 +66,7 @@ DE_protnames_F <- function(model){"read DE proteins"
   return (DE_protnames[[model]])
 }
 # protein association plot
-for (DE_type in list('day1_11_KNN','day1_21_KNN')){
+for (DE_type in list('early_MinProb','late_KNN')){
   for (term in list('process','function','component')){
     file_name = sprintf('enrichment_%s_%s.csv', DE_type, term)
     enrich_data = reireive_EA_data_F(file_name)
@@ -77,14 +77,24 @@ for (DE_type in list('day1_11_KNN','day1_21_KNN')){
     base_height = 6
     base_asp = 1.1
     circular = TRUE
-    if (DE_type == 'day1_21_KNN' & term == 'function'){
+    if (DE_type == 'late_KNN' & term == 'function'){
       base_height = 8
     }
-    if (DE_type == 'day1_21_KNN' & term == 'process'){
+    if (DE_type == 'late_KNN' & term == 'process'){
       base_height = 6
     }
-    if (DE_type == 'day1_21_KNN' & term == 'component'){
+    if (DE_type == 'late_KNN' & term == 'component'){
+      base_height = 4
+      circular = FALSE
+    }
+    if (DE_type == 'early_MinProb' & term == 'function'){
+      base_height = 6
+    }
+    if (DE_type == 'early_MinProb' & term == 'process'){
       base_height = 5
+    }
+    if (DE_type == 'early_MinProb' & term == 'component'){
+      base_height = 4
       circular = FALSE
     }
     

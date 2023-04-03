@@ -16,8 +16,8 @@ from tqdm import tqdm
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from scripts.utils import serif_font, comic_font
-from scripts.utils.links import choose_top_quantile
+from utils import serif_font, comic_font
+from utils.links import choose_top_quantile
 
 
 def __Q_P_thresholds(AS, PS) -> Tuple[float,float]: #TODO:deprecated
@@ -166,19 +166,24 @@ class RolePlot:
                                         df['Q2'].values):
 
             if custom_annotation is not None:
-                offset_x, offset_y, arrow_t, rad = custom_annotation(prot)
+                offset_x, offset_y, arrow_t, rad_text, rad_arrow, offset_text_location = custom_annotation(prot)
 
             offset_x = offset_x if (offset_x is not None) else .015
             offset_y = offset_y if (offset_y is not None) else 0.1
             arrow_t = arrow_t if (arrow_t is not None) else 'arc3'
-            rad = rad if (rad is not None) else .3
+            rad_arrow = rad_arrow if (rad_arrow is not None) else .3
+            rad_text = rad_text if (rad_text is not None) else .1
 
             x, y = x0 + offset_x * xlim, y0 + offset_y * ylim
-            ax.annotate(f'{prot}', xy=(x, y), fontsize=9)
+            if offset_text_location:
+                ax.annotate(f'{prot}', xy=(x0, y0), xytext=(x, y), arrowprops={'arrowstyle': '->', 'connectionstyle': f'{arrow_t}, rad={rad_text}', 'lw':.6, 'color':'orange'}, fontsize=9)
+            else:
+                ax.annotate(f'{prot}', xy=(x, y), fontsize=9)
 
-            ax.annotate('', xy=(x1, y1), xytext=(x0, y0),
-                        arrowprops={'arrowstyle': '->', 'connectionstyle': f'{arrow_t}, rad={rad}'}
-                        , horizontalalignment='center')
+            ax.annotate(f'', xy=(x1, y1), xytext=(x0, y0),
+                        arrowprops={'arrowstyle': '->', 'connectionstyle': f'{arrow_t}, rad={rad_arrow}'}
+                        , horizontalalignment='center', fontsize=9)
+
 
         RolePlot.mark_x(ax, 0)
         RolePlot.mark_y(ax, 0)
@@ -189,9 +194,7 @@ class RolePlot:
         '''
             Plots Q/P for ctr and mg conditions in a 1*2 subplot
         '''
-        comic_font()
-
-
+        serif_font()
         RolePlot.scatter(ax, P=data['P'], Q=data['Q'], roles=data['Role'])
         # Q_t, P_t = RolePlot.thresholds(df['Q'], df['P'])
         RolePlot.mark_x(ax, 0)
@@ -242,8 +245,8 @@ class RolePlot:
         if show_axis_names:
             # ax.set_xlabel('P (the line marks top 25 %)')
             # ax.set_ylabel('Q (the line marks top 25 %)')
-            ax.set_xlabel('Product (AS.PS)', fontweight='bold')
-            ax.set_ylabel('Quotient (AS/PS)', fontweight='bold')
+            ax.set_xlabel('Product (AS.PS)', fontweight='bold', fontsize=9)
+            ax.set_ylabel('Quotient (AS/PS)', fontweight='bold',  fontsize=9)
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         xlen, ylen = xlim[1] - xlim[0], ylim[1] - ylim[0]
@@ -297,10 +300,10 @@ class RolePlot:
         '''
         # fontsize = 9
 
-        ax.text(.01, .99, 'Active', ha='left', va='top', transform=ax.transAxes, fontweight='bold')
-        ax.text(.01, .01, 'Buffering', ha='left', va='bottom', transform=ax.transAxes, fontweight='bold')
-        ax.text(.99, .01, 'Passive', ha='right', va='bottom', transform=ax.transAxes, fontweight='bold')
-        ax.text(.99, .99, 'Critical', ha='right', va='top', transform=ax.transAxes, fontweight='bold')
+        ax.text(.01, .99, 'Active', ha='left', va='top', transform=ax.transAxes, fontweight='bold', fontsize=8)
+        ax.text(.01, .01, 'Buffering', ha='left', va='bottom', transform=ax.transAxes, fontweight='bold', fontsize=8)
+        ax.text(.99, .01, 'Passive', ha='right', va='bottom', transform=ax.transAxes, fontweight='bold', fontsize=8)
+        ax.text(.99, .99, 'Critical', ha='right', va='top', transform=ax.transAxes, fontweight='bold', fontsize=8)
 
 
 
@@ -351,7 +354,7 @@ class NoiseAnalysis:
             oo_prots: Q/P data for ctr and sample, for each gene
         '''
         assert len(data) == len(genenames)
-        comic_font()
+        serif_font()
         arrow_specs = {'arrow_type': 'arc3', 'rad': .2}
 
         for idx, (gene, data) in enumerate(zip(genenames, data)): #- plot for each prot on a seperate window

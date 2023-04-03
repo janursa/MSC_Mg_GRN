@@ -31,9 +31,9 @@ def manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights):
             scale, base = .3, .3
     if model_name == 'late_KNN_portia':
         if study == 'ctr':
-            scale, base = .3, .3
+            scale, base = .3, .35
         if study == 'mg':
-            scale, base = .3, .3
+            scale, base = .3, .4
     def standardize(vector, scale, base):
         vector = vector - min(vector)
         vector = vector/max(vector)
@@ -44,12 +44,15 @@ def manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights):
     base_edge_weight = 1
     edge_weights = 4 * (edge_weights - min(edge_weights)) + base_edge_weight
     return vertex_sizes, edge_weights
-def ig_plot(ax, nodes, edges, model_name, study, target_genes, vertex_shapes):
+def ig_plot(ax, nodes, edges, model_name, study, target_genes):
     """Plot protein connections using igplot"""
     node_names = list(nodes['Protein'].to_numpy())
     F_normalize = lambda vector: vector / np.max(vector)
     #- node colors are only for target proteins
-    node_colors = [RolePlot.roles_colors[role] if (gene in target_genes) else 'white' for gene, role in zip(nodes['Protein'], nodes['Role'])]
+    # node_colors = [RolePlot.roles_colors[role] if (gene in target_genes) else 'white' for gene, role in zip(nodes['Protein'], nodes['Role'])]
+    target_genes_colors = {gene:color for gene, color in zip(target_genes, colors[0:len(target_genes)])}
+    node_colors = [target_genes_colors[gene] if (gene in target_genes) else 'white' for gene in nodes['Protein']]
+
     edge_weights = F_normalize(edges['Weight'].to_numpy(float))
     vertex_sizes = F_normalize(nodes['Weight'].to_numpy(float))
     #- manual adjustement to the sizes
@@ -58,7 +61,6 @@ def ig_plot(ax, nodes, edges, model_name, study, target_genes, vertex_shapes):
     edges_list = [[node_names.index(reg), node_names.index(targ)] for reg, targ in edges.loc[:,['Regulator','Target']].to_numpy(str)]
     # - Construct a graph
     g = ig.Graph(n=len(node_names), edges=edges_list, directed=True)
-    arrow_shapes = ["triangle", "vee", "tee", "square", "circle", "diamond"]
     layouts = ["auto", "kamada_kawai","fruchterman_reingold"]
     ig.plot(
         g,
@@ -68,12 +70,11 @@ def ig_plot(ax, nodes, edges, model_name, study, target_genes, vertex_shapes):
         vertex_color = node_colors,
         vertex_frame_width = 1,
         vertex_frame_color = 'grey',
-        vertex_shape = 'triangle',
         vertex_label = node_names,
         vertex_label_size = 9,
         edge_width = edge_weights,
-        edge_arrow_size=.005  ,
-        arrow_shape = arrow_shapes[3],
+        edge_color = 'dimgrey',
+        edge_arrow_size=.005,
         edge_curved=True
     )
 
@@ -176,7 +177,7 @@ if __name__ == '__main__':
                                                                              F_protnames_to_genenames(), studies)
     #- standardize links
     links_all = {key: [normalize_links(links) for links in links_stack] for key, links_stack in links_all.items()}
-    node_shapes = ['rectangle']
+    colors = ['lightgreen', 'lightblue', 'orange', 'yellow', 'lightolive']
     #- for each selected model, draw the network
     for model_name in selected_models:
         target_genes= target_genes_all[model_name]
@@ -194,7 +195,7 @@ if __name__ == '__main__':
             edges = links
             nodes = create_nodes(edges, model_name, study)
             fig, ax = plt.subplots(1, 1, figsize=(6,6), tight_layout=True)
-            ig_plot(ax, nodes, edges, model_name, study, target_genes, node_shapes)
+            ig_plot(ax, nodes, edges, model_name, study, target_genes)
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.pdf', bbox_inches='tight')
             fig.savefig(Path(GRN_VISUALIZE_DIR) / f'GRN_{model_name}_{study}.png', dpi=300, transparent=True)
 
