@@ -15,7 +15,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import F_model_name_2_method_and_DE_type, VSA_DIR, GRN_DIR, CALIBRATION_DIR, time_points, F_selected_models, VSA_NOISE_DIR
-from utils.VSA import NoiseAnalysis, RolePlot
+from utils.robustness_analysis import NoiseAnalysis
 from utils.links import run_generni, run_portia
 from utils import read_write_data,serif_font
 from utils.calibration import retrieve_data

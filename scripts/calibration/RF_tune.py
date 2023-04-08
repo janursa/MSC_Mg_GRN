@@ -16,9 +16,11 @@ from utils import read_write_data, calibration
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    parser.add_argument('--n_replica', type=int, default=10)
     args, remaining_args = parser.parse_known_args()
 
     studies = args.studies
+    n_replica = args.n_replica
 
     method = 'RF'
 
@@ -39,8 +41,8 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values.tolist()
             #- define settings and calibration
             specs = dict(
-                i_start=10,
-                i_end=10,
+                i_start=0,
+                i_end=n_replica,
                 param=param,
                 gene_names=gene_names,
                 time_points=days,
@@ -48,7 +50,7 @@ if __name__ == '__main__':
                 param_grid=param_grid,
                 output_dir=os.path.join(CALIBRATION_DIR, method, DE_type, study),
                 random_state=0,
-                n_jobs=10,
+                n_jobs=1,
             )
             best_scores, best_params = calibration.calibrate(study=study, data=data, **specs)
             np.save(os.path.join(CALIBRATION_DIR, method, DE_type, f'best_scores_{study}.npy'), best_scores)

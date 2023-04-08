@@ -6,6 +6,8 @@ import sys
 import os
 import numpy as np
 import random
+
+import pandas as pd
 import scipy
 from typing import List, Dict
 
@@ -15,18 +17,17 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from utils import serif_font, flatten
 from utils.links import choose_top_quantile, normalize_links
 
-def violinplot(ax, idx, data_stack, x_labels, sig_signs, title):
+def violinplot(ax, idx:int, data_stack:np.ndarray, x_labels:List[str], sig_signs:List[str], percentages:List[str], title:str):
     serif_font()
-    # matplotlib.rcParams.update({'font.size': 12})
     bplot = ax.violinplot(data_stack.T, showmeans=True, showextrema=False)
     if idx %2 == 0:
-        ax.set_ylabel('AUC-EPR (standardize)')
-        ax.set_yticks([0,1,2])
-        ax.set_yticklabels([0, 1, 2])
+        ax.set_ylabel('Mean EPR')
+        # ax.set_yticks([0,1,2])
+        # ax.set_yticklabels([0, 1, 2])
     else:
         ax.set_yticks([0, 1, 2])
-        ax.set_yticks([])
-        ax.set_ylabel('')
+        # ax.set_yticks([])
+        # ax.set_ylabel('')
     ax.set_xticks(list(range(1,len(x_labels)+1)))
     ax.set_xticklabels(x_labels,rotation=0)
     ax.set_ymargin(.25)
@@ -51,7 +52,7 @@ def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
 
     """
     serif_font()
-    colors = ['grey', 'lightpink', 'lightblue', 'lightgreen', 'blue', 'orange', 'cyan']
+    colors = ['grey', 'lightpink', 'lightblue', 'lightgreen', 'blue', 'orange', 'cyan', 'cyan', 'cyan','cyan']
     linestyles = np.repeat(['-', '--', '-.', ':'], 2)
     for i, line_name in enumerate(line_names):
         ax.plot(x_data,
@@ -69,7 +70,7 @@ def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
     if yticks is not None:
         ax.set_yticks(yticks)
 
-def create_random_links(links_stack, n):
+def create_random_links(links_stack: List[pd.DataFrame], n:int) -> List[pd.DataFrame]:
     """
     Creates n number of random links using weights of given set of links
     """
@@ -81,7 +82,7 @@ def create_random_links(links_stack, n):
     random_links = []
     for i in range(n):
         rep = sample_links.copy()
-        rep.loc[:,'Weight'] =random.sample(weights, len(rep))
+        rep.loc[:,'Weight'] = random.sample(weights, len(rep))
         random_links.append(rep)
 
     return random_links
@@ -106,4 +107,4 @@ def calculate_early_precision(links, golden_links, top_quantiles) -> List[float]
             if ((l_regs == reg) & (l_targs == target)).any():
                 n+=1
         ns.append(n)
-    return np.asarray(ns)/len(golden_links)
+    return np.asarray(ns)/len(golden_links)*100

@@ -22,13 +22,13 @@ ENRICH_DIR = os.path.join(OUTPUT_DIR, 'enrichment_analysis')
 MODELSELECTION_DIR = os.path.join(OUTPUT_DIR, 'model_selection')
 VSA_NOISE_DIR = Path(VSA_DIR)/'noise'
 GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
-
-geneRNI_dir = os.path.join(MAIN_DIR,'..','geneRNI')
-sys.path.insert(0, geneRNI_dir)
+PLOT_WEIGHTS_DIR = Path(GRN_DIR)/'plot_weights'
+RANDOM_MODELS_DIR = Path(MODELSELECTION_DIR) / 'baseline_scores'
 
 from geneRNI.models import get_estimator_wrapper
 
-#- load protnames to genenames map
+study_colors = ['lightblue', 'pink'] #color map for ctr and sample, respectively
+
 
 def F_selected_models():
     return np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")

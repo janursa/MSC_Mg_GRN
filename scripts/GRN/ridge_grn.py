@@ -45,7 +45,6 @@ if __name__ == '__main__':
                                              param=param, param_unique=param_unique)
             #- write to file
             links.to_csv(os.path.join(GRN_DIR, method, f'links_{DE_type}_{study}.csv'), index=False)
-            # TODO: test scores are not calculated
             # np.savetxt(os.path.join(GRN_DIR, method, f'testscores_{DE_type}_{study}.csv'), testscores)
             np.savetxt(os.path.join(GRN_DIR, method, f'trainscores_{DE_type}_{study}.csv'), trainscores)
 

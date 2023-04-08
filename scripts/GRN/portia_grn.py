@@ -5,15 +5,13 @@ import argparse
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import time_points, MAIN_DIR, F_DE_protnames, GRN_DIR, DATA_DIR
-from utils import  read_write_data
+from imports import F_DE_protnames, GRN_DIR
+from utils import read_write_data
 from utils.links import run_portia
 
 
-
-
 if __name__ == '__main__':
-    #- create dir
+    #- arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
     args, remaining_args = parser.parse_known_args()
@@ -27,4 +25,5 @@ if __name__ == '__main__':
             data = read_write_data(mode='read', tag=f'{DE_type}_{study}')
             links_df = run_portia(data, DE_proteins)
             links_df.to_csv(os.path.join(GRN_DIR, 'portia', f'links_{DE_type}_{study}.csv'), index=False)
+    print('GRN inference using Portia completed')
 

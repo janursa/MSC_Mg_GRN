@@ -14,9 +14,11 @@ from utils.links import batch_run_generni
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    parser.add_argument('--n_replica', type=int, default=100)
     args, remaining_args = parser.parse_known_args()
 
     studies = args.studies
+    n_replica = args.n_replica
 
     method = 'RF'
     param = dict(estimator_t=method)
@@ -35,8 +37,8 @@ if __name__ == '__main__':
             n_timepoints = data.shape[0]
             days = time_points()[0:n_timepoints]
             specs = dict(
-                i_start=100,
-                i_end=100,
+                i_start=0,
+                i_end=n_replica,
                 param=param,
                 gene_names=gene_names,
                 time_points=days,

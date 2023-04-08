@@ -1,4 +1,5 @@
 data/evidence.txt
-results/calibration/RF/day*
-results/calibration/ridge/day*
-results/GRN/RF/day*
+results/calibration/RF/early*
+results/calibration/RF/late*
+results/GRN/RF/early*
+results/GRN/RF/late*
