@@ -17,24 +17,12 @@ from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from utils import make_title_pretty
-from imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, CALIBRATION_DIR, RANDOM_MODELS_DIR
+from imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, CALIBRATION_DIR, RANDOM_MODELS_DIR, top_quantiles
 from utils import calibration
 from utils.model_selection import lineplot, violinplot, create_random_links, calculate_early_precision
 
 score_type: TypeAlias = Dict[str, Any]  # template to store score. score_name, e.g. ep: score value
-def retrieve_test_scores(DE_type: str, method: str, studies: List[str]) -> Optional[Tuple[float, float]]:
-    """
-    Retrieves calibration test scores for ridge and RF and sets portia's score to None
-    """
-    if method == 'portia':
-        scores_studies = None
-    else:
-        scores_studies = []
-        for study in studies:
-            best_scores, _ = calibration.retrieve_data(study, method, DE_type, CALIBRATION_DIR)
-            mean_score = np.mean(best_scores)
-            scores_studies.append(mean_score)
-    return scores_studies
+
 
 
 
@@ -50,29 +38,25 @@ def extract_tag_based_data_from_modeldata(data: Dict[str, pd.DataFrame], tag: st
 
 
 
+def is_single_value(value):
+    collection_types = (list, tuple, set, dict, np.ndarray)
+    return not isinstance(value, collection_types)
+def violinplot_all_models(scores, n_repeat, methods_preferred_names):
+    methods_names = [ methods_preferred_names[score.split('_')[2]] for score in scores.keys()] # only method name
 
-def violinplot_all_models(scores, methods_preferred_names):
-    methods_names = ['Baseline'] + [methods_preferred_names[method] for method in GRN_methods]
-    ncols = 2
-    nrows = 2
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2.3 * ncols, 2.1 * nrows))
+    ncols = 1
+    nrows = 1
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(7.5 * ncols, 3 * nrows))
 
-    ep_mean_scores = {model_name: item['epr'] for model_name, item in scores.items()}
-    sig_flags = {model_name: item['sig_flag'] for model_name, item in scores.items()}
-    percentages = {model_name: item['percentage'] for model_name, item in scores.items()}
-    for idx, DE_type in enumerate(F_DE_data().keys()):
-        random_scores = get_baseline_scores(DE_type)
-        AUC_scores_methods = extract_tag_based_data_from_modeldata(ep_mean_scores, DE_type)
-        sig_flags_methods = extract_tag_based_data_from_modeldata(sig_flags, DE_type)
-        percentages_methods = extract_tag_based_data_from_modeldata(percentages, DE_type)
-        i = int(idx / ncols)
-        j = idx % ncols
-        ax_dist = axes[i][j]
-        sig_signs = [r'$*$' if flag else '' for flag in sig_flags_methods]
-        percentages_methods = [f'{item}%' for item in percentages_methods]
-        sig_signs.insert(0, '')  # for random
-        scores_dist = np.vstack([random_scores/np.mean(random_scores), [np.repeat(score, len(random_scores)) for score in AUC_scores_methods]])
-        violinplot(ax=ax_dist, idx=idx, data_stack=scores_dist, x_labels=methods_names, sig_signs=sig_signs, percentages=percentages_methods, title=make_title_pretty(DE_type))
+    scores_list = [item['epr'] for item in scores.values()]
+    sig_flags = [item['sig_flag'] for item in scores.values()]
+    percentages = [item['percentage'] for item in scores.values()]
+
+    sig_signs = [r'$*$' if flag else '' for flag in sig_flags]
+    percentages_methods = [f'{item}%' if item else '' for item in percentages]
+
+    scores_dist = [np.repeat(score, n_repeat) if (is_single_value(score)) else score for score in scores_list]
+    violinplot(ax=ax, data_stack=np.asarray(scores_dist), x_labels=methods_names, sig_signs=sig_signs, percentages=percentages_methods, title='')
 
     fig.savefig(os.path.join(MODELSELECTION_DIR, f'violinplot_all_models.png'), dpi=300, transparent=True)
     fig.savefig(os.path.join(MODELSELECTION_DIR, f'violinplot_all_models.pdf'))
@@ -106,6 +90,9 @@ def calculate_scores() -> Dict[str, score_type]:
         # - get the baseline scores
         ep_scores_random = get_baseline_scores(DE_type) #1000
         ep_score_random = np.mean(ep_scores_random)
+        all_scores['_'.join([DE_type, 'baseline'])] = {'ep':ep_scores_random,
+                                                       'epr':ep_scores_random/np.mean(ep_scores_random),
+                                                       'percentage':None, 'sig_flag':None}
         # - get the golden links
         golden_links = pd.read_csv(os.path.join(ENRICH_DIR, f'network_{DE_type}.csv'), index_col=False)
         #- scores of all DE_type
@@ -130,6 +117,7 @@ def calculate_scores() -> Dict[str, score_type]:
             # - get the test score
             # test_scores_method = retrieve_test_scores(DE_type, method, studies)  # test score is calculated for both ctr and sample
             all_scores[model_name] = {'ep':ep_score, 'epr':ep_score/ep_score_random, 'sig_flag':sig_flag, 'percentage':percentage}
+
     return all_scores
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -143,7 +131,7 @@ if __name__ == '__main__':
     studies = args.studies
     top_quantiles = np.linspace(.75, .9, 10)
     #- to be displayed on the graph
-    methods_preferred_names = {'RF':'RF', 'ridge':'Ridge', 'portia':'Portia'}
+    methods_preferred_names = {'RF':'RF', 'ridge':'Ridge', 'portia':'Portia', 'baseline':'Baseline'}
 
     #- calculate all scores for all models
     scores = calculate_scores() # model_name: scores[dict]
@@ -151,7 +139,7 @@ if __name__ == '__main__':
     #- plot epr: line and violin
     # titles = [make_title_pretty(DE_type) for DE_type in DE_types]
     # lineplot_all_models(ep_scores_all_models, top_quantiles, line_names= methods_preferred_names)
-    violinplot_all_models(scores, methods_preferred_names)
+    violinplot_all_models(scores, 1000 ,methods_preferred_names)
 
     # #- filter those that have non sig AUC vs random
     # shortlisted_model_names = list(filter(lambda x: sig_AUC_vs_random[x], sig_AUC_vs_random))

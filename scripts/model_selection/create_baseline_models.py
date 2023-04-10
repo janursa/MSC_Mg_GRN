@@ -12,7 +12,7 @@ from typing import List
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import ENRICH_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR
+from imports import ENRICH_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR, top_quantiles
 from utils.model_selection import create_random_links, calculate_early_precision
 
 
@@ -37,7 +37,6 @@ if __name__ == '__main__':
 
     methods = args.GRN_methods
     n_repeat = args.n_random_links
-    top_quantiles = np.linspace(.75, .9, 10)
     target_study = args.target_study
 
     if not os.path.isdir(RANDOM_MODELS_DIR):

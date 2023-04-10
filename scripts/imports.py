@@ -29,6 +29,7 @@ from geneRNI.models import get_estimator_wrapper
 
 study_colors = ['lightblue', 'pink'] #color map for ctr and sample, respectively
 
+top_quantiles = np.linspace(.75, .9, 10) #used to cut-off links for epr calculation
 
 def F_selected_models():
     return np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
