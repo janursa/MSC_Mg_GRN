@@ -28,13 +28,7 @@ from imports import DATA_DIR
 
 
 
-def make_title_pretty(name):
-    name = name.replace('early', 'ShortTerm')
-    name = name.replace('late', 'LongTerm')
-    name = name.replace('portia', 'Portia')
-    name = name.replace('ridge', 'Ridge')
-    name = name.replace('_','-')
-    return name
+
 def comic_font():
     matplotlib.rc('font', family='Comic Sans MS')
     matplotlib.rc('text', usetex='false')

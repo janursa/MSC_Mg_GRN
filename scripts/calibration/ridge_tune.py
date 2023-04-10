@@ -38,7 +38,7 @@ if __name__ == '__main__':
             #- define settings and calibration
             param = dict(estimator_t = method)
             specs = dict(
-                i_start=0,
+                i_start=1,
                 i_end=1,
                 param=param,
                 gene_names=gene_names,
