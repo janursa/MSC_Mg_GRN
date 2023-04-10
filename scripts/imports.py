@@ -31,6 +31,14 @@ study_colors = ['lightblue', 'pink'] #color map for ctr and sample, respectively
 
 top_quantiles = np.linspace(.75, .9, 10) #used to cut-off links for epr calculation
 
+def make_title_pretty(name):
+    name = name.replace('early', 'ShortTerm')
+    name = name.replace('late', 'LongTerm')
+    name = name.replace('portia', 'Portia')
+    name = name.replace('ridge', 'Ridge')
+    name = name.replace('baseline', 'Baseline')
+    name = name.replace('_','-')
+    return name
 def F_selected_models():
     return np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
 

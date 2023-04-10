@@ -41,7 +41,7 @@ if __name__ == '__main__':
                 gene_names = DE_data['Protein'].values.tolist()
             #- define settings and calibration
             specs = dict(
-                i_start=0,
+                i_start=n_replica,
                 i_end=n_replica,
                 param=param,
                 gene_names=gene_names,

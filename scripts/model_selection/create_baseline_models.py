@@ -13,8 +13,7 @@ from typing import List
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import ENRICH_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR, top_quantiles
-from utils.model_selection import create_random_links, calculate_early_precision
-
+from md_aux import save_baseline_scores, create_random_links, calculate_early_precision
 
 def calculate_ep_for_random_links(links_stack: List[pd.DataFrame], data_type: str) -> List[List[float]]:
     """calculate early precision ratio for random links"""
@@ -58,5 +57,4 @@ if __name__ == '__main__':
         ep_scores = np.mean(ep_scores_series, axis=1)  # 1000
         assert (np.asarray(ep_scores).shape == (n_repeat,))
 
-        np.savetxt(f'{Path(RANDOM_MODELS_DIR)}/ep_scores_{DE_type}.csv', np.asarray(ep_scores),
-                   delimiter=',')
+        save_baseline_scores(ep_scores, ep_scores_series, DE_type)

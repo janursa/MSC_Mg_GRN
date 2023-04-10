@@ -6,10 +6,11 @@ import sys
 import os
 import numpy as np
 import random
-
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy
 from typing import List, Dict
+from matplotlib.figure import Figure
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -17,62 +18,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from utils import serif_font, flatten
 from utils.links import choose_top_quantile, normalize_links
 
-def violinplot(ax, data_stack:np.ndarray, x_labels:List[str], sig_signs:List[str], percentages:List[str], title:str):
-    # - x axis
-    x_tick_locations = [i + 1 + (i // 8) for i in range(len(x_labels))] # every 8 groups closer to each other
-    ax.set_xticks(x_tick_locations)
-    ax.set_xticklabels(x_labels, rotation=30)
-    ax.set_xmargin(.025)
-    # - y axis
-    ax.set_ymargin(.25)
-    ax.set_ylabel('Mean EPR')
-    # - violin plot
-    serif_font()
-    group_colors = ["limegreen", "orangered"]
-    bplot = ax.violinplot(data_stack.T, positions=x_tick_locations, showmeans=False, showextrema=False)
-    # - plot medians as scatter plot
-    quartile1, medians, quartile3 = np.percentile(data_stack, [25, 50, 75], axis=1)
-    group_repeated_colors = list(np.repeat(group_colors, 4, axis=0))
-    meancolors = group_repeated_colors + group_repeated_colors
-    ax.scatter(x_tick_locations, medians, marker='o', color=meancolors, s=30, zorder=3)
 
-    #- face colors
-    for patch_i, patch in enumerate(bplot['bodies']):
-        patch.set_facecolor(meancolors[patch_i])
-        patch.set_edgecolor('black')
-        patch.set_alpha(1)
-    #- plot sig
-    xs = ax.get_xticks()
-    ys = np.max(data_stack, axis=1)
-    for i, value in enumerate(percentages):
-        if value != '':
-            ax.annotate(value, xy=(xs[i],ys[i]),
-                ha='center',
-                va='bottom',
-                verticalalignment='baseline',
-                textcoords='offset points',
-                xytext=(0, 5)
-                        )
-    # - plot significannce
-    for i, value in enumerate(sig_signs):
-        if value != '':
-            ax.annotate(value, xy=(xs[i], ys[i]),
-                        ha='center',
-                        va='bottom',
-                        verticalalignment='baseline',
-                        textcoords='offset points',
-                        xytext=(0, -15)
-                        )
-    # - plot the legends for the groups
-    handles = []
-    labels = ['MinProb', 'KNN']
-    for i, color in enumerate(group_colors):
-        handles.append(ax.scatter([], [], marker='o', label=labels[i], color=color,
-                                  s=30, alpha=1))
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=2, handles=handles, title='', fancybox=False,
-                   frameon=False, prop={'size': 10}, title_fontproperties={'size': 9, 'weight': 'bold'})
-
-    ax.set_title(title)
 def lineplot(ax, idx, x_data, data_stack, line_names, title, yticks):
     """ Line plot for the epr scores versus top quantiles
 
