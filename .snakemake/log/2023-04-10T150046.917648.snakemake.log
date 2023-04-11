@@ -1,0 +1,3 @@
+AttributeError in file C:\Users\nourisa\Documents\testProjs\proteomics_MSC_Mg_model\Snakefile, line 179:
+'Namedlist' object has no attribute 'selected_models'
+  File "C:\Users\nourisa\Documents\testProjs\proteomics_MSC_Mg_model\Snakefile", line 179, in <module>

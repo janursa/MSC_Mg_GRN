@@ -1,0 +1,22 @@
+Building DAG of jobs...
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                             count    min threads    max threads
+----------------------------  -------  -------------  -------------
+line_plot_shortlisted_models        1              1              1
+total                               1              1              1
+
+Select jobs to execute...
+
+[Mon Apr 10 18:08:02 2023]
+Job 0: Plots epr vs top quantiles for the shortlisted models
+Reason: Missing output files: results/model_selection/line_plot.pdf
+
+Waiting at most 5 seconds for missing files.
+MissingOutputException in rule line_plot_shortlisted_models in file C:\Users\nourisa\Documents\testProjs\proteomics_MSC_Mg_model\Snakefile, line 173:
+Job 0 completed successfully, but some output files are missing. Missing files after 5 seconds. This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait:
+results/model_selection/line_plot.pdf
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake\log\2023-04-10T180801.059915.snakemake.log

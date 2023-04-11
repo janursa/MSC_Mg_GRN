@@ -1,5 +1,4 @@
 data/evidence.txt
-results/calibration/RF/early*
-results/calibration/RF/late*
 results/GRN/RF/early*
 results/GRN/RF/late*
+*__*

@@ -1,0 +1,11 @@
+category,BackgroundGeneCount,ProteinCount,ProteinNames,FDR,Description,Strength
+GO Cellular Component,2,2,"XRCC6,XRCC5",0.0035,Ku70:Ku80 complex,5.675650457120422
+GO Cellular Component,6,2,"OGDH,DLST",0.012,Oxoglutarate dehydrogenase complex,1.837667629296346
+GO Cellular Component,6,2,"NONO,SFPQ",0.012,Paraspeckles,1.837667629296346
+GO Cellular Component,9,2,"XRCC6,XRCC5",0.0209,Nonhomologous end joining complex,1.4304719038114166
+GO Cellular Component,13,2,"XRCC6,XRCC5",0.0359,Nuclear telomere cap complex,1.183154660395488
+GO Cellular Component,32,3,"NUFIP2,RPL8,RPS26",0.0068,Polysomal ribosome,0.9601603681432276
+GO Cellular Component,65,5,"PXN,SYNPO2,TPM3,SEPTIN9,PDLIM5",0.0002,Stress fiber,0.8923202121102218
+GO Cellular Component,73,3,"NUFIP2,CAPRIN1,CIRBP",0.0432,Cytoplasmic stress granule,0.7182822031091927
+GO Cellular Component,227,5,"SYNPO2,MYL1,CALD1,TPM3,PDLIM5",0.0192,Myofibril,0.6027491959832106
+GO Cellular Component,405,7,"LRP1,RPL8,PXN,SYNPO2,YWHAG,ARPC1B,LMO7",0.0061,Focal adhesion,0.5670451524728302

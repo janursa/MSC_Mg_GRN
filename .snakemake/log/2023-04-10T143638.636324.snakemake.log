@@ -1,0 +1,24 @@
+Building DAG of jobs...
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                                 count    min threads    max threads
+--------------------------------  -------  -------------  -------------
+calculate_model_selection_scores        1              1              1
+create_baseline_models                  1              1              1
+total                                   2              1              1
+
+Select jobs to execute...
+
+[Mon Apr 10 14:36:39 2023]
+Job 1: Creates random baseline models using inferred links and calculate ep for random models
+Reason: Missing output files: C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_early_MinProb.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_early_KNN.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_late_MinProb.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_late_KNN.csv; Updated input files: C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_late_MinProb_ctr.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_late_KNN_mg.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_early_MinProb_ctr.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_late_MinProb_mg.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_late_KNN_ctr.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_early_KNN_ctr.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_early_MinProb_mg.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/GRN/ridge/Links_early_KNN_mg.csv
+
+Failed to set marker file for job started ([WinError 3] The system cannot find the path specified: 'C:\\Users\\nourisa\\Documents\\testProjs\\proteomics_MSC_Mg_model\\.snakemake\\incomplete\\tmp88t82bh2.QzovVXNl' -> 'C:\\Users\\nourisa\\Documents\\testProjs\\proteomics_MSC_Mg_model\\.snakemake\\incomplete\\QzovVXNlcnMvbm91cmlzYS9Eb2N1bWVudHMvdGVzdFByb2pzL3Byb3Rlb21pY3NfTVNDX01nX21vZGVsL3NjcmlwdHMvLi4vcmVzdWx0cy9tb2RlbF9zZWxlY3Rpb24vYmFzZWxpbmVfc2NvcmVzL2VwX3Njb3Jlc19lYXJseV9NaW5Qcm9iLmNzdg=='). Snakemake will work, but cannot ensure that output files are complete in case of a kill signal or power loss. Please ensure write permissions for the directory C:\Users\nourisa\Documents\testProjs\proteomics_MSC_Mg_model\.snakemake
+WorkflowError:
+Error recording metadata for finished job ([WinError 3] The system cannot find the path specified: 'C:\\Users\\nourisa\\Documents\\testProjs\\proteomics_MSC_Mg_model\\.snakemake\\metadata\\tmpk39f_u4l.QzovVXNl' -> 'C:\\Users\\nourisa\\Documents\\testProjs\\proteomics_MSC_Mg_model\\.snakemake\\metadata\\QzovVXNlcnMvbm91cmlzYS9Eb2N1bWVudHMvdGVzdFByb2pzL3Byb3Rlb21pY3NfTVNDX01nX21vZGVsL3NjcmlwdHMvLi4vcmVzdWx0cy9tb2RlbF9zZWxlY3Rpb24vYmFzZWxpbmVfc2NvcmVzL2VwX3Njb3Jlc19lYXJseV9NaW5Qcm9iLmNzdg=='). Please ensure write permissions for the directory C:\Users\nourisa\Documents\testProjs\proteomics_MSC_Mg_model\.snakemake
+Removing output files of failed job create_baseline_models since they might be corrupted:
+C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_early_MinProb.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_early_KNN.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_late_MinProb.csv, C:/Users/nourisa/Documents/testProjs/proteomics_MSC_Mg_model/scripts/../results/model_selection/baseline_scores/ep_scores_late_KNN.csv
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake\log\2023-04-10T143638.636324.snakemake.log

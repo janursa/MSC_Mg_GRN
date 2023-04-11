@@ -1,0 +1,19 @@
+Building DAG of jobs...
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                                 count    min threads    max threads
+--------------------------------  -------  -------------  -------------
+calculate_model_selection_scores        1              1              1
+total                                   1              1              1
+
+Select jobs to execute...
+
+[Mon Apr 10 14:41:03 2023]
+Job 0: Calculates model selections scores of early precision rate, sig flags, etc.
+Reason: Updated input files: results/model_selection/baseline_scores/ep_scores_early_MinProb.csv, results/model_selection/baseline_scores/ep_scores_early_KNN.csv, results/model_selection/baseline_scores/ep_scores_late_MinProb.csv, results/model_selection/baseline_scores/ep_scores_late_KNN.csv
+
+[Mon Apr 10 14:41:05 2023]
+Finished job 0.
+1 of 1 steps (100%) done
+Complete log: .snakemake\log\2023-04-10T144102.555910.snakemake.log

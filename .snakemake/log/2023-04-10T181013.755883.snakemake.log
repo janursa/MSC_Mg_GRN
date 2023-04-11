@@ -1,0 +1,72 @@
+Building DAG of jobs...
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                                 count    min threads    max threads
+--------------------------------  -------  -------------  -------------
+calculate_model_selection_scores        1              1              1
+create_baseline_models                  1              1              1
+line_plot_shortlisted_models            1              1              1
+model_selection                         1              1              1
+model_selection_violin_plot             1              1              1
+select_best_models                      1              1              1
+total                                   6              1              1
+
+Select jobs to execute...
+
+[Mon Apr 10 18:10:14 2023]
+Job 3: Creates random baseline models using inferred links and calculate ep for random models
+Reason: Missing output files: results/model_selection/baseline_scores/ep_scores_series_early_MinProb.csv, results/model_selection/baseline_scores/ep_scores_series_early_KNN.csv, results/model_selection/baseline_scores/ep_scores_early_MinProb.csv, results/model_selection/baseline_scores/ep_scores_early_KNN.csv, results/model_selection/baseline_scores/ep_scores_series_late_MinProb.csv, results/model_selection/baseline_scores/ep_scores_late_KNN.csv, results/model_selection/baseline_scores/ep_scores_series_late_KNN.csv, results/model_selection/baseline_scores/ep_scores_late_MinProb.csv
+
+[Mon Apr 10 18:11:24 2023]
+Finished job 3.
+1 of 6 steps (17%) done
+Select jobs to execute...
+
+[Mon Apr 10 18:11:24 2023]
+Job 2: Calculates model selections scores of early precision rate, sig flags, etc.
+Reason: Missing output files: results/model_selection/scores.json; Input files updated by another job: results/model_selection/baseline_scores/ep_scores_series_early_MinProb.csv, results/model_selection/baseline_scores/ep_scores_series_early_KNN.csv, results/model_selection/baseline_scores/ep_scores_early_MinProb.csv, results/model_selection/baseline_scores/ep_scores_early_KNN.csv, results/model_selection/baseline_scores/ep_scores_series_late_MinProb.csv, results/model_selection/baseline_scores/ep_scores_late_KNN.csv, results/model_selection/baseline_scores/ep_scores_series_late_KNN.csv, results/model_selection/baseline_scores/ep_scores_late_MinProb.csv
+
+[Mon Apr 10 18:11:27 2023]
+Finished job 2.
+2 of 6 steps (33%) done
+Select jobs to execute...
+
+[Mon Apr 10 18:11:27 2023]
+Job 10: Select best models for early and late phases by filtering based on R2 score, sig_flag and using epr score
+Reason: Missing output files: results/model_selection/selected_models.txt, results/model_selection/shortlisted_models.txt; Input files updated by another job: results/model_selection/scores.json
+
+[Mon Apr 10 18:11:28 2023]
+Finished job 10.
+3 of 6 steps (50%) done
+Select jobs to execute...
+
+[Mon Apr 10 18:11:28 2023]
+Job 11: Plots epr vs top quantiles for the shortlisted models
+Reason: Missing output files: results/model_selection/lineplot.pdf; Input files updated by another job: results/model_selection/scores.json, results/model_selection/shortlisted_models.txt
+
+[Mon Apr 10 18:11:34 2023]
+Finished job 11.
+4 of 6 steps (67%) done
+Select jobs to execute...
+
+[Mon Apr 10 18:11:34 2023]
+Job 1: Violin plot for all models
+Reason: Missing output files: results/model_selection/violinplot.pdf; Input files updated by another job: results/model_selection/scores.json
+
+[Mon Apr 10 18:11:37 2023]
+Finished job 1.
+5 of 6 steps (83%) done
+Select jobs to execute...
+
+[Mon Apr 10 18:11:37 2023]
+localrule model_selection:
+    input: results/model_selection/violinplot.pdf, results/model_selection/shortlisted_models.txt, results/model_selection/selected_models.txt, results/model_selection/lineplot.pdf
+    jobid: 0
+    reason: Input files updated by another job: results/model_selection/violinplot.pdf, results/model_selection/lineplot.pdf, results/model_selection/selected_models.txt, results/model_selection/shortlisted_models.txt
+    resources: tmpdir=C:\Users\nourisa\AppData\Local\Temp
+
+[Mon Apr 10 18:11:37 2023]
+Finished job 0.
+6 of 6 steps (100%) done
+Complete log: .snakemake\log\2023-04-10T181013.755883.snakemake.log

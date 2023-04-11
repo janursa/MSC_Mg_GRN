@@ -1,0 +1,15 @@
+Building DAG of jobs...
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                   count    min threads    max threads
+------------------  -------  -------------  -------------
+select_best_models        1              1              1
+total                     1              1              1
+
+Select jobs to execute...
+
+[Mon Apr 10 16:48:09 2023]
+Job 0: Select best models for early and late phases by filtering based on R2 score, sig_flag and using epr score
+Reason: Missing output files: results/model_selection/selected_models.*, results/model_selection/shortlisted_models.*
+
