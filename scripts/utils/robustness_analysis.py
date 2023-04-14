@@ -1,5 +1,5 @@
 """
-    Sets of functions useful for robustness analysis against noise
+    Sets of functions useful for robustness_analysis analysis against noise
 """
 import sys
 import os
@@ -17,7 +17,7 @@ from utils.VSA import role_analysis, RolePlot
 
 class NoiseAnalysis:
     """
-    This class handles the functions for the robustness analysis of VSA results for role change from ctr to
+    This class handles the functions for the robustness_analysis analysis of VSA results for role change from ctr to
     sample. It introduces different types and levels of noise to input datasets and runs the GRN methods to infer
     noise outputs. Then, it uses VSA to determine the roles for the noisy datasets. Finally, it plots the noisy
     roles to examine if the roles are statistically different from ctr to sample.

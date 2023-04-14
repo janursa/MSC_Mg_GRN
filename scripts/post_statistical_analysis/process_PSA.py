@@ -12,26 +12,22 @@ import argparse
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import STATISTICAL_ANALYSIS_DIR, DATA_DIR
-from edit_data.edit import correct_entry
+from imports import DATA_DIR
 from utils import read_write_data, process_data
-
-def main(IMPUT_FILE:str, SIG_FILE:str, sig_t:float) -> Tuple[list,pd.DataFrame]:
+from psa_aux import load_sig_df, load_imputated_df
+def extract_de_data(imput_method, period_days, sig_t:float) -> Tuple[list,pd.DataFrame]:
+    """ Extracts DE proteins and data
+    """
     # load the imputed df
-    df_imput = pd.read_csv(IMPUT_FILE)
-    df_imput.rename(columns={'Unnamed: 0': 'Protein'}, inplace=True)
-    df_imput = correct_entry(df_imput, 'Protein')
+    df_imput = load_imputated_df(imput_method, period_days)
     # read the sig results
-    df_sig = pd.read_csv(SIG_FILE, index_col=False)
-    df_sig = correct_entry(df_sig, 'Protein')
-    df_sig.drop(columns=['Unnamed: 0'], inplace=True)
+    df_sig = load_sig_df(imput_method, period_days)
     # sort the data to make them comparable
     df_imput.sort_values('Protein', inplace=True)
     df_imput.reset_index(drop=True, inplace=True)
     df_sig.sort_values('Protein', inplace=True)
     df_sig.reset_index(drop=True, inplace=True)
     # determine sign proteins
-
     sig_flags = (df_sig['P.Value'] < sig_t).tolist()
     print(f'Number of DE proteins {sig_flags.count(True)}')
     # output the DE proteins to a file
@@ -57,16 +53,12 @@ if __name__ == '__main__':
 
     DE_data = {}
     DE_proteins = {}
-    for period_phase, period_days in zip(periods, periods_days):
+    for period_phase, period in zip(periods, periods_days):
         for imput in imputs:
-            IMPUT_FILE =  os.path.join(STATISTICAL_ANALYSIS_DIR, period_days, f'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imput}.csv')  # dir for the imputated df
-            TOPTABLE_FILE = os.path.join(STATISTICAL_ANALYSIS_DIR, period_days, f'DiffExp_tables/TopTable_TimeCourse_{imput}.csv')  # dir for the sig analysis
-
-            DE_protnames_single, DE_data_single = main(IMPUT_FILE, TOPTABLE_FILE, sig_t)
+            DE_protnames_single, DE_data_single = extract_de_data(imput, period, sig_t)
             tag = '_'.join([period_phase, imput])
             DE_proteins[tag] = DE_protnames_single
             DE_data[tag] = DE_data_single
-
             #- extract data in the format of arrays and store it for each model
             for study in studies:
                 data = process_data(DE_data_single, study=study)

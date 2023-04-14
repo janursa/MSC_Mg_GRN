@@ -46,7 +46,7 @@ def manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights):
     return vertex_sizes, edge_weights
 def ig_plot(ax, nodes, edges, model_name, study, target_genes):
     """Plot protein connections using igplot"""
-    node_names = list(nodes['Protein'].to_numpy())
+    node_names = nodes['Protein'].tolist()
     F_normalize = lambda vector: vector / np.max(vector)
     #- node colors are only for target proteins
     # node_colors = [RolePlot.roles_colors[role] if (gene in target_genes) else 'white' for gene, role in zip(nodes['Protein'], nodes['Role'])]

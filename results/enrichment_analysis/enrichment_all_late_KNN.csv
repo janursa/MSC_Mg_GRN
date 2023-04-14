@@ -144,7 +144,7 @@ SMART,2,2,"P12956,P13010",0.0276,Ku70 and Ku80 are 70kDa and 80kDa subunits of t
 PMID,138,9,"Q15233,P21281,Q96CW1,P61981,P23246,P12956,Q07065,P13010,P04179",0.00046,(2016) Protein Co-Expression Analysis as a Strategy to Complement a Standard Quantitative Proteomics Approach: Case of a Glioblastoma Multiforme Study.,0.8411332383856551
 PMID,210,9,"P07339,P61981,P05976,P37837,P23246,P12956,P06753,P13010,P04179",0.0079,"(2022) A master autoantigen-ome links alternative splicing, female predilection, and COVID-19 to autoimmune diseases.",0.7298524526803123
 PMID,23,5,"Q13263,Q15233,P23246,P12956,P13010",0.0113,(2021) FUS-dependent liquid-liquid phase separation is important for DNA repair initiation.,1.4676933453372545
-PMID,69,6,"P27816,Q05682,P18859,Q01995,Q8WWI1,P04179",0.0363,(2016) Prostate stromal cell proteomics analysis discriminates normal from tumour reactive stromal phenotypes.,0.937166026567754
+PMID,69,6,"P27816,Q05682,P18859,Q01995,Q8WWI1,P04179",0.0364,(2016) Prostate stromal cell proteomics analysis discriminates normal from tumour reactive stromal phenotypes.,0.937166026567754
 WikiPathways,42,4,"O94925,P37837,P40926,P36957",0.0038,Metabolic reprogramming in colon cancer,0.9694539935021435
 WikiPathways,18,3,"Q02218,P40926,P36957",0.0068,TCA cycle (aka Krebs or citric acid cycle),1.247299057719659
 WikiPathways,91,4,"Q02218,O94925,P40926,P36957",0.0227,Amino acid metabolism,0.7343072109058295

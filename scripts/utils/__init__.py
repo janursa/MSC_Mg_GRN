@@ -104,7 +104,7 @@ def read_write_data(tag, mode, data=None):
     else:
         assert data is not None
         np.savetxt(file_name, data, delimiter=",")
-def process_data(df_target, study) -> np.array :
+def process_data(df_target, study) -> np.ndarray:
     '''
         Extract training data from df and returns it in a from of array
     '''

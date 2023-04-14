@@ -115,8 +115,8 @@ Uniprot Keywords,2383,19,"Q02790,Q15459,Q7Z417,P80723,Q969G3,Q9UN86,Q14203,P6090
 Uniprot Keywords,62,4,"P24844,P05976,P67936,Q01995",0.0011,Muscle protein,0.8351563696385724
 Uniprot Keywords,5028,22,"Q02790,P60228,Q7Z417,P16989,Q07954,P49023,P31949,P21399,Q99613,P67936,Q9UN86,Q14203,Q9NQP4,P67809,Q07065,P62328,Q92841,Q16181,Q01995,P09104,P05787,Q9Y5S9",0.0075,Cytoplasm,0.423879873785494
 PMID,110,8,"Q07954,P49023,P31949,P13667,P60903,P05556,Q01995,P05787",0.00036,(2020) Biomarkers of tumor invasiveness in proteomics (Review).,0.8754014872921642
-PMID,36,5,"P31949,P67936,P05556,P62888,Q01995",0.0397,(2022) Analysis of senescence-responsive stress fiber proteome reveals reorganization of stress fibers mediated by elongation factor eEF2 in HFF-1 cells.,1.1503088835979212
-PMID,36,5,"P24844,P05976,P67936,Q16181,Q01995",0.0397,(2012) Quantification of protein isoforms in mesenchymal stem cells by reductive dimethylation of lysines in intact proteins.,1.1503088835979212
+PMID,36,5,"P31949,P67936,P05556,P62888,Q01995",0.0398,(2022) Analysis of senescence-responsive stress fiber proteome reveals reorganization of stress fibers mediated by elongation factor eEF2 in HFF-1 cells.,1.1503088835979212
+PMID,36,5,"P24844,P05976,P67936,Q16181,Q01995",0.0398,(2012) Quantification of protein isoforms in mesenchymal stem cells by reductive dimethylation of lysines in intact proteins.,1.1503088835979212
 Reactome Pathways,108,5,"P60228,Q99613,P18621,P47914,P62888",0.0047,L13a-mediated translational silencing of Ceruloplasmin expression,0.7470734367789704
 Reactome Pathways,99,5,"P60228,Q99613,P18621,P47914,P62888",0.0047,Formation of a pool of free 40S subunits,0.7685627134356309
 Reactome Pathways,109,5,"P60228,Q99613,P18621,P47914,P62888",0.0047,GTP hydrolysis and joining of the 60S ribosomal subunit,0.7448663730489575

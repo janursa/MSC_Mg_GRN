@@ -102,7 +102,9 @@ def plot_enrich(df_stack, tags, size_tag, color_tag, xlabel, marker_types, figsi
         # CB.ax.tick_params(labelsize=fontsize['fontsize'])
     return fig
 
-def string_network_analysis(my_genes: List[str], string_api: str) -> pd.DataFrame:
+def string_network_analysis(my_genes: List[str], string_api: str="https://version-11-5.string-db.org/api") -> pd.DataFrame:
+    """Extract protein network interactions from string database"""
+
     output_format = "tsv"
     method = "network"
 
@@ -132,7 +134,7 @@ def string_network_analysis(my_genes: List[str], string_api: str) -> pd.DataFram
     df.rename(columns={'preferredName_A': 'Regulator', 'preferredName_B': 'Target', 'score': 'Weight'},
               inplace=True)
     return df
-def string_functions_analysis(my_genes, string_api):
+def string_functions_analysis(my_genes, string_api="https://version-11-5.string-db.org/api"):
     output_format = "tsv"
     method = "enrichment"
     request_url = "/".join([string_api, output_format, method])

@@ -83,7 +83,7 @@ def run_portia(data, gene_names, **kwargs):
     for exp_id, data_i in enumerate(data):
         portia_dataset.add(pt.Experiment(exp_id, data_i))
     # - GRN inference
-    M_bar = pt.run(portia_dataset, method='fast', verbose=False)
+    M_bar = pt.run(portia_dataset, method='fast', verbose=False, normalize=True)
     links_df = format_links(M_bar, gene_names)
     return links_df
 

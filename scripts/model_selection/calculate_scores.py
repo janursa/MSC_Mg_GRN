@@ -6,7 +6,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import scipy
 import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
@@ -17,8 +16,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import ENRICH_DIR, CALIBRATION_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR, top_quantiles
 from utils import calibration
-from md_aux import calculate_early_precision
-from md_aux import score_type, get_baseline_scores, save_scores
+from md_aux import score_type, get_baseline_scores, save_scores, determine_sig_flag, calculate_early_precision
 
 
 def retrieve_prediction_scores(DE_type: str, method: str, studies: List[str]) -> Optional[Tuple[float, float]]:
@@ -64,11 +62,7 @@ def calculate_scores() -> Dict[str, score_type]:
                         x > ep_score)  # Count how many elements in 'a' are bigger than 'b'
             percentile_rank = int((count / len(ep_scores_random)) * 100)  # Calculate the percentile_rank
             # - check if AUC values are sig larger than random values
-            s, p = scipy.stats.ttest_1samp(ep_scores_random, ep_score)
-            if (p < 0.05) & (ep_score > np.mean(ep_scores_random)):
-                sig_flag = True
-            else:
-                sig_flag = False
+            sig_flag = determine_sig_flag(ep_scores_random, ep_score)
             # - get the test score
             test_scores_method = retrieve_prediction_scores(DE_type, method, studies)  # test score is calculated for both ctr and sample
             all_scores[model_name] = {'R2':test_scores_method,

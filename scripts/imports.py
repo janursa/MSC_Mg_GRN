@@ -24,6 +24,8 @@ VSA_NOISE_DIR = Path(VSA_DIR)/'noise'
 GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
 PLOT_WEIGHTS_DIR = Path(GRN_DIR)/'plot_weights'
 RANDOM_MODELS_DIR = Path(MODELSELECTION_DIR) / 'baseline_scores'
+ROBUSTENESS_DIR = Path(OUTPUT_DIR)/'robustness_analysis'
+RANDOM_FEATURE_DIR = Path(ROBUSTENESS_DIR)/ 'random_feature_selection'
 
 from geneRNI.models import get_estimator_wrapper
 

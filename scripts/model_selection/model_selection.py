@@ -38,5 +38,5 @@ if __name__ == '__main__':
     best_model_names = [shortlisted_modelnames_early[np.argmax(shortlisted_epr_scores_early)],
                         shortlisted_modelnames_late[np.argmax(shortlisted_epr_scores_late)]]
     for model_name in best_model_names:
-        print(f"{model_name} -> ep scores: {scores[model_name]['ep_series']}")
+        print(f"{model_name} -> ep scores: {np.mean(scores[model_name]['ep_series'])}")
     np.savetxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), best_model_names, delimiter=",", fmt="%s")

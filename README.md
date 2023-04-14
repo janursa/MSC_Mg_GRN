@@ -5,7 +5,7 @@
 - statistical_analysis: results of time-series statitical analysis
 - scripts: python scripts that process the whole analysis after statistical analysis
 - results: results produced by this study, exluding statistical analysis
-- R: contains R scripts, which are for tests and are not used for the purpose of this study
+- R: contains R scripts, which are only used for plotting protein annotations
 
 # Authors
 # Contribution

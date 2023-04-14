@@ -47,13 +47,10 @@ rule enrichment_analysis:
     output:
         annotations = expand(Path(ENRICH_DIR)/ 'enrichment_all_{period}_{imput}.csv', period=periods, imput=imputs),
         network = expand(Path(ENRICH_DIR) / 'network_{period}_{imput}.csv', period=periods, imput=imputs)
-    params:
-        do_func_analysis = True,
-        do_network_analysis = True
     message:
         "Conduct enrichment analysis using STRING to obtain enriched netwrok and biological functions"
-    shell:
-        "python scripts/enrichment_analysis/string_enquiry.py --do_func_analysis {params.do_func_analysis} --do_network_analysis {params.do_network_analysis}"
+    script:
+        "scripts/enrichment_analysis/string_enquiry.py"
 
 rule calibrate_RF_models:
     input:

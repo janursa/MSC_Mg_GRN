@@ -16,7 +16,7 @@ from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import ENRICH_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, CALIBRATION_DIR, RANDOM_MODELS_DIR, top_quantiles, make_title_pretty
+from imports import ENRICH_DIR, MODELSELECTION_DIR, top_quantiles, make_title_pretty, F_selected_models
 from md_aux import lineplot, retreieve_scores
 
 def calculate_epr_series(model_names:List[str], ep_series_scores:Dict[str, List[float] | List[List[float]]]) -> List[List[float]]:
@@ -43,7 +43,8 @@ if __name__ == '__main__':
     # - retreive scores
     scores = retreieve_scores()
     # - get the shortlisted model
-    shortlisted_modelnames = list(np.genfromtxt(os.path.join(MODELSELECTION_DIR, f'shortlisted_models.txt'), delimiter=",", dtype=str))
+    # shortlisted_modelnames = list(np.genfromtxt(os.path.join(MODELSELECTION_DIR, f'shortlisted_models.txt'), delimiter=",", dtype=str))
+    shortlisted_modelnames = list(F_selected_models())
     # - extract ep series for shortlisted models
     ep_scores = [value['ep_series'] for key,value in scores.items() if key in shortlisted_modelnames]
     # - calculate epr series
@@ -54,16 +55,17 @@ if __name__ == '__main__':
     # - add random score and name to the data
     assert (len(epr_series) == len(shortlisted_modelnames))
     epr_mean_scores = [1.0] + epr_mean_scores
-    models_names = ['baseline'] + shortlisted_modelnames
+    models_names = ['Short-term' if ('early' in name) else 'Long-term' for name in shortlisted_modelnames]
+    models_names = ['Baseline'] + models_names
     models_names = [f'{name} ({score})' for name, score in zip(models_names, epr_mean_scores)]
     epr_baseline = np.repeat(1, len(top_quantiles))
     data_stack = np.vstack([epr_baseline, epr_series])
     # - plot
-    models_names = [make_title_pretty(name) for name in models_names]
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3.5, 2.2))
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.7, 2))
     lineplot(ax=ax, x_data=top_quantiles, data_stack=data_stack,
               line_names=models_names, title='', yticks= None)
-    ax.legend(loc='upper center', bbox_to_anchor=(1.54, 1), fancybox=False, frameon=False, title='Model (Mean EPR)', title_fontproperties={'weight':'bold'} )
+    ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1), fancybox=False, frameon=False, title='Model (Mean EPR)', title_fontproperties={'weight':'bold'} )
 
     fig.savefig(os.path.join(MODELSELECTION_DIR, f'lineplot.png'), bbox_inches="tight", dpi=300, transparent=True)
     fig.savefig(os.path.join(MODELSELECTION_DIR, f'lineplot.pdf'), bbox_inches="tight")
