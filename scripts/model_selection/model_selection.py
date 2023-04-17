@@ -9,7 +9,7 @@ import argparse
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from md_aux import retreieve_scores
+from common_tools.model_selection import retreieve_scores
 from imports import MODELSELECTION_DIR
 
 if __name__ == '__main__':

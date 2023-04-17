@@ -12,7 +12,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import ENRICH_DIR, F_DE_protnames
-from utils.enrich_analysis import string_functions_analysis, string_network_analysis
+from common_tools.enrich_analysis import string_functions_analysis, string_network_analysis
 
 
 

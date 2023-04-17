@@ -2,7 +2,9 @@ import os
 from subprocess import run
 from pathlib import Path
 import numpy as np
-from scripts.imports import MAIN_DIR, DATA_DIR, STATISTICAL_ANALYSIS_DIR, ENRICH_DIR, CALIBRATION_DIR, GRN_DIR, MODELSELECTION_DIR, VSA_DIR, VSA_NOISE_DIR, GRN_VISUALIZE_DIR, F_selected_models, F_model_name_2_method_and_DE_type, RANDOM_MODELS_DIR, F_DE_data
+from scripts.imports import MAIN_DIR, DATA_DIR, STATISTICAL_ANALYSIS_DIR, ENRICH_DIR, CALIBRATION_DIR, GRN_DIR, \
+    MODELSELECTION_DIR, VSA_DIR, VSA_NOISE_DIR, GRN_VISUALIZE_DIR, F_selected_models, F_model_name_2_method_and_DE_type, \
+    F_DE_data,RANDOM_REGULATORS_DIR, MODELSELECTION_BASELINE_DIR
 
 periods = ['early', 'late']
 periods_days = ['day1_11', 'day1_21']
@@ -15,7 +17,6 @@ def selected_models():
         return F_selected_models()
     else:
         return []
-
 rule edit_original_proteomics_data:
     input:
         Path(MAIN_DIR)/'data'/'original_omics.xlsx'
@@ -23,11 +24,10 @@ rule edit_original_proteomics_data:
         Path(DATA_DIR)/'edited_data.csv'
     shell:
         "python scripts/edit_data/edit.py --original_df_dir {input} --df_dir {output}"
-
-
 rule extract_differntial_expression_data:
     input:
-        expand(Path(STATISTICAL_ANALYSIS_DIR)/ '{period}'/ 'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imput}.csv', period=periods_days, imput=imputs)
+        imput_data = expand(Path(STATISTICAL_ANALYSIS_DIR) / '{period}' / 'ProteinAbundance_tables/ProtAbundance__Norm_n_Imp_{imput}.csv', period=periods_days, imput=imputs),
+        sig_table = expand(Path(STATISTICAL_ANALYSIS_DIR) / '{period}' / 'DiffExp_tables/TopTable_TimeCourse_{imput}.csv', period=periods_days, imput=imputs),
     output:
         data = expand(Path(DATA_DIR)/"data_{period}_{imput}_{study}.csv", period=periods, imput=imputs, study=studies),
         DE_protnames = Path(DATA_DIR)/'DE_protnames.txt',
@@ -40,7 +40,6 @@ rule extract_differntial_expression_data:
     threads: 1
     shell:
         "python scripts/post_statistical_analysis/process_PSA.py --periods {periods} --periods_days {periods_days} --imputs {imputs} --studies {studies}"
-
 rule enrichment_analysis:
     input:
         rules.extract_differntial_expression_data.output.DE_protnames
@@ -51,7 +50,6 @@ rule enrichment_analysis:
         "Conduct enrichment analysis using STRING to obtain enriched netwrok and biological functions"
     script:
         "scripts/enrichment_analysis/string_enquiry.py"
-
 rule calibrate_RF_models:
     input:
         ancient(rules.extract_differntial_expression_data.output.DE_data)
@@ -64,7 +62,6 @@ rule calibrate_RF_models:
         "Conduct calibration of random forest based models"
     shell:
         "python scripts/calibration/RF_tune.py --studies {studies} --n_replica {params.n_replica}"
-
 rule calibrate_ridge_models:
     input:
         rules.extract_differntial_expression_data.output.DE_data
@@ -75,7 +72,6 @@ rule calibrate_ridge_models:
         "Conduct calibration of ridge based models"
     shell:
         "python scripts/calibration/ridge_tune.py --studies {studies}"
-
 rule plot_calibration_scores:
     input:
         ancient(rules.calibrate_RF_models.output.best_scores),
@@ -86,7 +82,6 @@ rule plot_calibration_scores:
         "Plot testing scores for ridge and rf models"
     script:
         "scripts/calibration/visualize_scores.py"
-
 rule infer_GRN_RF:
     input:
         ancient(rules.extract_differntial_expression_data.output.DE_data),
@@ -100,7 +95,6 @@ rule infer_GRN_RF:
         "Conduct GRN inference using RF"
     shell:
         "python scripts/GRN/RF_GRN.py --studies {studies} --n_replica {params.n_replica}"
-
 rule infer_GRN_ridge:
     input:
         rules.extract_differntial_expression_data.output.DE_data,
@@ -111,7 +105,6 @@ rule infer_GRN_ridge:
         "Conduct GRN inference using ridge"
     shell:
         "python scripts/GRN/ridge_GRN.py --studies {studies}"
-
 rule infer_GRN_portia:
     input:
         rules.extract_differntial_expression_data.output.DE_data,
@@ -121,15 +114,14 @@ rule infer_GRN_portia:
         "Conduct GRN inference using portia"
     shell:
         "python scripts/GRN/portia_GRN.py --studies {studies}"
-
 rule create_baseline_models:
     input:
         ancient(rules.infer_GRN_RF.output.links),
         rules.infer_GRN_ridge.output.links,
         rules.infer_GRN_portia.output.links,
     output:
-        expand('results/model_selection/baseline_scores/ep_scores_{DE_type}.csv', DE_type=F_DE_data().keys()),
-        expand('results/model_selection/baseline_scores/ep_scores_series_{DE_type}.csv', DE_type=F_DE_data().keys()),
+        expand(Path(MODELSELECTION_BASELINE_DIR) / 'ep_scores_{DE_type}.csv', DE_type=F_DE_data().keys()),
+        expand(Path(MODELSELECTION_BASELINE_DIR) / 'ep_scores_series_{DE_type}.csv', DE_type=F_DE_data().keys()),
     params:
         n_random_links = 1000
     message:
@@ -140,7 +132,7 @@ rule calculate_model_selection_scores:
     input:
         rules.create_baseline_models.output
     output:
-        'results/model_selection/scores.json'
+        Path(MODELSELECTION_DIR)/'scores.json'
     message:
         "Calculates model selections scores of early precision rate, sig flags, etc."
     shell:
@@ -156,7 +148,6 @@ rule model_selection_violin_plot:
         "Violin plot for all models"
     shell:
         "python scripts/model_selection/violin_plot.py  --n_random_links {params.n_random_links}"
-
 rule select_best_models:
     input:
         rules.calculate_model_selection_scores.output
@@ -170,21 +161,19 @@ rule select_best_models:
 rule line_plot_shortlisted_models:
     input:
         rules.calculate_model_selection_scores.output,
-        rules.select_best_models.output.shortlisted_models
+        rules.select_best_models.output.selected_models
     output:
         'results/model_selection/lineplot.pdf',
     message:
         "Plots epr vs top quantiles for the shortlisted models"
     shell:
         "python scripts/model_selection/line_plot.py"
-
 rule model_selection:
     input:
         'results/model_selection/violinplot.pdf',
         'results/model_selection/shortlisted_models.txt',
         'results/model_selection/selected_models.txt',
         'results/model_selection/lineplot.pdf',
-
 rule map_protnames_to_genenames:
     input:
         rules.extract_differntial_expression_data.output.DE_protnames
@@ -194,7 +183,6 @@ rule map_protnames_to_genenames:
         "Maps protnames to genenames using https://rest.uniprot.org"
     script:
         "scripts/protname_to_genename.py"
-
 rule VSA_role_analysis:
     input:
         rules.select_best_models.output.selected_models,
@@ -213,8 +201,7 @@ rule VSA_role_analysis:
         "Vester's sensitivity analysis to study protein roles in the network"
     shell:
         "python scripts/VSA/analyse_roles.py --studies {studies} --top_quantile_role_change {params.top_quantile_role_change}"
-
-rule robustness_analysis:
+rule uncertainity_analysis_VSA_noise:
     input:
         rules.select_best_models.output.selected_models,
         rules.infer_GRN_ridge.output.links,
@@ -231,11 +218,10 @@ rule robustness_analysis:
     message:
         "Robustness analysis for the results of VSA"
     shell:
-        "python scripts/VSA/analyse_noise.py --studies {studies} --warm_start {params.warm_start} --n_noisy_datasets {params.n_noisy_datasets}"
-
+        "python scripts/uncertainity_analysis/VSA_noise/analyse_noise.py --studies {studies} --warm_start {params.warm_start} --n_noisy_datasets {params.n_noisy_datasets}"
 rule visualize_protein_network:
     input:
-        rules.robustness_analysis.output.target_genes
+        rules.uncertainity_analysis_VSA_noise.output.target_genes
     output:
         expand(Path(GRN_VISUALIZE_DIR) / "GRN_{model_name}_{study}.pdf", model_name=selected_models(), study=studies),
     params:
@@ -244,7 +230,6 @@ rule visualize_protein_network:
         "Plots protein-protein connections for the selected proteins"
     shell:
         "python scripts/GRN/visualize_network.py --studies {studies} --top_n_links {params.top_n_links}"
-
 rule plot_enriched_annotations:
     input:
         rules.enrichment_analysis.output.annotations
@@ -257,6 +242,31 @@ rule plot_enriched_annotations:
         "Plots enriched annotations of GO for the selected models"
     shell:
         "python scripts/enrichment_analysis/plot_EA.py --top_n {params.top_n} --length_limit {params.length_limit}"
+rule uncertainity_analysis_random_regulators:
+    input:
+        rules.extract_differntial_expression_data.input.imput_data,
+        rules.select_best_models.output.selected_models
+    output:
+        expand(Path(RANDOM_REGULATORS_DIR) / 'ep_scores_random_{selected_model}.csv', selected_model=selected_models())
+    params:
+        n_features = 50,
+        n_repeat = 100
+    message:
+        "Runs uncertainity analysis on the DE proteins as regulators by randomly sampling proteins as regulating and calculating early precision scores"
+    shell:
+        "python scripts/uncertainity_analysis/regulators_random/calculate_random_scores.py --n_features {params.n_features} --n_repeat {params.n_repeat}"
+rule uncertainity_analysis_plot_violin:
+    input:
+        rules.uncertainity_analysis_random_regulators.output,
+        rules.calculate_model_selection_scores.output
+    output:
+        Path(RANDOM_REGULATORS_DIR) / f'violinplot.png'
+    params:
+        n_repeat = 100
+    message:
+        "Plots the results of uncertainity analysis on the DE proteins as regulators versus DE proteins"
+    shell:
+        "python scripts/uncertainity_analysis/regulators_random/violin_plot.py --n_repeat {params.n_repeat}"
 
 rule all:
     input:

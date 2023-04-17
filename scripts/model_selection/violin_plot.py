@@ -4,19 +4,13 @@
 import sys
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import json
 import argparse
 import matplotlib.pyplot as plt
-from pathlib import Path
-from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
-
-
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from imports import MODELSELECTION_DIR, make_title_pretty
-from md_aux import retreieve_scores, is_single_value, ViolinPlot
+from common_tools.model_selection import retreieve_scores, is_single_value, ViolinPlot
 
 
 if __name__ == '__main__':
@@ -34,7 +28,9 @@ if __name__ == '__main__':
     sig_flags = [item['sig_flag'] for item in scores.values()]
     percentile_ranks = [item['percentile_rank'] for item in scores.values()]
 
-    scores_dist = [np.repeat(score, n_repeat) if (is_single_value(score)) else score for score in scores_list]
+    scores_dist = np.asarray([np.repeat(score, n_repeat) if (is_single_value(score)) else score for score in scores_list])
+    assert all(len(item) == len(scores_dist[0]) for item in scores_dist), "All items in scores_list must have the same length"
+
 
     fig, ax = plt.subplots(nrows=1, ncols=1, tight_layout=True, figsize=(6, 2.2))
     ViolinPlot.plot(ax, scores_dist, percentile_ranks, sig_flags, methods_names)

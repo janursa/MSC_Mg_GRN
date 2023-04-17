@@ -7,9 +7,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import F_DE_data, time_points, GRN_DIR, CALIBRATION_DIR
-from utils import read_write_data
-from utils.calibration import retrieve_data, plot_scores
-from utils.links import run_generni
+from common_tools import read_write_data
+from common_tools.calibration import retrieve_data, plot_scores
+from common_tools.links import run_generni
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import F_model_name_2_method_and_DE_type, VSA_DIR, F_selected_models, \
     F_DE_genenames, F_protnames_to_genenames
-from utils.VSA import role_analysis, RolePlot, determine_top_role_change, determine_critical_role_change
+from common_tools.VSA import role_analysis, RolePlot, determine_top_role_change, determine_critical_role_change
 from VSA.vsa_aux import retreive_links_with_genenames
 
 def custom_annotation_ctr_vs_sample(gene_name):

@@ -12,7 +12,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import GRN_DIR, F_DE_protnames, study_colors, PLOT_WEIGHTS_DIR
-from utils.links import plot_grn_weights_distributions_per_top_links
+from common_tools.links import plot_grn_weights_distributions_per_top_links
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

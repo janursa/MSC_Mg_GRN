@@ -17,9 +17,9 @@ from typing import List, Dict
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from imports import GRN_VISUALIZE_DIR, VSA_DIR, VSA_NOISE_DIR, F_protnames_to_genenames, F_DE_genenames, F_model_name_2_method_and_DE_type, F_selected_models
-from utils.links import  choose_top_count, normalize_links
-from utils.VSA import RolePlot
+from imports import GRN_VISUALIZE_DIR, VSA_DIR, VSA_NOISE_DIR, F_protnames_to_genenames, F_selected_models
+from common_tools.links import  choose_top_count, normalize_links
+from common_tools.VSA import RolePlot
 from VSA.analyse_roles import retreive_links_with_genenames
 
 def manual_adjustments_2_graphs(model_name, study, vertex_sizes, edge_weights):

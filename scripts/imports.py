@@ -20,12 +20,13 @@ DATA_DIR = os.path.join(OUTPUT_DIR, 'data')
 VSA_DIR = os.path.join(OUTPUT_DIR, 'VSA')
 ENRICH_DIR = os.path.join(OUTPUT_DIR, 'enrichment_analysis')
 MODELSELECTION_DIR = os.path.join(OUTPUT_DIR, 'model_selection')
-VSA_NOISE_DIR = Path(VSA_DIR)/'noise'
-GRN_VISUALIZE_DIR = Path(GRN_DIR)/'visualize'
-PLOT_WEIGHTS_DIR = Path(GRN_DIR)/'plot_weights'
-RANDOM_MODELS_DIR = Path(MODELSELECTION_DIR) / 'baseline_scores'
-ROBUSTENESS_DIR = Path(OUTPUT_DIR)/'robustness_analysis'
-RANDOM_FEATURE_DIR = Path(ROBUSTENESS_DIR)/ 'random_feature_selection'
+UNCERTAINITY_DIR = Path(OUTPUT_DIR) / 'uncertainity_analysis'
+VSA_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'VSA_noise'
+GRN_VISUALIZE_DIR = Path(GRN_DIR) / 'visualize'
+PLOT_WEIGHTS_DIR = Path(GRN_DIR) / 'plot_weights'
+MODELSELECTION_BASELINE_DIR = Path(MODELSELECTION_DIR) / 'baseline_models'
+RANDOM_REGULATORS_DIR = Path(UNCERTAINITY_DIR) / 'regulators_random'
+NETWORK_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'network_noise'
 
 from geneRNI.models import get_estimator_wrapper
 

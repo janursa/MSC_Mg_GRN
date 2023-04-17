@@ -7,8 +7,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import time_points, F_DE_data, GRN_DIR, CALIBRATION_DIR
-from utils import read_write_data, calibration
-from utils.links import batch_run_generni
+from common_tools import read_write_data, calibration
+from common_tools.links import batch_run_generni
 
 
 if __name__ == '__main__':

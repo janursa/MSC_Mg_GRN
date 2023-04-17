@@ -14,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import CALIBRATION_DIR, F_DE_data, make_title_pretty
-from utils import calibration, serif_font
+from common_tools import calibration, serif_font
 
 def visualize_scores(method, ylabel, yticks):
     serif_font()

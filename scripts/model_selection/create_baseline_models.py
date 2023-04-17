@@ -7,13 +7,12 @@ import numpy as np
 import pandas as pd
 import tqdm
 import argparse
-from pathlib import Path
 from typing import List
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import ENRICH_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR, top_quantiles
-from md_aux import save_baseline_scores, create_random_links, calculate_early_precision
+from imports import ENRICH_DIR, F_DE_data, GRN_DIR, top_quantiles
+from common_tools.model_selection import save_baseline_scores, create_random_links, calculate_early_precision
 
 def calculate_ep_for_random_links(links_stack: List[pd.DataFrame], data_type: str) -> List[List[float]]:
     """calculate early precision ratio for random links"""
@@ -37,9 +36,6 @@ if __name__ == '__main__':
     methods = args.GRN_methods
     n_repeat = args.n_random_links
     target_study = args.target_study
-
-    if not os.path.isdir(RANDOM_MODELS_DIR):
-        os.makedirs(RANDOM_MODELS_DIR)
 
     for DE_type in F_DE_data().keys():
         # - retrieve links

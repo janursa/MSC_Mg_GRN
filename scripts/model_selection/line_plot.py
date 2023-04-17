@@ -5,19 +5,13 @@ import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import scipy
-import tqdm
 import argparse
-from pathlib import Path
-from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
-
-
+from typing import Dict, List
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import ENRICH_DIR, MODELSELECTION_DIR, top_quantiles, make_title_pretty, F_selected_models
-from md_aux import lineplot, retreieve_scores
+from imports import MODELSELECTION_DIR, top_quantiles, F_selected_models
+from common_tools.model_selection import lineplot, retreieve_scores
 
 def calculate_epr_series(model_names:List[str], ep_series_scores:Dict[str, List[float] | List[List[float]]]) -> List[List[float]]:
     """Calculate epr for a series of top quantiles (10 numbers)

@@ -15,7 +15,7 @@ import argparse
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import enrich_analysis
+from common_tools import enrich_analysis
 from imports import ENRICH_DIR, F_selected_models, F_model_name_2_method_and_DE_type, F_protnames_to_genenames
 
 def load_enrichment_data(de_type: str) -> pd.DataFrame:

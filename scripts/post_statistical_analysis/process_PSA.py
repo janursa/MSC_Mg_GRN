@@ -13,7 +13,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import DATA_DIR
-from utils import read_write_data, process_data
+from common_tools import read_write_data, process_data
 from psa_aux import load_sig_df, load_imputated_df
 def extract_de_data(imput_method, period_days, sig_t:float) -> Tuple[list,pd.DataFrame]:
     """ Extracts DE proteins and data

@@ -4,19 +4,15 @@
 import sys
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
-from pathlib import Path
-from typing import Dict, List, Tuple, Callable, Optional, TypeAlias, Any
-import json
-
+from typing import Dict, List, Tuple, Optional
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from imports import ENRICH_DIR, CALIBRATION_DIR, MODELSELECTION_DIR, F_DE_data, GRN_DIR, RANDOM_MODELS_DIR, top_quantiles
-from utils import calibration
-from md_aux import score_type, get_baseline_scores, save_scores, determine_sig_flag, calculate_early_precision
+from imports import ENRICH_DIR, CALIBRATION_DIR, F_DE_data, GRN_DIR, top_quantiles
+from common_tools import calibration
+from common_tools.model_selection import score_type, get_baseline_scores, save_scores, determine_sig_flag, calculate_early_precision
 
 
 def retrieve_prediction_scores(DE_type: str, method: str, studies: List[str]) -> Optional[Tuple[float, float]]:

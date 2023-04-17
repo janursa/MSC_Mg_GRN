@@ -18,7 +18,7 @@ session = requests.Session()
 session.mount("https://", HTTPAdapter(max_retries=retries))
 
 from imports import DATA_DIR, F_DE_protnames
-from utils import flatten
+from common_tools import flatten
 
 
 def check_response(response):

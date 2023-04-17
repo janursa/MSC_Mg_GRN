@@ -6,8 +6,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import F_DE_protnames, GRN_DIR
-from utils import read_write_data
-from utils.links import run_portia
+from common_tools import read_write_data
+from common_tools.links import run_portia
 
 
 if __name__ == '__main__':

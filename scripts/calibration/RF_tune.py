@@ -11,7 +11,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from imports import F_DE_data, time_points, param_grid_RF, F_DE_protnames, CALIBRATION_DIR
-from utils import read_write_data, calibration
+from common_tools import read_write_data, calibration
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
