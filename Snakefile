@@ -212,13 +212,10 @@ rule uncertainity_analysis_VSA_noise:
         rules.map_protnames_to_genenames.output
     output:
         target_genes = Path(VSA_NOISE_DIR)/ "target_genes.json"
-    params:
-        n_noisy_datasets=100,# number of noisy datasets to be created for each noise type and std
-        warm_start=True,#To use previous results
     message:
         "Robustness analysis for the results of VSA"
-    shell:
-        "python scripts/uncertainity_analysis/VSA_noise/analyse_noise.py --studies {studies} --warm_start {params.warm_start} --n_noisy_datasets {params.n_noisy_datasets}"
+    script:
+        "scripts/uncertainity_analysis/VSA_noise/analyse_noise.py"
 rule visualize_protein_network:
     input:
         rules.uncertainity_analysis_VSA_noise.output.target_genes

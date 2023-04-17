@@ -14,12 +14,12 @@ from common_tools import serif_font
 from common_tools.links import choose_top_quantile
 
 
-def standardize_array(arr):
+def standardize_array(arr: List[float]) -> List[float]:
+    """To set 0.75 quntile as the center and standardize to maximum value"""
     q75 = np.quantile(arr, 0.75)
     arr = arr - q75
-    max_abs_val = np.max(np.abs(arr)) / 2
+    max_abs_val = np.max(np.abs(arr))
     arr = arr / max_abs_val
-    arr = arr * 0.5
     return arr
 def role_analysis(links, gene_names) -> pd.DataFrame:
     '''
@@ -37,7 +37,7 @@ def role_analysis(links, gene_names) -> pd.DataFrame:
     output: VSA (DataFrame) -> protname: active_sum, passive_sum, Role
     '''
     # active sum and passive sum
-    links = choose_top_quantile(links, 0.5)
+    # links = choose_top_quantile(links, 0.5)
     active_sum = np.asarray([sum(links.query(f"Regulator == '{gene}'")['Weight']) for gene in gene_names])
     passive_sum = np.asarray([sum(links.query(f"Target == '{gene}'")['Weight']) for gene in gene_names])
 
@@ -201,14 +201,13 @@ class RolePlot:
                         , horizontalalignment='center')
 
     @staticmethod
-    def postprocess(ax, title='', show_axis_names=True):
+    def postprocess(ax, title='', show_axis_names=True, xlim=[-1.4, 1.4], ylim=[[-1.4, 1.4]]):
         if show_axis_names:
             ax.set_xlabel(r'Product (AS $\times$ PS)', fontweight='bold', fontsize=9)
             ax.set_ylabel('Quotient (AS / PS)', fontweight='bold',  fontsize=9)
-
         ax.set_title(title, fontweight='bold')
-        ax.set_xlim([-1.4, 1.4])
-        ax.set_ylim([-1.4, 1.4])
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
         ax.set_xticks([])
         ax.set_yticks([])
 
