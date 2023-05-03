@@ -15,7 +15,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from common_tools import serif_font
-from common_tools.VSA import role_analysis, RolePlot
+from common_tools.role_analysis import role_analysis, RolePlot
 
 def add_noise(data_org, noise_type, noise_intensity):
 
@@ -33,7 +33,8 @@ def create_noisy_data(n_repeat, **kwargs) -> List[pd.DataFrame]:
         noisy_sets.append(noisy_data)
     return noisy_sets
 def create_noisy_links(data_org:pd.DataFrame, n_repeat:int, noise_type:str,
-                       noise_intensity:float,  gene_names: List[str], grn_function: Callable[[pd.DataFrame, List[str]], pd.DataFrame]) -> List[pd.DataFrame]:
+                       noise_intensity:float,  gene_names: List[str],
+                       grn_function: Callable[[pd.DataFrame, List[str]], pd.DataFrame]) -> List[pd.DataFrame]:
     """
     add noise to the data, run grn, and save it. If file already exist, skip it unless forced.
     Collect the links and retunt a list.
@@ -78,4 +79,5 @@ def _add_adnoise(data: np.ndarray, std=.05) -> np.array:
     noisy_data = rand_values + data
 
     return noisy_data
+
 

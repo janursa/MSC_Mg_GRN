@@ -3,8 +3,8 @@ from subprocess import run
 from pathlib import Path
 import numpy as np
 from scripts.imports import MAIN_DIR, DATA_DIR, STATISTICAL_ANALYSIS_DIR, ENRICH_DIR, CALIBRATION_DIR, GRN_DIR, \
-    MODELSELECTION_DIR, VSA_DIR, VSA_NOISE_DIR, GRN_VISUALIZE_DIR, F_selected_models, F_model_name_2_method_and_DE_type, \
-    F_DE_data,RANDOM_REGULATORS_DIR, MODELSELECTION_BASELINE_DIR
+    MODELSELECTION_DIR, VSA_DIR, VSA_NOISE_DIR, F_selected_models, F_model_name_2_method_and_DE_type, \
+    F_DE_data,RANDOM_REGULATORS_DIR, MODELSELECTION_BASELINE_DIR, NETWORK_ANALYSIS_DIR
 
 periods = ['early', 'late']
 periods_days = ['day1_11', 'day1_21']
@@ -40,16 +40,15 @@ rule extract_differntial_expression_data:
     threads: 1
     shell:
         "python scripts/post_statistical_analysis/process_PSA.py --periods {periods} --periods_days {periods_days} --imputs {imputs} --studies {studies}"
-rule enrichment_analysis:
+rule map_protnames_to_genenames:
     input:
         rules.extract_differntial_expression_data.output.DE_protnames
     output:
-        annotations = expand(Path(ENRICH_DIR)/ 'enrichment_all_{period}_{imput}.csv', period=periods, imput=imputs),
-        network = expand(Path(ENRICH_DIR) / 'network_{period}_{imput}.csv', period=periods, imput=imputs)
+        Path(DATA_DIR)/ 'protnames_to_genenames.json'
     message:
-        "Conduct enrichment analysis using STRING to obtain enriched netwrok and biological functions"
+        "Maps protnames to genenames using https://rest.uniprot.org"
     script:
-        "scripts/enrichment_analysis/string_enquiry.py"
+        "scripts/protname_to_genename.py"
 rule calibrate_RF_models:
     input:
         ancient(rules.extract_differntial_expression_data.output.DE_data)
@@ -174,33 +173,43 @@ rule model_selection:
         'results/model_selection/shortlisted_models.txt',
         'results/model_selection/selected_models.txt',
         'results/model_selection/lineplot.pdf',
-rule map_protnames_to_genenames:
+rule uncertainity_analysis_random_regulators:
     input:
-        rules.extract_differntial_expression_data.output.DE_protnames
+        rules.extract_differntial_expression_data.input.imput_data,
+        rules.select_best_models.output.selected_models
     output:
-        Path(DATA_DIR)/ 'protnames_to_genenames.json'
+        expand(Path('results/uncertainity_analysis/random_regulators') / 'ep_scores_random_{selected_model}.csv', selected_model=selected_models())
+    params:
+        n_features = 50,
+        n_repeat = 100
     message:
-        "Maps protnames to genenames using https://rest.uniprot.org"
-    script:
-        "scripts/protname_to_genename.py"
+        "Runs uncertainity analysis to evaluate if DE proteins are significantly better than reandom regulators"
+    shell:
+        "python scripts/uncertainity_analysis/regulators_random/calculate_random_scores.py --n_features {params.n_features} --n_repeat {params.n_repeat}"
+rule uncertainity_analysis_random_regulators_plot_violin:
+    input:
+        rules.uncertainity_analysis_random_regulators.output,
+        rules.calculate_model_selection_scores.output
+    output:
+        Path('results/uncertainity_analysis/random_regulators') / f'violinplot.png'
+    params:
+        n_repeat = 100
+    message:
+        "Plots the results of uncertainity analysis on the DE proteins as regulators versus DE proteins"
+    shell:
+        "python scripts/uncertainity_analysis/regulators_random/violin_plot.py --n_repeat {params.n_repeat}"
 rule VSA_role_analysis:
     input:
         rules.select_best_models.output.selected_models,
-        rules.infer_GRN_ridge.output.links,
-        rules.infer_GRN_RF.output.links,
-        rules.infer_GRN_portia.output.links,
         rules.map_protnames_to_genenames.output
     output:
         vsa = expand(Path(VSA_DIR) / 'vsa_{selected_model}_{study}.csv', selected_model=selected_models(), study=studies),
         top_role_change = expand(Path(VSA_DIR) / 'top_role_change_{selected_model}.csv', selected_model = selected_models()),
         critical_role_change = expand(Path(VSA_DIR) / 'critical_role_change_{selected_model}.csv', selected_model = selected_models()),
-        plot_role_changes = expand(Path(VSA_DIR) / 'role_changes_{selected_model}.pdf', selected_model = selected_models())
-    params:
-        top_quantile_role_change = 0.9 # top 10 percent with the largest role change are chosen for top role change
     message:
         "Vester's sensitivity analysis to study protein roles in the network"
-    shell:
-        "python scripts/VSA/analyse_roles.py --studies {studies} --top_quantile_role_change {params.top_quantile_role_change}"
+    script:
+        "scripts/VSA/analyse_roles.py"
 rule uncertainity_analysis_VSA_noise:
     input:
         rules.select_best_models.output.selected_models,
@@ -211,22 +220,59 @@ rule uncertainity_analysis_VSA_noise:
         rules.VSA_role_analysis.output.critical_role_change,
         rules.map_protnames_to_genenames.output
     output:
-        target_genes = Path(VSA_NOISE_DIR)/ "target_genes.json"
+        target_genes = expand(Path("results/uncertainity_analysis/VSA_noise")/ "target_genes_{model_name}.txt", model_name=selected_models())
     message:
         "Robustness analysis for the results of VSA"
     script:
         "scripts/uncertainity_analysis/VSA_noise/analyse_noise.py"
-rule visualize_protein_network:
+rule plot_VSA_analysis:
     input:
-        rules.uncertainity_analysis_VSA_noise.output.target_genes
+        rules.VSA_role_analysis.output,
+        rules.uncertainity_analysis_VSA_noise.output
     output:
-        expand(Path(GRN_VISUALIZE_DIR) / "GRN_{model_name}_{study}.pdf", model_name=selected_models(), study=studies),
-    params:
-        top_n_links = 2
+        plot_role_changes=expand(Path("results/VSA/plots") / 'role_changes_{selected_model}.pdf',selected_model=selected_models())
     message:
-        "Plots protein-protein connections for the selected proteins"
-    shell:
-        "python scripts/GRN/visualize_network.py --studies {studies} --top_n_links {params.top_n_links}"
+        "Plot Vester's sensitivity analysis results with sig role change"
+    script:
+        "scripts/VSA/plot_roles.py"
+rule identify_top_links:
+    input:
+        rules.uncertainity_analysis_VSA_noise.output.target_genes,
+        rules.infer_GRN_portia.output.links,
+        rules.map_protnames_to_genenames.output,
+    output:
+        expand(Path('results/network_analysis/top_links') / 'top_links_{model_name}.csv', model_name=selected_models()),
+        expand(Path('results/network_analysis/top_links') / 'top_links_around_target_genes_{model_name}.csv', model_name=selected_models())
+    message:
+        "Identify the top links in the network and the top links around the target proteins"
+    script:
+        "scripts/analyze_network/identify_top_links.py"
+rule uncertainity_analysis_top_links:
+    input:
+        rules.identify_top_links.output
+    output:
+        expand(Path('results/uncertainity_analysis/network_noise/') / '{model_name}/links_divergence_scores.csv', model_name=selected_models()),
+    message:
+        "Runs uncertainity analysis on the links in the network and determine divergence score"
+    script:
+        "scripts/uncertainity_analysis/network_noise/calculate_divergence_scores.py"
+rule visualize_gene_network:
+    input:
+        rules.uncertainity_analysis_top_links.output,
+    message:
+        "Plots GRN using cytoscape and igraph, It only sends the graphs to cytoscape but has to be manually taken care of after"
+    script:
+        "scripts/network_analysis/plot_network.py"
+rule enrichment_analysis:
+    input:
+        rules.extract_differntial_expression_data.output.DE_protnames
+    output:
+        annotations = expand(Path(ENRICH_DIR)/ 'enrichment_all_{period}_{imput}.csv', period=periods, imput=imputs),
+        network = expand(Path(ENRICH_DIR) / 'network_{period}_{imput}.csv', period=periods, imput=imputs)
+    message:
+        "Conduct enrichment analysis using STRING to obtain enriched netwrok and biological functions"
+    script:
+        "scripts/enrichment_analysis/string_enquiry.py"
 rule plot_enriched_annotations:
     input:
         rules.enrichment_analysis.output.annotations
@@ -239,33 +285,3 @@ rule plot_enriched_annotations:
         "Plots enriched annotations of GO for the selected models"
     shell:
         "python scripts/enrichment_analysis/plot_EA.py --top_n {params.top_n} --length_limit {params.length_limit}"
-rule uncertainity_analysis_random_regulators:
-    input:
-        rules.extract_differntial_expression_data.input.imput_data,
-        rules.select_best_models.output.selected_models
-    output:
-        expand(Path(RANDOM_REGULATORS_DIR) / 'ep_scores_random_{selected_model}.csv', selected_model=selected_models())
-    params:
-        n_features = 50,
-        n_repeat = 100
-    message:
-        "Runs uncertainity analysis on the DE proteins as regulators by randomly sampling proteins as regulating and calculating early precision scores"
-    shell:
-        "python scripts/uncertainity_analysis/regulators_random/calculate_random_scores.py --n_features {params.n_features} --n_repeat {params.n_repeat}"
-rule uncertainity_analysis_plot_violin:
-    input:
-        rules.uncertainity_analysis_random_regulators.output,
-        rules.calculate_model_selection_scores.output
-    output:
-        Path(RANDOM_REGULATORS_DIR) / f'violinplot.png'
-    params:
-        n_repeat = 100
-    message:
-        "Plots the results of uncertainity analysis on the DE proteins as regulators versus DE proteins"
-    shell:
-        "python scripts/uncertainity_analysis/regulators_random/violin_plot.py --n_repeat {params.n_repeat}"
-
-rule all:
-    input:
-        Path(VSA_NOISE_DIR) / "target_genes.json",
-        expand(Path(GRN_VISUALIZE_DIR) / "GRN_{model_name}_{study}.pdf",model_name=selected_models(),study=studies),

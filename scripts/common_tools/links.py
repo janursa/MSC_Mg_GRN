@@ -93,19 +93,19 @@ def run_generni(data, time_points, gene_names, **specs):
     dataset = Data(ts_data=[data], ss_data=None, time_points=[time_points], gene_names=gene_names)
     return network_inference(dataset, gene_names=gene_names, **specs)
 
-def choose_top_quantile(links: pd.DataFrame, quantile=0.75) -> pd.DataFrame:
+def choose_top_quantile(links: pd.DataFrame, quantile=0.75, col_name='Weight') -> pd.DataFrame:
     '''
         Filters the given df based on the top quantile
     '''
-    cut_off = np.quantile(links['Weight'].values.tolist(), q=quantile)
-    links_short = links.loc[links['Weight']>=cut_off,:].reset_index(drop=True)
+    cut_off = np.quantile(links[col_name].values.tolist(), q=quantile)
+    links_short = links.loc[links[col_name]>=cut_off,:].reset_index(drop=True)
     return links_short
-def choose_top_count(links: pd.DataFrame, n=100) -> pd.DataFrame:
+def choose_top_count(links: pd.DataFrame, n=100, col_name: str='Weight') -> pd.DataFrame:
     '''
         Filters the given df based on the top count
     ''' 
     links.reset_index(inplace=True, drop=True)
-    links.sort_values('Weight',ascending=False,inplace=True)
+    links.sort_values(col_name,ascending=False,inplace=True)
     links_short = links.iloc[:n,:].reset_index(drop=True)
     return links_short
 

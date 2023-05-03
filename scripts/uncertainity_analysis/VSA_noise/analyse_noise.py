@@ -8,100 +8,191 @@ import numpy as np
 import argparse
 from pathlib import Path
 import json
-from typing import List, Dict, Tuple, TypeAlias
-from common_tools.VSA import role_analysis
+import matplotlib.pyplot as plt
+
+from typing import List, Dict, Tuple, TypeAlias, Any
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
-from imports import F_model_name_2_method_and_DE_type, F_DE_genenames, F_selected_models, VSA_NOISE_DIR
-from common_tools import read_write_data
-from VSA.vsa_aux import retrieve_VSA_results
-from common_tools.uncertainity import create_noisy_links
-from uncertainity_analysis.VSA_noise.uavsa_aux import re_organize_vsa_results, determine_sig_change_in_role, plot_results
-from common_tools.links import run_portia
+from imports import F_model_name_2_method_and_DE_type, F_DE_genenames, VSA_NOISE_DIR, F_selected_models
+from common_tools import serif_font, flatten
+from common_tools.role_analysis import role_analysis, RolePlot
+from uncertainity_analysis.ua_aux import NoiseAnalysis
 
-def parse_args():
-    class Args:
-        noise_types = ['mp', 'ad']
-        noise_intensities = {'mp':[0.05], 'ad':[.1]}
-        robust_thresholds = {'mp':0.05, 'ad':.1}
-        n_repeat = 500
-        studies = ['ctr', 'mg']
-    return Args()
-def create_dir(model_name):
-    results_save_dir = Path(VSA_NOISE_DIR) / model_name
-    if not os.path.isdir(results_save_dir):
-        os.makedirs(results_save_dir)
-    plots_save_dir = Path(results_save_dir) / 'plots'
-    if not os.path.isdir(plots_save_dir):
-        os.makedirs(plots_save_dir)
-    return results_save_dir, plots_save_dir
-def run_noise_analysis(model_name: str, noise_type:str,
-                       noise_intensity:float, save_file:str, genes_under_study: List[str]) -> None:
-    """Main function to run analysis for a given model, noise type, and noise intensity"""
-    print(f'Noise analysis for {model_name} {noise_type} {noise_intensity}')
-    method, DE_type = F_model_name_2_method_and_DE_type(model_name)
-    genenames = F_DE_genenames()[DE_type]
-    # - get data
-    data_ctr, data_sample = [read_write_data(mode='read', tag=f'{DE_type}_{study}') for study in args.studies]
-    # - create noisy links for ctr and sample
-    kwargs = dict(noise_type=noise_type, n_repeat=args.n_repeat,
-                  noise_intensity=noise_intensity, gene_names=genenames, grn_function=run_portia)
-    noisy_links_stack_ctr = create_noisy_links(data_org=data_ctr, **kwargs)
-    noisy_links_stack_sample = create_noisy_links(data_org=data_sample, **kwargs)
-    # - VSA
-    vsa_results_stack_ctr = [role_analysis(links, genenames) for links in noisy_links_stack_ctr]
-    vsa_results_stack_sample = [role_analysis(links, genenames) for links in noisy_links_stack_sample]
-    # - re structred the data to have: gene: {ctr:[(Q1, P1), ...], sample:[(Q1, P1), ..]}
-    gene_based_vsa_results = re_organize_vsa_results(vsa_results_stack_ctr, vsa_results_stack_sample,
-                                                     genes_to_extract=genes_under_study)
-    # - save to file
-    with open(save_file, 'w') as ff:
-        json.dump(gene_based_vsa_results, ff)
+ASPS_series_type: TypeAlias = List[Tuple[float, float]]  # data type for list of (AS,PS)
 
-def determine_robust_genes(_sig_signs: List[str], _genes_under_study: List[str]) -> List[str]:
-    """To determine which genes are robust
-    For any given sig signs, *, **, **, a gene is robust
-    """
-    robust_indices = [gene_i for gene_i, sig_sig in enumerate(_sig_signs) if (sig_sig != '')]
-    return np.asarray(_genes_under_study)[robust_indices]
+def axis_limits(model_name):
+    if model_name == 'early_MinProb_Portia':
+        active_sum_range = [-2, 12]
+        passive_sum_range = [0, 10]
+    else:
+        active_sum_range = [-3, 13]
+        passive_sum_range = [-1, 9]
+    return active_sum_range, passive_sum_range
+class VSA_noise_analysis(NoiseAnalysis):
+    """Main class to conduct noise analysis for the protein role change using VSA"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sig_signs = {} # keeps record of sig signs for all noise types and noise intensities
+    def _save_file(self, noise_type, noise_intensity):
+        save_dir = self._save_dir()
+        return  f'{save_dir}/results_{noise_type}_{noise_intensity}.json'
+    @staticmethod
+    def __re_organize_vsa_results(batch_results_ctr: List[pd.DataFrame],
+                                batch_results_sample: List[pd.DataFrame],
+                                genes_to_extract: List[str]) -> Dict[str, Tuple[ASPS_series_type, ASPS_series_type]]:
+        """
+            Sorts batch VSA results based on target proteins. gene: [[(Q1, P1), ...], [(Q1, P1), ..]]}, which contains repeated
+            results for ctr and sample.
+        """
+
+        # - extract the data
+        def extract_function(batch_results, targ_gene) -> ASPS_series_type:
+            """Gets a list of vsa results, extracts tag values for given gene"""
+            ASs_PSs = []
+            for results in batch_results:
+                mask = results['Entry'] == targ_gene
+                ASs_PSs.append(results.loc[mask, ['AS', 'PS']].values.tolist()[0]) # index 0 is AS
+            return ASs_PSs
+
+        results_stack: Dict[
+            str, Tuple[ASPS_series_type, ASPS_series_type]] = {}  # gene <- (ctr, sample) <- list of ASs_PSs for each
+        for gene in genes_to_extract:
+            ASs_PSs_ctr = extract_function(batch_results_ctr, targ_gene=gene)
+            ASs_PSs_sample = extract_function(batch_results_sample, targ_gene=gene)
+            results_stack[gene] = (ASs_PSs_ctr, ASs_PSs_sample) # index 0 is ctr
+        return results_stack
+
+    def _run_analysis(self, noise_type:str, noise_intensity:float) -> None:
+        save_file = self._save_file(noise_type, noise_intensity)
+        studies = self.studies
+        # - run the analysis if the output file doesnt exist
+        if not os.path.exists(save_file) or self.force:
+            print(f'Noise analysis for {self.model_name} {noise_type} {noise_intensity}')
+            # - run grn to get the links
+            noisy_links_stack_ctr, noisy_links_stack_sample = self._create_noisy_links_studies(model_name=self.model_name,
+                                                                                         studies=studies,
+                                                                                         noise_type=noise_type,
+                                                                                         noise_intensity=noise_intensity,
+                                                                                         n_repeat=self.n_repeat)
+            # - run vsa
+            method, DE_type = F_model_name_2_method_and_DE_type(self.model_name)
+            genenames = F_DE_genenames()[DE_type]
+            vsa_results_stack_ctr = [role_analysis(links, genenames) for links in noisy_links_stack_ctr]
+            vsa_results_stack_sample = [role_analysis(links, genenames) for links in noisy_links_stack_sample]
+            # - re structred the data to have: gene: {ctr:[(Q1, P1), ...], sample:[(Q1, P1), ..]}
+            gene_based_vsa_results = self.__re_organize_vsa_results(vsa_results_stack_ctr, vsa_results_stack_sample,
+                                                                    genes_to_extract=self.retrieve_genes_vsa(self.model_name))
+            with open(save_file, 'w') as ff:
+                json.dump(gene_based_vsa_results, ff)
+    def _run_post_analysis(self,noise_type:str, noise_intensity:float) -> None:
+        """The analysis of the results and plots"""
+        # - retrieve the results
+        save_file = self._save_file(noise_type, noise_intensity)
+        with open(save_file, 'r') as ff:
+            results = json.load(ff)
+        # - determine sig level from ctr to sample: *, **, ***
+        sig_signs_noisetype_intensity = self.__determine_sig_change(results)
+        # - store the sig level for robustness check
+        if noise_type not in self.sig_signs.keys():
+            self.sig_signs[noise_type] = {}
+        self.sig_signs[noise_type][noise_intensity] = sig_signs_noisetype_intensity
+        # - plot scatters showing ctr to sample change
+        save_plots_dir = self._save_plot_dir()
+        self.__plot_results(results, noise_type, noise_intensity, sig_signs_noisetype_intensity, save_plots_dir)
+    def determine_robust_targs(self) -> List[str]:
+        """Determines robust changes by taking into account sig changes across different noise types"""
+        robust_targs = []
+        for noise_type, noise_type_data in self.sig_signs.items():
+            threshold = self.robust_thresholds[noise_type]  # the noise intensity that we consider for robustness
+            target_results = noise_type_data[threshold]
+            robust_genes_noisetype = [gene for gene, sig_sig in target_results.items() if (sig_sig != '')]
+            robust_targs.append(robust_genes_noisetype)
+        list_of_sets = [set(sublist) for sublist in robust_targs]
+        # Find the intersection of all sets
+        robust_targs = list(set.intersection(*list_of_sets))
+        return robust_targs
+    @staticmethod
+    def __plot_results(results, noise_type, std_noise, sig_flags, save_plots_dir):
+        """ Plot role change from control to sample for n noisy results
+        Scatter plots where each node shows the results of one noisy analysis.
+        """
+
+        preferred_titles = [f'{gene} {sign}' for gene, sign in sig_flags.items()]
+
+        ncols, nrows = len(results), 1
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, tight_layout=True, figsize=(2 * ncols, 2 * nrows))
+        serif_font()
+        for gene_i, (gene, gene_results) in enumerate(results.items()):  # - plot for each gene on a seperate window
+            ax = axes[gene_i]
+            for study_i, study_data in enumerate(gene_results):
+                PSs = [item[1] for item in study_data]
+                ASs = [item[0] for item in study_data]
+                ax.scatter(PSs, ASs,
+                           color=RolePlot.ctr_sample_colors[study_i],
+                           alpha=.6,
+                           linewidths=.2,
+                           edgecolors='black',
+                           s=35
+                           )
+            title = preferred_titles[gene_i] if (preferred_titles is not None) else gene
+            xlim, ylim = axis_limits(model_name)
+            RolePlot.postprocess(ax, title=title, show_axis_names=True, xlim=xlim, ylim=ylim)
+            # RolePlot.mark_x(ax, 0)
+            # RolePlot.mark_y(ax, 0)
+            RolePlot.plot_roles(ax)
+
+        fig.savefig(Path(save_plots_dir) / f'{noise_type}_{std_noise}.pdf')
+        fig.savefig(Path(save_plots_dir) / f'{noise_type}_{std_noise}.png', dpi=150, transparent=True)
+    @staticmethod
+    def __determine_sig_change(results: Dict[str, Tuple[List[float]]]) -> Dict[str, str]:
+        """Determines the degree of sig change from ctr to sample by assigning
+        one of *, **, ***.
+        Results: ctr and sample data for each gene
+        """
+        sig_signs = {}
+        for gene, gene_results in results.items():
+            ctr, sample = gene_results
+            # - runs the test
+            Qs_ctr = [point[0] for point in ctr]
+            Ps_ctr = [point[1] for point in ctr]
+            Qs_sample = [point[0] for point in sample]
+            Ps_sample = [point[1] for point in sample]
+
+            abs_diff_Qs = np.abs(np.mean(Qs_ctr) - np.mean(Qs_sample))
+            abs_diff_Ps = np.abs(np.mean(Ps_ctr) - np.mean(Ps_sample))
+            Q_std = np.std(Qs_ctr)
+            P_std = np.std(Ps_ctr)
+            sign = ''
+            if (abs_diff_Qs > Q_std) | (abs_diff_Ps > P_std):
+                if (abs_diff_Qs > 2 * Q_std) | (abs_diff_Ps > 2 * P_std):
+                    if (abs_diff_Qs > 3 * Q_std) | (abs_diff_Ps > 3 * P_std):
+                        sign = '***'
+                    else:
+                        sign = '**'
+                else:
+                    sign = '*'
+            sig_signs[gene] = sign
+        return sig_signs
+
+
 if __name__ == '__main__':
     # - parse the arguments
-    args = parse_args()
-    force = False # force run
-    # - load names of selected models
-    selected_models = F_selected_models()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--studies', nargs='+', default=['ctr', 'mg'])
+    parser.add_argument('--force', type=bool, default=False,
+                        help='To overwrite if the result files exist')
+    args, remaining_args = parser.parse_known_args()
+
+    studies = args.studies
+    force = args.force
+
     # - run for each model
-    targets_genes = {}
-    for model_name in selected_models:
-        robust_genes_model = []
-        save_dir, save_plots_dir, = create_dir(model_name)
-        genes_under_study = retrieve_VSA_results(model_name)
-        # - run for each noise type
-        for noise_type in args.noise_types:
-            sig_signs_noisetype = {intensity:[] for intensity in args.noise_intensities[noise_type]}  # for final evaluation of robust genes
-            # - run for each noise intensity
-            for noise_intensity in args.noise_intensities[noise_type]:
-                save_file = f'{save_dir}/results_{noise_type}_{noise_intensity}.json' # file to save the results
-                # - if it doesn't exist, run the analysis
-                if not os.path.exists(save_file) or force:
-                    run_noise_analysis(model_name, noise_type, noise_intensity, save_file, genes_under_study)
-                # - retrieve the results
-                with open(save_file, 'r') as ff:
-                        gene_based_vsa_results = json.load(ff)
-                # - determine sig level from ctr to sample: *, **, ***
-                sig_signs = determine_sig_change_in_role(gene_based_vsa_results)
-                # - plot scatters showing ctr to sample change
-                fig = plot_results(gene_based_vsa_results, noise_type, noise_intensity, sig_signs)
-                fig.savefig(Path(save_plots_dir) / f'{noise_type}_{noise_intensity}.pdf')
-                fig.savefig(Path(save_plots_dir) / f'{noise_type}_{noise_intensity}.png', dpi=150, transparent=True)
-                # - save sig signs for rubustness analysis
-                sig_signs_noisetype[noise_intensity] = sig_signs
-            #- determine robust genes for noise type. those sig signs with any of *, **, ***
-            threshold = args.robust_thresholds[noise_type]  # the noise intensity that we consider for robustness
-            robust_genes = determine_robust_genes(sig_signs_noisetype[threshold], genes_under_study)
-            robust_genes_model.append(robust_genes)
-        targets_genes[model_name] = list(set(np.asarray(robust_genes_model).flatten()))
-    with open(f"{VSA_NOISE_DIR}/target_genes.json", 'w') as file:
-        json.dump(targets_genes, file)
+    for model_name in F_selected_models():
+        VSA_noise_analysis_obj = VSA_noise_analysis(model_name=model_name, studies=studies, force=force, base_dir=VSA_NOISE_DIR)
+        VSA_noise_analysis_obj.run_decorator()
+        # - robust targs
+        robust_targs = VSA_noise_analysis_obj.determine_robust_targs()
+        VSA_noise_analysis_obj.save_robust_genes(model_name, robust_targs)
+

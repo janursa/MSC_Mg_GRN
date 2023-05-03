@@ -22,11 +22,14 @@ ENRICH_DIR = os.path.join(OUTPUT_DIR, 'enrichment_analysis')
 MODELSELECTION_DIR = os.path.join(OUTPUT_DIR, 'model_selection')
 UNCERTAINITY_DIR = Path(OUTPUT_DIR) / 'uncertainity_analysis'
 VSA_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'VSA_noise'
-GRN_VISUALIZE_DIR = Path(GRN_DIR) / 'visualize'
 PLOT_WEIGHTS_DIR = Path(GRN_DIR) / 'plot_weights'
 MODELSELECTION_BASELINE_DIR = Path(MODELSELECTION_DIR) / 'baseline_models'
 RANDOM_REGULATORS_DIR = Path(UNCERTAINITY_DIR) / 'regulators_random'
 NETWORK_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'network_noise'
+
+NETWORK_ANALYSIS_DIR = Path(OUTPUT_DIR) / 'network_analysis'
+TOP_LINKS_DIR = Path(NETWORK_ANALYSIS_DIR) / "top_links"
+TOP_LINKS_WITH_DISTANCE_SCORES_DIR = Path(NETWORK_NOISE_DIR) / "top_links_with_divergence_scores"
 
 from geneRNI.models import get_estimator_wrapper
 
@@ -44,7 +47,16 @@ def make_title_pretty(name):
     return name
 def F_selected_models():
     return np.loadtxt(os.path.join(MODELSELECTION_DIR, f'selected_models.txt'), dtype=str, delimiter=",")
+def change_protnames_to_genenames_in_links(links):
+    """Changes regulator and target names from protnames to genenames"""
+    regulators = links['Regulator']
+    targets = links['Target']
+    regulators = [F_protnames_to_genenames()[protname] for protname in regulators]
+    targets = [F_protnames_to_genenames()[protname] for protname in targets]
+    links['Regulator'] = regulators
+    links['Target'] = targets
 
+    return links
 def F_model_name_2_method_and_DE_type(model_name):
     model_name_parts = model_name.split('_')
     method = model_name_parts[-1]

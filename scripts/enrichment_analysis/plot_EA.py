@@ -106,7 +106,8 @@ if __name__ == '__main__':
     top_n = args.top_n
     length_limit = args.length_limit
     #- EA for each model
-    for model_name in F_selected_models():
+    for model_name in F_selected_models()[1:]: #TODO: fix
+        from local_utils import * #TODO: togo
         _, DE_type = F_model_name_2_method_and_DE_type(model_name)
         #- retrieve the enriched terms and reformat them
         df = load_enrichment_data(DE_type)
@@ -119,6 +120,10 @@ if __name__ == '__main__':
             df_target = select_top_enriched_terms(df, category, top_n=top_n, length_limit=length_limit, filter_tag= 'Strength')
             df_target = change_protnames_2_genenames(df_target)
             df_targets.append(df_target)
+        dff = pd.concat(df_targets).reset_index()
+        dff.drop(columns=['index','ProteinNames', 'BackgroundGeneCount'], inplace=True)
+        print_df(dff)
+        aa
         #- output each term's df (for R plot)
         write_term_enrichment_data_to_file(df_targets, categories, DE_type)
         #- plot
