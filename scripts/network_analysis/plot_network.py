@@ -60,29 +60,31 @@ def add_connection_counts(nodes, edges):
     return nodes, edges
 def assign_node_color(tag, nodes, target_genes):
     """We assign node color customly as it is different from one plot to another"""
-    if tag == 'top_links':
-        nodes['color'] = ['#D1B3FF' if (count>=4) else 'white' for count in
-                          nodes['connections']]
-    else:
+    if tag == 'target_genes':
         nodes['color'] = ['#D1B3FF' if (node in target_genes) else 'white' for node in nodes['node']]
+    else:
+        nodes['color'] = ['#D1B3FF' if (count >= 4) else 'white' for count in
+                          nodes['connections']]
     return nodes
 
 def plot_network(model_name, studies, top_links_n: int | float, tag: str = 'top_links', target_genes=None):
     """
         Plot the network
     """
-    assert (tag in ['top_links', 'target_genes'])
+    assert (tag in ['top_links', 'top_links_same_weight', 'target_genes'])
     divergence_scores = NoiseAnalysis.retrieve_divergence_scores_df(model_name)
-    if tag == 'top_links':
-        divergence_scores_short = choose_top_quantile(divergence_scores, top_links_n,
-                                                          col_name='divergence_score')
-    else:
+    if tag == 'target_genes':
         divergence_scores_short = filter_for_around_target_genes(divergence_scores, target_genes, top_links_n)
-
+    else:
+        divergence_scores_short = choose_top_quantile(divergence_scores, top_links_n,
+                                                      col_name='divergence_score')
     # - plot for each study
     for i_study, study in enumerate(studies):
         # - create nodes and edges
         nodes, edges = create_nodes_edges(model_name, study, divergence_scores_short)
+        if tag == 'top_links_same_weight':
+            edges['weight'] = 1
+            nodes['active_sum'] = 30
         # - manual filter
         nodes, edges = manual_filter(nodes, edges, model_name)
         # - define node color manually
@@ -167,8 +169,13 @@ if __name__ == '__main__':
                     'late_KNN_portia':['MDH2', 'TRIM28', 'MYL1', 'GLS']}
     # - for each selected model
     for model_name in F_selected_models():
-        plot_network(model_name, studies, top_links_n, "target_genes", target_genes_models[model_name])
-        # plot_network(model_name, studies, top_links_n, "top_links")
+        if False:
+            plot_network(model_name, studies, top_links_n, "top_links")
+        if False:
+            plot_network(model_name, studies, top_links_n, "target_genes", target_genes_models[model_name])
+        if True: # - to identify hops, we dont need to plot ctr vs mg
+            plot_network(model_name, studies, top_links_n, "top_links_same_weight")
+
     # - plot the legends
     if plot_legends:
         # - plot the edge color map

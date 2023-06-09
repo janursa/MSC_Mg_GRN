@@ -34,10 +34,6 @@ rule extract_differntial_expression_data:
         DE_data = Path(DATA_DIR) / 'DE_data.csv'
     message:
         "Extract differential expressed proteins and associated expression data"
-    # params:
-    #     prefix=lambda wildcards, output: output[0][:-4]
-    priority: 0
-    threads: 1
     shell:
         "python scripts/post_statistical_analysis/process_PSA.py --periods {periods} --periods_days {periods_days} --imputs {imputs} --studies {studies}"
 rule map_protnames_to_genenames:

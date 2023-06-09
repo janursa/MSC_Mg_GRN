@@ -76,8 +76,8 @@ if __name__ == '__main__':
     studies = args.studies
     group_colors = ["#1E90FF", "#FFA07A"]  # for imputation types
 
-    visualize_scores(method='ridge', ylabel='LOO score', yticks=[-4, -2, 0, 1])
-    visualize_scores(method='RF', ylabel='OOB score', yticks=[-1, 0, 1])
+    visualize_scores(method='ridge', ylabel=r'$\mathrm{R}^2$ score (LOO)', yticks=[-4, -2, 0, 1])
+    visualize_scores(method='RF', ylabel=r'$\mathrm{R}^2$ score (OOB)', yticks=[-1, 0, 1])
 
     # - plot the legends for the groups
     fig, ax = plt.subplots(nrows=1, ncols=1, tight_layout=True, figsize=(4, 2))

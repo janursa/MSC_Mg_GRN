@@ -238,7 +238,7 @@ class ViolinPlot:
         ys = np.max(data_stack, axis=1)
         cls.annotate_percentile_rank(ax, xs, ys, percentile_ranks)
         # - annotate sig sign
-        sig_colors = ['red' if item is not None and item < 5 else 'black' for item in percentile_ranks]
+        sig_colors = ['red' if item is not None and item < 5 else 'white' for item in percentile_ranks]
         cls.annotate_sig_signs(ax, xs, ys, sig_flags, sig_colors)
         # - plot the legends for the groups
         cls.place_legends_for_groups(ax, legends)

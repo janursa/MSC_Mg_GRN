@@ -24,7 +24,7 @@ UNCERTAINITY_DIR = Path(OUTPUT_DIR) / 'uncertainity_analysis'
 VSA_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'VSA_noise'
 PLOT_WEIGHTS_DIR = Path(GRN_DIR) / 'plot_weights'
 MODELSELECTION_BASELINE_DIR = Path(MODELSELECTION_DIR) / 'baseline_models'
-RANDOM_REGULATORS_DIR = Path(UNCERTAINITY_DIR) / 'regulators_random'
+RANDOM_REGULATORS_DIR = Path(UNCERTAINITY_DIR) / 'random_regulators'
 NETWORK_NOISE_DIR = Path(UNCERTAINITY_DIR) / 'network_noise'
 
 NETWORK_ANALYSIS_DIR = Path(OUTPUT_DIR) / 'network_analysis'

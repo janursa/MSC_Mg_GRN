@@ -64,7 +64,11 @@ if __name__ == '__main__':
                 data = process_data(DE_data_single, study=study)
                 tag_study = '_'.join([tag,study])
                 read_write_data(mode='write', tag=tag_study, data=data)
-
+    # finding the proteins are that are mutually detected as DE across all datasets
+    sets = [set(val) for val in DE_proteins.values()]
+    # Find the intersection of all sets
+    common_proteins = list(set.intersection(*sets))
+    print(f'common DE proteins {common_proteins}')
     with open(os.path.join(DATA_DIR, 'DE_protnames.txt'), 'w') as f:
         print(DE_proteins, file=f)
     DE_data_serialized = {ky: df.to_json() for ky, df in DE_data.items()}

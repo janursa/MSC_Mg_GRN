@@ -66,6 +66,8 @@ class PlotCytoscape:
     def normalize(values, scale=1, min_value=0):
         min_val = min(values)
         max_val = max(values)
+        if min_val == max_val:
+            return values
         normalized_values = [min_value+ (val - min_val) / (max_val - min_val)*scale for val in values]
         return normalized_values
     @staticmethod

@@ -75,4 +75,6 @@ if __name__ == '__main__':
     df = remove_zeros(df, days=time_points())
     #- entry corrections
     df = correct_entry(df)
+    print(f'number of proteins {len(df)}')
+    print(df.columns)
     df.to_csv(df_dir)
