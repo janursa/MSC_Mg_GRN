@@ -61,7 +61,7 @@ def add_connection_counts(nodes, edges):
 def assign_node_color(tag, nodes, target_genes):
     """We assign node color customly as it is different from one plot to another"""
     if tag == 'target_genes':
-        nodes['color'] = ['#D1B3FF' if (node in target_genes) else 'white' for node in nodes['node']]
+        nodes['color'] = ['cyan' if (node in target_genes) else 'white' for node in nodes['node']]
     else:
         nodes['color'] = ['#D1B3FF' if (count >= 4) else 'white' for count in
                           nodes['connections']]
@@ -171,9 +171,9 @@ if __name__ == '__main__':
     for model_name in F_selected_models():
         if False:
             plot_network(model_name, studies, top_links_n, "top_links")
-        if False:
+        if True:
             plot_network(model_name, studies, top_links_n, "target_genes", target_genes_models[model_name])
-        if True: # - to identify hops, we dont need to plot ctr vs mg
+        if False: # - to identify hops, we dont need to plot ctr vs mg
             plot_network(model_name, studies, top_links_n, "top_links_same_weight")
 
     # - plot the legends

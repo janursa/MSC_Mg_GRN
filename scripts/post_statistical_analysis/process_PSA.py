@@ -61,9 +61,10 @@ if __name__ == '__main__':
             DE_data[tag] = DE_data_single
             #- extract data in the format of arrays and store it for each model
             for study in studies:
-                data = process_data(DE_data_single, study=study)
+                #- get the data as matrix
+                data_matrix = process_data(DE_data_single, study=study)
                 tag_study = '_'.join([tag,study])
-                read_write_data(mode='write', tag=tag_study, data=data)
+                read_write_data(mode='write', tag=tag_study, data=data_matrix)
     # finding the proteins are that are mutually detected as DE across all datasets
     sets = [set(val) for val in DE_proteins.values()]
     # Find the intersection of all sets
@@ -74,3 +75,16 @@ if __name__ == '__main__':
     DE_data_serialized = {ky: df.to_json() for ky, df in DE_data.items()}
     with open(os.path.join(DATA_DIR, 'DE_data.csv'), 'w') as f:
         json.dump(DE_data_serialized, f)
+
+
+    #- to store the data as a df where gene names are given in the first column
+    for period_phase, period in zip(periods, periods_days):
+        for imput in imputs:
+            tag = '_'.join([period_phase, imput])
+            #- extract data in the format of arrays and store it for each model
+            for study in studies:
+                #- get the data for each study and add gene name to the df
+                data_df = DE_data[tag].filter(like=study)
+                data_df.insert(0, 'Protein', DE_proteins[tag])
+                data_df.round(3).to_csv(f'{DATA_DIR}/df_data_{tag}_{study}.csv')
+

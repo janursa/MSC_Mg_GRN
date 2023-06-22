@@ -28,7 +28,7 @@ class PlotCytoscape:
         assert (len(edges) > 0)
         # - scale node size
         if node_size_attribute is not None:
-            scale, min_value = 20, 30
+            scale, min_value = 20, 20
             nodes["size"] = self.normalize(nodes[node_size_attribute], scale=scale, min_value=min_value)
         # - scale edge width
         if edge_size_attribute is not None:
