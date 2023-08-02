@@ -88,3 +88,47 @@ if __name__ == '__main__':
                 data_df.insert(0, 'Protein', DE_proteins[tag])
                 data_df.round(3).to_csv(f'{DATA_DIR}/df_data_{tag}_{study}.csv')
 
+    # - check if certain proteins are up or down regulated for a given model
+    def get_values(df, protein, day):
+        protein_data = df[df['Protein'] == protein]
+
+        if not protein_data.empty:
+            ctr_value = protein_data[f'ctr_{day}'].values[0]
+            mg_value = protein_data[f'mg_{day}'].values[0]
+            return ctr_value, mg_value
+        else:
+            return "Protein not found"
+
+
+    def get_mean_values(df, protein):
+        protein_data = df[df['Protein'] == protein]
+
+        if not protein_data.empty:
+            ctr_cols = [col for col in df.columns if col.startswith('ctr')]
+            mg_cols = [col for col in df.columns if col.startswith('mg')]
+
+            ctr_mean = protein_data[ctr_cols].mean(axis=1).values[0]
+            mg_mean = protein_data[mg_cols].mean(axis=1).values[0]
+
+            return ctr_mean, mg_mean
+        else:
+            return "Protein not found"
+    def print_values(df, protein):
+        protein_data = df[df['Protein'] == protein]
+
+
+        ctr_cols = [col for col in df.columns if col.startswith('ctr')]
+        mg_cols = [col for col in df.columns if col.startswith('mg')]
+
+        print('ctr', protein_data[ctr_cols].values[0])
+        print('mg', protein_data[mg_cols].values[0])
+
+    data = DE_data['late_KNN']
+    proteins = {'P40926':'MDH2', "O94925": "GLS", "Q13263": "TRIM28"}
+    day = '11'
+    for protein, gene in proteins.items():
+        # print(f'{gene}:{get_mean_values(data, protein)}')
+        # print(f'{data[]}')
+        print(gene)
+        print_values(data, protein)
+

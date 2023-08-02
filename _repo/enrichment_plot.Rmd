@@ -122,15 +122,15 @@ p1 <- cnet_plot_F(df_process) + ggtitle("Go: Biological Process") + theme(plot.t
 ggsave("cnet_process.png", p1, units = "px", width = 2000, height = 1200, scale=1.1)
 
 p2 <- cnet_plot_F(df_function) + ggtitle("Go: Biological Function")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
-ggsave("cnet_function.png", p2, units = "px", width = 800, height = 600,  scale=1.1)
+ggsave("cnet_function.png", p2, units = "px", width = 800, height = 600, scale=1.1)
 
 p3 <- cnet_plot_F(df_component) + ggtitle("Go: Biological Component")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
-ggsave("cnet_component.png", p3, units = "px", width = 1919, height = 1250,  scale=1.1)
+ggsave("cnet_component.png", p3, units = "px", width = 1919, height = 1250, scale=1.1)
 
 p4 <- cnet_plot_F(df_keyword) + ggtitle("UniProt Keywords")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
-ggsave("cnet_keyword.png", p4, units = "px", width = 1800, height = 1120,  scale=1.1)
+ggsave("cnet_keyword.png", p4, units = "px", width = 1800, height = 1120, scale=1.1)
 p5 <- cnet_plot_F(df_reactome) + ggtitle("Reactome Pathways")+ theme(plot.title=element_text(size = title_font_size, hjust = 0.5, vjust=3))
-ggsave("cnet_pathways.png", p5, units = "px", width = 1200, height = 600,  scale=1.1)
+ggsave("cnet_pathways.png", p5, units = "px", width = 1200, height = 600, scale=1.1)
 
 ```
 

@@ -2,11 +2,17 @@
 
 # Content
 - data: the folder that contains original proteomics data
-- statistical_analysis: results of time-series statitical analysis
-- scripts: python scripts that process the whole analysis after statistical analysis
-- results: results produced by this study, exluding statistical analysis
-- R: contains R scripts, which are only used for plotting protein annotations
+- statistical_analysis: the R script and the results of the time-series statitical analysis
+- scripts: Python scripts that process the whole analysis except the statistical analysis
+- results: the results exluding the statistical analysis
+
+# How to run
+- The R script in the relevant folder to run the time-series DE analysis
+- The Snakefile in the main directory to run the entire process except the time-series DE analysis
 
 # Authors
+- Jalil Nourisa 
+- Farhad Shakeri
+- Antoine Passemiers 
 # Contribution
 For enquiries, pls contact Jalil Nourisa (jalil.nourisa@gmail.com)
