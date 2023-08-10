@@ -4,7 +4,6 @@ import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
-import igraph as ig
 import json
 from typing import List, Dict
 import matplotlib.pyplot as plt
@@ -18,7 +17,6 @@ from common_tools import flatten
 from uncertainity_analysis.ua_aux import NoiseAnalysis
 from common_tools.role_analysis import RolePlot
 
-# target_node_colors = ["#B0C4DE", "#C1FFC1", "#D8BFD8", "#87CEFA", "#98FB98", "#DDA0DD"]
 target_node_colors = RolePlot.roles_colors
 
 class PlotCytoscape:
@@ -35,9 +33,6 @@ class PlotCytoscape:
             scale, min_value = 3, 1
             edges["width"] = self.normalize(edges[edge_size_attribute], scale=scale,
                                                          min_value=min_value)
-        # - assign color to nodes
-        # if node_color_attribute is not None:
-        #     nodes['color'] = self.assign_node_colors(nodes[node_color_attribute])
         # - assign color to edges
         if edge_color_attribute is not None:
             edges['edge_color'] = self.assign_edge_colors(edges[edge_color_attribute])
@@ -46,12 +41,6 @@ class PlotCytoscape:
         self.ID = None
         self.nodes = self.extract_dict(nodes.rename(columns={'node': 'id'}))
         self.edges = self.extract_dict(edges)
-    # @staticmethod
-    # def assign_node_colors(values):
-    #
-    #     # colors = [target_node_colors[color_code] if (color_code != 0) else 'white' for color_code in values]
-    #     colors = [target_node_colors[color_code] for color_code in values]
-    #     return colors
 
     @classmethod
     def assign_edge_colors(cls, values):
@@ -186,7 +175,7 @@ class PlotCytoscape:
         response = requests.get(self.base + f'apply/styles/{style_name}/{self.ID}')
         self.check(response, 200, 'apply style')
 
-class PlotIgplot:
+class PlotIgplot: #depricated
     @classmethod
     def plot(cls, nodes: pd.DataFrame, edges: pd.DataFrame, model_name: str, study: str) -> None:
         """
@@ -238,10 +227,6 @@ class PlotIgplot:
         fig.subplots_adjust(right=0.8)
 
         return fig
-
-
-
-
 
 class LegendPlot():
     title_size = 9

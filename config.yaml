@@ -1,0 +1,20 @@
+periods:
+  - early
+  - late
+
+periods_days:
+  - day1_11
+  - day1_21
+
+imputs:
+  - MinProb
+  - KNN
+
+studies:
+  - ctr
+  - mg
+
+GRN_methods:
+  - RF
+  - ridge
+  - portia
