@@ -1,4 +1,0 @@
-category,BackgroundGeneCount,ProteinCount,ProteinNames,FDR,Description,Strength
-GO Biological Process,72,5,"EIF3E,EIF3C,RPL17,RPL29,RPL30",0.0062,Cytoplasmic translation,0.8587724226296367
-GO Biological Process,119,5,"EIF3E,RPL17,RPL29,RPL30,RBM8A",0.033,Nuclear-transcribed mRNA catabolic proce,0.7244742850605095
-GO Biological Process,141,5,"EIF3E,EIF3C,RPL17,RPL29,RPL30",0.0488,Translational initiation,0.6880331508460507

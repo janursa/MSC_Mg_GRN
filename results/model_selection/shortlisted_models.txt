@@ -1,5 +1,0 @@
-early_MinProb_portia
-early_KNN_portia
-late_MinProb_RF
-late_MinProb_portia
-late_KNN_portia

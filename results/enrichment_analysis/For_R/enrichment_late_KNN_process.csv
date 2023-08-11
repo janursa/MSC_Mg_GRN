@@ -1,4 +1,0 @@
-category,BackgroundGeneCount,ProteinCount,ProteinNames,FDR,Description,Strength
-GO Biological Process,360,8,"SKP1,NEDD8,RAB1B,APOA2,UCHL3,CKAP4,NUCB1,LMO7",0.0442,Post-translational protein modification,0.6044059203410292
-GO Biological Process,971,12,"TMSB10,LRP1,TRIM28,PXN,SYNPO2,RAB1B,MAP4,TMSB4X,XRCC5,ARPC1B,SEPTIN9,PDLIM5",0.0442,Regulation of cellular component biogene,0.523948364945005
-GO Biological Process,1306,14,"TMSB10,LRP1,TRIM28,PXN,ACAA2,SYNPO2,YWHAG,RAB1B,SFPQ,MAP4,TMSB4X,XRCC5,ARPC1B,SEPTIN9",0.0442,Regulation of organelle organization,0.5075504339718548

@@ -1,0 +1,20 @@
+
+periods: ['early', 'late']
+periods_days: ['day1_11', 'day1_21']
+imputs: ['MinProb', 'KNN']
+studies: ['ctr', 'mg']
+colors_used_for_groups: ['lightblue', 'pink'] #color map for ctr and sample, respectively
+GRN_methods: ['RF', 'ridge', 'portia']
+
+top_quantiles: [0.75, 0.77, 0.787, 0.8, 0.82, 0.83, 0.85, 0.87, 0.88, 0.9] # used for model selection
+top_quantile_role_change: 0.75 # used for VSA to choose the most important role changes
+top_quantile_links_change: 0.9 # used to select top links change from ctr to mg
+ #used to cut-off links for epr calculation
+time_points: [1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 21]
+n_replica_calibration_run_RF: 1 # to repeat the model run n times before inferring the results
+n_replica_grn_run_RF: 1 # to repeat the model run n times before inferring the results
+n_random_links: 1000 # number of randomly generated links for model selection
+n_repeat_noise_analysis: 500 # number of samples to create noisey data
+model_selection_study: 'ctr' # the study group used for model selection procedure
+
+n_random_regulators: 50
