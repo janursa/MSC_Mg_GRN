@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/527917088.svg)](https://zenodo.org/badge/latestdoi/527917088)
+
 # Uncovering key regulatory mechanisms in the molecular response of mesenchymal stem cells to Mg2+ ions through protein network analysis 
 
 # Content
