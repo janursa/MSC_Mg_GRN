@@ -26,7 +26,7 @@ fit <- eBayes(fit)
 #####################
 design <- model.matrix(~ group * X)
 dupcor <- duplicateCorrelation(mat, design, block = donor)
-colnames(design) %<>% make.names(.)
+colnames(design) <- make.names(colnames(design))
 fit0 <- lmFit(mat, 
               design,
               block = donor,
