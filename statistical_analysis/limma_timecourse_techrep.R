@@ -24,7 +24,7 @@ fit <- eBayes(fit)
 
 ## Donoras as MIXED EFFECT (if design is mot PAIRED)
 #####################
-design <- model.matrix(~ 0 + group * X)
+design <- model.matrix(~ group * X)
 dupcor <- duplicateCorrelation(mat, design, block = donor)
 colnames(design) %<>% make.names(.)
 fit0 <- lmFit(mat, 
